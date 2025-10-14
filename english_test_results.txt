@@ -1,0 +1,571 @@
+/media/liuyu/DataDrive/WWW2026_demo/stindex/stindex/core/extractor.py:12: LangChainDeprecationWarning: As of langchain-core 0.3.0, LangChain uses pydantic v2 internally. The langchain_core.pydantic_v1 module was a compatibility shim for pydantic v1, and should no longer be used. Please update the code to import from Pydantic directly.
+
+For example, replace imports like: `from langchain_core.pydantic_v1 import BaseModel`
+with: `from pydantic import BaseModel`
+or the v1 compatibility namespace if you are working in a code base that has not been fully upgraded to pydantic 2 yet. 	from pydantic.v1 import BaseModel
+
+  from stindex.extractors.temporal import TemporalExtractor
+`torch_dtype` is deprecated! Use `dtype` instead!
+====================================================================================================
+STIndex - English Test Suite Evaluation
+====================================================================================================
+
+Loading model...
+Loading model from: Qwen/Qwen3-8B
+Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:00<00:01,  2.47it/s]Loading checkpoint shards:  40%|████      | 2/5 [00:00<00:01,  2.41it/s]Loading checkpoint shards:  60%|██████    | 3/5 [00:01<00:00,  2.40it/s]Loading checkpoint shards:  80%|████████  | 4/5 [00:01<00:00,  2.60it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:01<00:00,  3.44it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:01<00:00,  2.93it/s]
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+`generation_config` default values have been modified to match model-specific defaults: {'do_sample': True, 'top_k': 20, 'bos_token_id': 151643, 'eos_token_id': [151645, 151643]}. If this is not desired, please set these values explicitly.
+Model loaded successfully on auto
+✓ Model loaded
+
+
+====================================================================================================
+SECTION: TEMPORAL
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.1] Absolute Dates with Explicit Years
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The project started on January 15, 2020, was paused on March 20, 2021, and resum...
+
+Temporal (3):
+  • 'January 15, 2020' → 2020-01-15 [date]
+  • 'March 20, 2021' → 2021-03-20 [date]
+  • 'September 5, 2022' → 2022-09-05 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.2] Dates Without Years - Year Inference
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: In 2023, the conference began on March 10. The workshop was on March 11, and the...
+
+Temporal (4):
+  • '2023' → 2023-10-14 [date]
+  • 'March 10' → 2023-03-10 [date]
+  • 'March 11' → 2023-03-11 [date]
+  • 'March 12' → 2023-03-12 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.3] Date Intervals
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The exhibition will run from May 1, 2024 to May 31, 2024.
+
+Temporal (2):
+  • 'May 1, 2024' → 2024-05-01 [date]
+  • 'May 31, 2024' → 2024-05-31 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.4] Mixed Date Formats
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The event on 2024-06-15 follows the announcement from June 1, 2024, and precedes...
+
+Temporal (3):
+  • '2024-06-15' → 2024-06-15 [date]
+  • 'June 1, 2024' → 2024-06-01 [date]
+  • 'July 15, 2024' → 2024-07-15 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.5] Relative Time Expressions
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The meeting was yesterday, the report is due tomorrow, and the review happens ne...
+
+Temporal (3):
+  • 'yesterday' → 2025-10-13T02:46:59.820849 [relative]
+  • 'tomorrow' → 2025-10-15T02:46:59.820849 [relative]
+  • 'next week' → 2025-10-21T02:46:59.820849 [relative]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.6] Dates with Specific Times
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The webinar starts at 2:00 PM on March 15, 2024.
+
+Temporal: None
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.7] Duration Expressions
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The training program lasts 3 weeks.
+
+Temporal (1):
+  • '3 weeks' → P3W [duration]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.8] Complex Temporal Context
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The study began in January 2020, was interrupted in March 2020 due to COVID-19, ...
+
+Temporal (3):
+  • 'January 2020' → 2020-01-14 [date]
+  • 'March 2020' → 2020-03-14 [date]
+  • 'September 2021' → 2021-09-14 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.9] Cross-Year Intervals
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The study ran from December 2022 to February 2023.
+
+Temporal (2):
+  • 'December 2022' → 2022-12-14 [date]
+  • 'February 2023' → 2023-02-14 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[T1.10] Historical Dates
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: World War II ended on September 2, 1945. The Berlin Wall fell on November 9, 198...
+
+Temporal (2):
+  • 'September 2, 1945' → 1945-09-02 [date]
+  • 'November 9, 1989' → 1989-11-09 [date]
+
+Spatial (1):
+  • 'The Berlin Wall' → (51.4964° N, 0.1083° W)
+
+✓ Success
+
+====================================================================================================
+SECTION: SPATIAL
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.1] Major World Cities
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The tour includes stops in Paris, Tokyo, New York, and Sydney.
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: includes st
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.2] Cities with Country Context
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The conference has venues in Berlin, Germany; Toronto, Canada; and Melbourne, Au...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: has venues 
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.3] Ambiguous Place Names
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Springfield, Illinois is the state capital. Springfield, Massachusetts has a dif...
+
+Temporal: None
+
+Spatial (4):
+  • 'Springfield' → (39.7990° N, 89.6440° W)
+  • 'Illinois' → (40.0797° N, 89.4337° W)
+  • 'Springfield' → (39.7990° N, 89.6440° W)
+  • 'Massachusetts' → (41.5461° N, 88.1165° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.4] States and Regions
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: California, Texas, and Florida are the most populous US states.
+
+Temporal: None
+
+Spatial (4):
+  • 'California' → (29.7181° N, 94.9980° W)
+  • 'Texas' → (37.3355° N, 91.9808° W)
+  • 'Florida' → (33.6504° N, 97.2053° W)
+  • 'US' → (37.3355° N, 91.9808° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.5] Landmarks
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The Eiffel Tower in Paris and the Statue of Liberty in New York are iconic landm...
+
+Temporal: None
+
+Spatial (4):
+  • 'The Eiffel Tower' → (36.2870° N, 88.3015° W)
+  • 'Paris' → (33.6618° N, 95.5555° W)
+  • 'the Statue of Liberty' → (16.3989° N, 120.6171° E)
+  • 'New York' → (43.1562° N, 75.8450° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.6] Multiple Locations in Same Country
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The Australian tour covers Sydney, Melbourne, Brisbane, Perth, and Adelaide.
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: covers [typ
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.7] Small Towns with State Context
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The study was conducted in Boulder, Colorado and Ann Arbor, Michigan.
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: in Boulder,
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.8] African Cities
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The research team visited Lagos, Nigeria; Nairobi, Kenya; and Cairo, Egypt.
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: visited [ty
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.9] Asian Cities
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The company has offices in Singapore, Seoul, Bangkok, and Mumbai.
+
+Temporal: None
+
+Spatial (3):
+  • 'Singapore' → (37.5684° N, 126.9777° E)
+  • 'Seoul' → (37.5667° N, 126.9783° E)
+  • 'Bangkok' → (13.7253° N, 100.5796° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[S2.10] European Capitals
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The summit rotates between Brussels, Geneva, Vienna, and Copenhagen.
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: rotates bet
+
+====================================================================================================
+SECTION: COMBINED
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.1] News Report - Hurricane
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: On August 29, 2005, Hurricane Katrina made landfall near New Orleans, Louisiana....
+
+Temporal (2):
+  • 'August 29, 2005' → 2005-08-29 [date]
+  • 'August 31' → 2005-08-31 [date]
+
+Spatial (3):
+  • 'New Orleans' → (29.9807° N, 90.1107° W)
+  • 'Louisiana' → (29.9807° N, 90.1107° W)
+  • 'Mississippi' → (33.9757° N, 89.6814° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.2] Travel Itinerary
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: We'll arrive in Rome on June 5, 2024, stay three days, then travel to Florence o...
+
+Temporal: None
+
+Spatial (2):
+  • 'Rome' → (40.9814° N, 91.6824° W)
+  • 'Florence' → (34.7998° N, 87.6773° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.3] Conference Announcement
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The International AI Conference will be held in Singapore from September 15-20, ...
+
+Temporal: None
+
+Spatial (1):
+  • 'Singapore' → (1.3571° N, 103.8195° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.4] Historical Event - Moon Landing
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: On July 20, 1969, Apollo 11 landed on the Moon.
+
+Temporal (1):
+  • 'July 20, 1969' → 1969-07-20 [date]
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.5] Business Expansion Timeline
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The company opened its Tokyo office in March 2020, followed by Shanghai in July ...
+
+Temporal (2):
+  • 'March 2020' → 2020-03-14 [date]
+  • 'July 2020' → 2020-07-14 [date]
+
+Spatial (2):
+  • 'Tokyo' → (35.6769° N, 139.7639° E)
+  • 'Shanghai' → (31.2323° N, 121.4691° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.6] Research Field Study
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The expedition began in Nairobi, Kenya on February 1, 2023. Researchers spent tw...
+
+Temporal (2):
+  • 'February 1, 2023' → 2023-02-01 [date]
+  • 'two weeks' → 2025-09-30 [date]
+
+Spatial (2):
+  • 'Nairobi' → (1.2890° S, 36.8173° E)
+  • 'Kenya' → (1.4420° N, 38.4314° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.7] Sports Event
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The 2026 FIFA World Cup will be jointly hosted by the United States, Canada, and...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: 2026 FIFA W
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.8] Climate Event (PDF Example)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: On March 15, 2022, a strong cyclone hit the coastal areas near Broome, Western A...
+
+Temporal (2):
+  • 'March 15, 2022' → 2022-03-15 [date]
+  • 'March 17' → 2022-03-17 [date]
+
+Spatial (2):
+  • 'Broome' → (17.9567° S, 122.2240° E)
+  • 'Western Australia' → (25.2303° S, 121.0187° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.9] Political Event - Summit
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The G20 Summit took place in Bali, Indonesia on November 15-16, 2022.
+
+Temporal: None
+
+Spatial (2):
+  • 'Bali' → (8.2271° S, 115.1919° E)
+  • 'Indonesia' → (2.4834° S, 117.8903° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[C3.10] Natural Disaster Timeline
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The earthquake struck off the coast of Sumatra on December 26, 2004. The tsunami...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: Thailand an
+
+====================================================================================================
+SECTION: EDGE CASES
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[E4.1] No Spatiotemporal Information
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The algorithm uses machine learning to optimize performance.
+
+Temporal: None
+
+Spatial: None
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[E4.2] Dense Information
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Between January 5 and January 10, 2024, the team visited Paris, London, Berlin, ...
+
+Warning: Could not normalize interval 'Between January 5 and January 10, 2024', skipping
+Temporal (2):
+  • 'January 5' → 2024-01-05 [date]
+  • 'January 10, 2024' → 2024-01-10 [date]
+
+Spatial (4):
+  • 'Paris' → (44.8145° N, 20.4589° E)
+  • 'London' → (51.5156° N, 0.0920° W)
+  • 'Berlin' → (52.5575° N, 13.2097° E)
+  • 'Amsterdam' → (52.3481° N, 4.9139° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[E4.3] Nested Locations
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The office is located in Austin, Texas, United States, near the University of Te...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: near the Un
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[E4.4] Non-English Place Names
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The meeting will be held in Beijing, China on December 1, 2024.
+
+Temporal (1):
+  • 'December 1, 2024' → 2024-12-01 [date]
+
+Spatial (2):
+  • 'Beijing' → (39.9057° N, 116.3913° E)
+  • 'China' → (35.0001° N, 104.9999° E)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[E4.5] Multiple Ambiguous References
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Cambridge researchers met with Cambridge colleagues to discuss the Cambridge stu...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: Cambridge r
+
+====================================================================================================
+SECTION: CHALLENGE
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[A1] Scientific Abstract
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The study, conducted between March 2019 and August 2021 at Stanford University, ...
+
+Warning: Could not normalize interval 'between March 2019 and August 2021', skipping
+Temporal (2):
+  • 'March 2019' → 2019-03-14 [date]
+  • 'August 2021' → 2021-08-14 [date]
+
+Spatial (5):
+  • 'Stanford University' → (37.4313° N, 122.1694° W)
+  • 'California' → (36.7015° N, 118.7560° W)
+  • 'Alaska' → (36.8355° N, 119.7940° W)
+  • 'Greenland' → (37.3128° N, 121.7857° W)
+  • 'Antarctica' → (53.1613° S, 70.9330° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[A2] Historical Narrative
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: The expedition departed from London on May 19, 1845. The ships were last seen in...
+
+Temporal (3):
+  • 'May 19, 1845' → 2014-05-19 [date]
+  • 'July 1845' → 2014-07-14 [date]
+  • '2014' → 2014-10-14 [date]
+
+Spatial (2):
+  • 'London' → (42.9837° N, 81.2496° W)
+  • 'Baffin Bay' → (74.0783° N, 68.6834° W)
+
+✓ Success
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[A3] Flight Schedule
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Flight AA123 departs Los Angeles at 8:15 AM on Monday, arrives in Chicago at 2:3...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: 08:15:00 [t
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[A4] Medical Record
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Patient admitted to Massachusetts General Hospital on January 5, 2024. Symptoms ...
+
+✗ Error: 1 validation error for TemporalEntity
+normalized
+  Value error, Invalid ISO 8601 format: three days 
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+[A5] Corporate Timeline
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Input: Founded in Seattle in 1994, the company expanded to San Francisco in 2000, opene...
+
+Temporal (4):
+  • '1994' → 1994-10-14 [date]
+  • '2000' → 2000-10-14 [date]
+  • '2008' → 2008-10-14 [date]
+  • '2015' → 2015-10-14 [date]
+
+Spatial (4):
+  • 'Seattle' → (47.6038° N, 122.3301° W)
+  • 'San Francisco' → (37.7793° N, 122.4193° W)
+  • 'Dublin' → (37.7022° N, 121.9358° W)
+  • 'Singapore' → (1.3571° N, 103.8195° E)
+
+✓ Success
+
+====================================================================================================
+TEST SUMMARY
+====================================================================================================
+
+Overall:
+  Total Tests: 40
+  Success: 28 (70.0%)
+  Error: 12 (30.0%)
+
+Extraction Statistics:
+  Temporal Entities: 44
+  Spatial Entities: 47
+  Total Entities: 91
+
+Average per Test:
+  Temporal: 1.6
+  Spatial: 1.7
+
+====================================================================================================
+Evaluation Complete!
+====================================================================================================
