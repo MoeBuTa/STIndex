@@ -10,7 +10,7 @@ import dateparser
 import pendulum
 from pendulum import DateTime
 
-from stindex.models.schemas import TemporalType
+from stindex.agents.response.schemas import TemporalType
 
 
 class TimeNormalizer:

@@ -7,12 +7,11 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-# Add project root to path (generic approach)
+# Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from stindex import STIndexExtractor
-from stindex.models.schemas import ExtractionConfig
+from stindex import ExtractionPipeline
 
 # Setup output directory
 output_dir = project_root / "data" / "output"
@@ -22,19 +21,19 @@ output_file = output_dir / f"test_english_suite_{timestamp}.json"
 output_txt = output_dir / f"test_english_suite_{timestamp}.txt"
 
 # Test configuration
-config = ExtractionConfig(
-    llm_provider="local",
-    model_name="Qwen/Qwen3-8B",
-    enable_temporal=True,
-    enable_spatial=True,
-)
+config = {
+    "llm_provider": "local",
+    "model_name": "Qwen/Qwen3-8B",
+    "enable_temporal": True,
+    "enable_spatial": True,
+}
 
 print("=" * 100)
 print("STIndex - English Test Suite Evaluation")
 print("=" * 100)
 print("\nLoading model...")
 
-extractor = STIndexExtractor(config=config)
+pipeline = ExtractionPipeline(config=config)
 
 print("✓ Model loaded\n")
 
@@ -196,13 +195,13 @@ for category, tests in test_cases.items():
         stats["total"] += 1
 
         try:
-            result = extractor.extract(text)
+            result = pipeline.extract(text)
 
             # Display temporal results
             if result.temporal_entities:
                 print(f"Temporal ({len(result.temporal_entities)}):")
                 for entity in result.temporal_entities:
-                    print(f"  • '{entity.text}' → {entity.normalized} [{entity.temporal_type.value}]")
+                    print(f"  • '{entity.get('text', '')}' → {entity.get('normalized', '')} [{entity.get('temporal_type', '')}]")
                 stats["temporal_extracted"] += len(result.temporal_entities)
             else:
                 print("Temporal: None")
@@ -213,9 +212,9 @@ for category, tests in test_cases.items():
             if result.spatial_entities:
                 print(f"Spatial ({len(result.spatial_entities)}):")
                 for entity in result.spatial_entities:
-                    lat_str = f"{abs(entity.latitude):.4f}° {'S' if entity.latitude < 0 else 'N'}"
-                    lon_str = f"{abs(entity.longitude):.4f}° {'E' if entity.longitude > 0 else 'W'}"
-                    print(f"  • '{entity.text}' → ({lat_str}, {lon_str})")
+                    lat_str = f"{abs(entity.get('latitude', 0.0)):.4f}° {'S' if entity.get('latitude', 0.0) < 0 else 'N'}"
+                    lon_str = f"{abs(entity.get('longitude', 0.0)):.4f}° {'E' if entity.get('longitude', 0.0) > 0 else 'W'}"
+                    print(f"  • '{entity.get('text', '')}' → ({lat_str}, {lon_str})")
                 stats["spatial_extracted"] += len(result.spatial_entities)
             else:
                 print("Spatial: None")

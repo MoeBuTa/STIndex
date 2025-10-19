@@ -5,7 +5,7 @@ Simple integration test for new agentic architecture.
 Tests the full pipeline: STIndexExtractor -> ExtractionPipeline -> SpatioTemporalExtractorAgent
 """
 
-from stindex.core.extractor import STIndexExtractor
+from stindex.extractors.extractor import STIndexExtractor
 
 
 def test_basic_extraction():

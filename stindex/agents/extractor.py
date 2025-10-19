@@ -8,20 +8,23 @@ This agent:
 """
 
 import time
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from stindex.agents.base import BaseAgent
 from stindex.agents.prompts import get_combined_prompt
-from stindex.agents.response.models import (
+from stindex.agents.response.schemas import (
     ExtractionActionResponse,
     ExtractionObservation,
     ExtractionReasoning,
+    SpatialEntity,
     SpatialMention,
+    TemporalEntity,
     TemporalMention,
+    TemporalType,
 )
-from stindex.models.schemas import SpatialEntity, TemporalEntity, TemporalType
 from stindex.utils.enhanced_geocoder import EnhancedGeocoderService
 from stindex.utils.enhanced_time_normalizer import EnhancedTimeNormalizer
 from stindex.utils.preprocessing import ContextEnricher, TextPreprocessor
@@ -183,10 +186,33 @@ class SpatioTemporalExtractorAgent(BaseAgent):
             temporal_mentions: List[TemporalMention] = LangChainField(default_factory=list)
             spatial_mentions: List[SpatialMention] = LangChainField(default_factory=list)
 
-        # Create prompt
+        # Create simple prompt without template variables (use literal string)
+        system_prompt = """You are an expert at extracting both temporal and spatial information from text.
+
+Extract ALL temporal and spatial mentions from the provided text.
+
+Temporal expressions include:
+- Dates, times, durations, intervals
+- Both absolute and relative time references
+
+Spatial expressions include:
+- Countries, cities, regions, landmarks, addresses
+- Any geographic or location references
+
+Return your response as JSON with this structure:
+{{
+  "temporal_mentions": [
+    {{"text": "temporal expression", "context": "surrounding context"}}
+  ],
+  "spatial_mentions": [
+    {{"text": "location name", "context": "surrounding context", "type": "city/country/region/landmark/other"}}
+  ]
+}}"""
+
+        # Create prompt without variable substitution issues
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an expert at extracting both temporal and spatial information from text."),
-            ("human", get_combined_prompt(observations.cleaned_text))
+            ("system", system_prompt),
+            ("human", "Extract temporal and spatial entities from this text:\n\n{text}")
         ])
 
         # Use structured output
@@ -302,10 +328,14 @@ class SpatioTemporalExtractorAgent(BaseAgent):
         ]
 
         # Batch normalize
-        normalized_results = self.time_normalizer.normalize_batch(
-            mentions_with_context,
-            document_text=document_text
-        )
+        try:
+            normalized_results = self.time_normalizer.normalize_batch(
+                mentions_with_context,
+                document_text=document_text
+            )
+        except Exception as e:
+            logger.error(f"Batch normalization failed: {str(e)}")
+            return []
 
         # Create TemporalEntity objects
         for i, mention in enumerate(mentions):
@@ -313,34 +343,71 @@ class SpatioTemporalExtractorAgent(BaseAgent):
                 continue
 
             normalized, temporal_type = normalized_results[i]
+            mention_text = mention.get("text", "")
 
-            # Skip intervals that couldn't be normalized
-            if temporal_type == TemporalType.INTERVAL and "/" not in normalized:
+            # IMPORTANT: Validate BEFORE creating entity to avoid Pydantic validation error
+            if not self._is_valid_normalized_format(normalized, temporal_type):
+                logger.warning(f"Skipping temporal entity '{mention_text}' with invalid normalized format: '{normalized}'")
                 continue
 
-            mention_text = mention["text"]
             start_char = document_text.find(mention_text)
             end_char = start_char + len(mention_text) if start_char != -1 else None
 
             # Handle intervals
             start_date, end_date = None, None
-            if temporal_type == TemporalType.INTERVAL:
-                start_date, end_date = self.time_normalizer.get_date_range(mention_text)
+            if temporal_type == TemporalType.INTERVAL and "/" in normalized:
+                parts = normalized.split("/")
+                if len(parts) == 2:
+                    start_date, end_date = parts[0], parts[1]
 
-            entity = TemporalEntity(
-                text=mention_text,
-                normalized=normalized,
-                temporal_type=temporal_type,
-                confidence=0.90,
-                start_char=start_char if start_char != -1 else None,
-                end_char=end_char,
-                start_date=start_date,
-                end_date=end_date,
-            )
+            try:
+                entity = TemporalEntity(
+                    text=mention_text,
+                    normalized=normalized,
+                    temporal_type=temporal_type,
+                    confidence=0.90,
+                    start_char=start_char if start_char != -1 else None,
+                    end_char=end_char,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                temporal_entities.append(entity)
+            except Exception as e:
+                # This shouldn't happen since we pre-validate, but keep as safety net
+                logger.error(f"Unexpected error creating TemporalEntity for '{mention_text}' (normalized: '{normalized}'): {str(e)}")
+                continue
 
-            temporal_entities.append(entity)
-
+        logger.info(f"Successfully created {len(temporal_entities)} temporal entities from {len(mentions)} mentions")
         return temporal_entities
+
+    def _is_valid_normalized_format(self, normalized: str, temporal_type: TemporalType) -> bool:
+        """Check if normalized format is valid ISO 8601."""
+        if not normalized:
+            logger.debug("Empty normalized string")
+            return False
+
+        try:
+            # Duration format (P1D, P1M, etc.)
+            if normalized.startswith("P"):
+                return True
+
+            # Interval format (date/date)
+            if "/" in normalized:
+                parts = normalized.split("/")
+                if len(parts) == 2:
+                    # Both parts should be valid ISO dates
+                    datetime.fromisoformat(parts[0].replace("Z", "+00:00"))
+                    datetime.fromisoformat(parts[1].replace("Z", "+00:00"))
+                    return True
+                logger.debug(f"Interval has {len(parts)} parts, expected 2")
+                return False
+
+            # Regular datetime/date format
+            datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+            return True
+        except (ValueError, AttributeError) as e:
+            logger.debug(f"Validation failed for '{normalized}': {str(e)}")
+            return False
 
     def _postprocess_spatial(
         self,

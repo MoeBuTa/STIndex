@@ -15,7 +15,7 @@ from collections import defaultdict
 import dateparser
 import pendulum
 
-from stindex.models.schemas import TemporalType
+from stindex.agents.response.schemas import TemporalType
 
 
 class TemporalContext:

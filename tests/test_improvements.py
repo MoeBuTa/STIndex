@@ -11,14 +11,13 @@ import sys
 import json
 from pathlib import Path
 from datetime import datetime
+import time
 
-# Add project root to path (generic approach)
+# Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-import time
-from stindex import STIndexExtractor
-from stindex.models.schemas import ExtractionConfig
+from stindex import ExtractionPipeline
 
 # Setup output directory
 output_dir = project_root / "data" / "output"
@@ -45,34 +44,34 @@ by March 17."""
 print(f"Input text:\n{text1}\n")
 
 # Use local model with enhancements
-config = ExtractionConfig(
-    llm_provider="local",
-    model_name="Qwen/Qwen3-8B",
-    enable_temporal=True,
-    enable_spatial=True,
-)
+config = {
+    "llm_provider": "local",
+    "model_name": "Qwen/Qwen3-8B",
+    "enable_temporal": True,
+    "enable_spatial": True,
+}
 
-extractor = STIndexExtractor(config=config)
+pipeline = ExtractionPipeline(config=config)
 
 start_time = time.time()
-result = extractor.extract(text1)
+result = pipeline.extract(text1)
 elapsed = time.time() - start_time
 
 print("Temporal Entities:")
 for entity in result.temporal_entities:
-    print(f"  • '{entity.text}' → {entity.normalized}")
-    if entity.text == "March 17":
-        if "2022" in entity.normalized:
+    print(f"  • '{entity.get('text', '')}' → {entity.get('normalized', '')}")
+    if entity.get('text', '') == "March 17":
+        if "2022" in entity.get('normalized', ''):
             print("    ✓ Year inference CORRECT (should be 2022)")
         else:
-            print(f"    ✗ Year inference INCORRECT (got {entity.normalized}, should be 2022-03-17)")
+            print(f"    ✗ Year inference INCORRECT (got {entity.get('normalized', '')}, should be 2022-03-17)")
 
 print("\nSpatial Entities:")
 for entity in result.spatial_entities:
-    print(f"  • '{entity.text}' → ({entity.latitude:.4f}°, {entity.longitude:.4f}°)")
-    if entity.text == "Broome":
+    print(f"  • '{entity.get('text', '')}' → ({entity.get('latitude', 0.0):.4f}°, {entity.get('longitude', 0.0):.4f}°)")
+    if entity.get('text', '') == "Broome":
         # Check if it's in Australia (negative latitude for southern hemisphere)
-        if entity.latitude < 0:
+        if entity.get('latitude', 0.0) < 0:
             print("    ✓ Location disambiguation CORRECT (Broome, Australia)")
         else:
             print("    ✗ Location disambiguation INCORRECT (got northern hemisphere, should be Australia)")
@@ -94,15 +93,15 @@ for text, expected_hint in test_cases:
     print(f"\nText: \"{text}\"")
     print(f"Expected context: {expected_hint}")
 
-    result = extractor.extract(text)
+    result = pipeline.extract(text)
     if result.spatial_entities:
         entity = result.spatial_entities[0]
-        print(f"  → Found: {entity.text} at ({entity.latitude:.4f}°, {entity.longitude:.4f}°)")
+        print(f"  → Found: {entity.get('text', '')} at ({entity.get('latitude', 0.0):.4f}°, {entity.get('longitude', 0.0):.4f}°)")
 
         # Simple heuristic checks
-        if "Illinois" in text and entity.latitude > 39 and entity.latitude < 41:
+        if "Illinois" in text and entity.get('latitude', 0.0) > 39 and entity.get('latitude', 0.0) < 41:
             print("    ✓ Correct (Springfield, IL)")
-        elif "France" in text and entity.latitude > 48 and entity.latitude < 49:
+        elif "France" in text and entity.get('latitude', 0.0) > 48 and entity.get('latitude', 0.0) < 49:
             print("    ✓ Correct (Paris, France)")
         else:
             print("    ? Check coordinates")
@@ -117,15 +116,15 @@ test_location_text = "Paris, France is a beautiful city. Tokyo, Japan is also ni
 
 print("First extraction (no cache)...")
 start1 = time.time()
-result1 = extractor.extract(test_location_text)
+result1 = pipeline.extract(test_location_text)
 time1 = time.time() - start1
-print(f"  Time: {time1:.2f}s, Found: {result1.spatial_count} locations")
+print(f"  Time: {time1:.2f}s, Found: {len(result1.spatial_entities)} locations")
 
 print("\nSecond extraction (with cache)...")
 start2 = time.time()
-result2 = extractor.extract(test_location_text)
+result2 = pipeline.extract(test_location_text)
 time2 = time.time() - start2
-print(f"  Time: {time2:.2f}s, Found: {result2.spatial_count} locations")
+print(f"  Time: {time2:.2f}s, Found: {len(result2.spatial_entities)} locations")
 
 if time2 < time1 * 0.5:  # Should be significantly faster
     print(f"\n  ✓ Cache working! Speedup: {time1/time2:.1f}x")
@@ -143,14 +142,14 @@ The closing ceremony was held on January 20."""
 
 print(f"Input text:\n{text4}\n")
 
-result4 = extractor.extract(text4)
+result4 = pipeline.extract(text4)
 
 print("Temporal Entities (all should have year 2023):")
 all_correct = True
 for entity in result4.temporal_entities:
-    has_2023 = "2023" in entity.normalized
+    has_2023 = "2023" in entity.get('normalized', '')
     status = "✓" if has_2023 else "✗"
-    print(f"  {status} '{entity.text}' → {entity.normalized}")
+    print(f"  {status} '{entity.get('text', '')}' → {entity.get('normalized', '')}")
     if not has_2023:
         all_correct = False
 

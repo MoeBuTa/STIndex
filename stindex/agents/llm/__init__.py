@@ -1,6 +1,13 @@
-"""LLM module for agents."""
+"""LLM wrappers for agents."""
 
-from stindex.agents.llm.api import AnthropicLLM, OpenAILLM
-from stindex.agents.llm.local import LocalLLM
+from stindex.agents.llm.local import LocalLLM, LocalQwenLLM, LocalLLMWrapper, StructuredOutputLLM
+from stindex.agents.llm.api import OpenAILLM, AnthropicLLM
 
-__all__ = ["LocalLLM", "OpenAILLM", "AnthropicLLM"]
+__all__ = [
+    "LocalLLM",
+    "LocalQwenLLM",
+    "LocalLLMWrapper",
+    "StructuredOutputLLM",
+    "OpenAILLM",
+    "AnthropicLLM",
+]

@@ -1,5 +1,7 @@
 """
 Command-line interface for STIndex.
+
+Uses the new agentic ExtractionPipeline with observe-reason-act pattern.
 """
 
 import json
@@ -15,9 +17,7 @@ from rich.json import JSON
 from rich.panel import Panel
 from rich.table import Table
 
-from stindex import __version__
-from stindex.core.extractor import STIndexExtractor
-from stindex.models.schemas import ExtractionConfig
+from stindex import __version__, ExtractionPipeline
 
 app = typer.Typer(
     name="stindex",
@@ -52,28 +52,40 @@ def _save_result(result, output_dir: Path, filename: str):
     """Save result to both JSON and TXT in the output directory."""
     # Save JSON
     json_file = output_dir / f"{filename}.json"
+    result_dict = {
+        "text": result.text,
+        "temporal_entities": result.temporal_entities,
+        "spatial_entities": result.spatial_entities,
+        "success": result.success,
+        "error": result.error,
+        "processing_time": result.processing_time,
+        "metadata": result.metadata,
+    }
     with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(result.to_dict(), f, indent=2, ensure_ascii=False)
+        json.dump(result_dict, f, indent=2, ensure_ascii=False)
 
     # Save TXT summary
     txt_file = output_dir / f"{filename}.txt"
+    temporal_count = len(result.temporal_entities)
+    spatial_count = len(result.spatial_entities)
+
     with open(txt_file, "w", encoding="utf-8") as f:
         f.write(f"STIndex Extraction Results\n")
         f.write(f"{'=' * 80}\n\n")
-        f.write(f"Temporal Entities: {result.temporal_count}\n")
-        f.write(f"Spatial Entities: {result.spatial_count}\n")
+        f.write(f"Temporal Entities: {temporal_count}\n")
+        f.write(f"Spatial Entities: {spatial_count}\n")
         f.write(f"Processing Time: {result.processing_time:.2f}s\n\n")
 
         if result.temporal_entities:
             f.write(f"Temporal Entities:\n")
             for entity in result.temporal_entities:
-                f.write(f"  • '{entity.text}' → {entity.normalized} [{entity.temporal_type.value}]\n")
+                f.write(f"  • '{entity['text']}' → {entity['normalized']} [{entity['type']}]\n")
             f.write("\n")
 
         if result.spatial_entities:
             f.write(f"Spatial Entities:\n")
             for entity in result.spatial_entities:
-                f.write(f"  • '{entity.text}' → ({entity.latitude:.4f}, {entity.longitude:.4f})\n")
+                f.write(f"  • '{entity['text']}' → ({entity['latitude']:.4f}, {entity['longitude']:.4f})\n")
 
     return json_file, txt_file
 
@@ -90,28 +102,23 @@ def extract(
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Custom output file path (overrides auto-save)"),
     format: str = typer.Option("json", "--format", "-f", help="Output format (json/table)"),
     model: str = typer.Option(DEFAULT_MODEL, "--model", "-m", help="LLM model to use"),
-    temporal_only: bool = typer.Option(False, "--temporal-only", help="Extract only temporal"),
-    spatial_only: bool = typer.Option(False, "--spatial-only", help="Extract only spatial"),
-    no_geocoding: bool = typer.Option(False, "--no-geocoding", help="Disable geocoding"),
     no_save: bool = typer.Option(False, "--no-save", help="Don't auto-save to data/output/"),
 ):
     """Extract spatiotemporal indices from text."""
     try:
-        # Create extractor
-        config = ExtractionConfig(
-            model_name=model,
-            enable_temporal=not spatial_only,
-            enable_spatial=not temporal_only,
-        )
-
-        if no_geocoding:
-            config.enable_spatial = False
-
-        extractor = STIndexExtractor(config=config)
+        # Create pipeline
+        config = {
+            "model_name": model,
+        }
+        pipeline = ExtractionPipeline(config=config)
 
         # Extract
         with console.status("[bold green]Extracting spatiotemporal indices..."):
-            result = extractor.extract(text)
+            result = pipeline.extract(text)
+
+        if not result.success:
+            console.print(f"[bold red]Extraction failed:[/bold red] {result.error}")
+            sys.exit(1)
 
         # Display results
         if format == "table":
@@ -127,9 +134,11 @@ def extract(
             console.print(f"  • JSON: {json_file.name}")
             console.print(f"  • TXT:  {txt_file.name}")
 
+        temporal_count = len(result.temporal_entities)
+        spatial_count = len(result.spatial_entities)
         console.print(
-            f"\n[dim]Extracted {result.temporal_count} temporal and "
-            f"{result.spatial_count} spatial entities in "
+            f"\n[dim]Extracted {temporal_count} temporal and "
+            f"{spatial_count} spatial entities in "
             f"{result.processing_time:.2f}s[/dim]"
         )
 
@@ -152,19 +161,19 @@ def extract_file(
         sys.exit(1)
 
     try:
-        # Read file
-        with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()
-
         console.print(f"[dim]Processing file: {file_path}[/dim]")
 
-        # Create extractor
-        config = ExtractionConfig(model_name=model)
-        extractor = STIndexExtractor(config=config)
+        # Create pipeline
+        config = {"model_name": model}
+        pipeline = ExtractionPipeline(config=config)
 
-        # Extract
+        # Extract from file
         with console.status("[bold green]Extracting spatiotemporal indices..."):
-            result = extractor.extract(text)
+            result = pipeline.extract_from_file(str(file_path))
+
+        if not result.success:
+            console.print(f"[bold red]Extraction failed:[/bold red] {result.error}")
+            sys.exit(1)
 
         # Display results
         if format == "table":
@@ -181,9 +190,11 @@ def extract_file(
             console.print(f"  • JSON: {json_file.name}")
             console.print(f"  • TXT:  {txt_file.name}")
 
+        temporal_count = len(result.temporal_entities)
+        spatial_count = len(result.spatial_entities)
         console.print(
-            f"\n[dim]Extracted {result.temporal_count} temporal and "
-            f"{result.spatial_count} spatial entities in "
+            f"\n[dim]Extracted {temporal_count} temporal and "
+            f"{spatial_count} spatial entities in "
             f"{result.processing_time:.2f}s[/dim]"
         )
 
@@ -220,9 +231,9 @@ def batch(
 
     console.print(f"[dim]Found {len(files)} files to process[/dim]\n")
 
-    # Create extractor
-    config = ExtractionConfig(model_name=model)
-    extractor = STIndexExtractor(config=config)
+    # Create pipeline
+    config = {"model_name": model}
+    pipeline = ExtractionPipeline(config=config)
 
     # Track statistics
     stats = {"success": 0, "error": 0, "total_temporal": 0, "total_spatial": 0}
@@ -232,23 +243,26 @@ def batch(
         try:
             console.print(f"[cyan][{idx}/{len(files)}] Processing:[/cyan] {file_path.name}")
 
-            with open(file_path, "r", encoding="utf-8") as f:
-                text = f.read()
+            result = pipeline.extract_from_file(str(file_path))
 
-            result = extractor.extract(text)
+            if not result.success:
+                raise Exception(result.error)
 
             # Save result
             filename = f"{file_path.stem}_result"
             json_file, txt_file = _save_result(result, output_dir, filename)
 
+            temporal_count = len(result.temporal_entities)
+            spatial_count = len(result.spatial_entities)
+
             console.print(
-                f"  [green]✓[/green] {result.temporal_count} temporal, "
-                f"{result.spatial_count} spatial → {json_file.name}"
+                f"  [green]✓[/green] {temporal_count} temporal, "
+                f"{spatial_count} spatial → {json_file.name}"
             )
 
             stats["success"] += 1
-            stats["total_temporal"] += result.temporal_count
-            stats["total_spatial"] += result.spatial_count
+            stats["total_temporal"] += temporal_count
+            stats["total_spatial"] += spatial_count
 
         except Exception as e:
             console.print(f"  [red]✗[/red] Error: {str(e)}")
@@ -277,10 +291,10 @@ def _display_table(result):
 
         for entity in result.temporal_entities:
             temp_table.add_row(
-                entity.text,
-                entity.normalized,
-                entity.temporal_type.value,
-                f"{entity.confidence:.2f}",
+                entity.get("text", ""),
+                entity.get("normalized", ""),
+                entity.get("type", ""),
+                f"{entity.get('confidence', 0.0):.2f}",
             )
 
         console.print(temp_table)
@@ -294,16 +308,29 @@ def _display_table(result):
         spatial_table.add_column("Confidence", justify="right")
 
         for entity in result.spatial_entities:
-            coords = f"{entity.latitude:.4f}, {entity.longitude:.4f}"
-            location = entity.locality or entity.admin_area or entity.country or "N/A"
-            spatial_table.add_row(entity.text, coords, location, f"{entity.confidence:.2f}")
+            coords = f"{entity.get('latitude', 0.0):.4f}, {entity.get('longitude', 0.0):.4f}"
+            location = entity.get("locality") or entity.get("admin_area") or entity.get("country") or "N/A"
+            spatial_table.add_row(
+                entity.get("text", ""),
+                coords,
+                location,
+                f"{entity.get('confidence', 0.0):.2f}"
+            )
 
         console.print(spatial_table)
 
 
 def _display_json(result, output: Optional[Path] = None):
     """Display results as JSON."""
-    result_dict = result.to_dict()
+    result_dict = {
+        "text": result.text,
+        "temporal_entities": result.temporal_entities,
+        "spatial_entities": result.spatial_entities,
+        "success": result.success,
+        "error": result.error,
+        "processing_time": result.processing_time,
+        "metadata": result.metadata,
+    }
     json_str = json.dumps(result_dict, indent=2, ensure_ascii=False)
 
     if output:

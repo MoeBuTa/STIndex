@@ -6,12 +6,11 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-# Add project root to path (generic approach)
+# Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from stindex import STIndexExtractor
-from stindex.models.schemas import ExtractionConfig
+from stindex import ExtractionPipeline
 
 # Setup output directory
 output_dir = project_root / "data" / "output"
@@ -28,16 +27,16 @@ print("PDF Example Validation Test")
 print("=" * 80)
 print(f"\nInput text:\n{text}\n")
 
-# Create extractor with local model
-config = ExtractionConfig(
-    llm_provider="local",
-    model_name="Qwen/Qwen3-8B",
-    enable_temporal=True,
-    enable_spatial=True,
-)
+# Create pipeline with local model
+config = {
+    "llm_provider": "local",
+    "model_name": "Qwen/Qwen3-8B",
+    "enable_temporal": True,
+    "enable_spatial": True,
+}
 
-extractor = STIndexExtractor(config=config)
-result = extractor.extract(text)
+pipeline = ExtractionPipeline(config=config)
+result = pipeline.extract(text)
 
 print("=" * 80)
 print("TEMPORAL OUTPUT")
@@ -48,8 +47,8 @@ print("  • March 17 → 2022-03-17")
 
 print("\nActual Output:")
 for entity in result.temporal_entities:
-    print(f"  • '{entity.text}' → {entity.normalized}")
-    
+    print(f"  • '{entity.get('text', '')}' → {entity.get('normalized', '')}")
+
 print("\n" + "=" * 80)
 print("SPATIAL OUTPUT")
 print("=" * 80)
@@ -59,9 +58,9 @@ print("  • Fitzroy Crossing, Western Australia → (18.1976° S, 125.5669° E)
 
 print("\nActual Output:")
 for entity in result.spatial_entities:
-    lat_str = f"{abs(entity.latitude):.4f}° {'S' if entity.latitude < 0 else 'N'}"
-    lon_str = f"{abs(entity.longitude):.4f}° {'E' if entity.longitude > 0 else 'W'}"
-    print(f"  • '{entity.text}' → ({lat_str}, {lon_str})")
+    lat_str = f"{abs(entity.get('latitude', 0.0)):.4f}° {'S' if entity.get('latitude', 0.0) < 0 else 'N'}"
+    lon_str = f"{abs(entity.get('longitude', 0.0)):.4f}° {'E' if entity.get('longitude', 0.0) > 0 else 'W'}"
+    print(f"  • '{entity.get('text', '')}' → ({lat_str}, {lon_str})")
 
 print("\n" + "=" * 80)
 print("VALIDATION SUMMARY")
@@ -71,19 +70,19 @@ print("=" * 80)
 temporal_correct = 0
 temporal_total = 2
 for entity in result.temporal_entities:
-    if entity.text == "March 15, 2022" and entity.normalized == "2022-03-15":
+    if entity.get('text', '') == "March 15, 2022" and entity.get('normalized', '') == "2022-03-15":
         temporal_correct += 1
-    elif entity.text == "March 17" and entity.normalized == "2022-03-17":
+    elif entity.get('text', '') == "March 17" and entity.get('normalized', '') == "2022-03-17":
         temporal_correct += 1
 
 # Validate spatial
 spatial_correct = 0
 spatial_total = 2
 for entity in result.spatial_entities:
-    if "Broome" in entity.text and -18.5 < entity.latitude < -17.5 and 121.5 < entity.longitude < 123:
+    if "Broome" in entity.get('text', '') and -18.5 < entity.get('latitude', 0.0) < -17.5 and 121.5 < entity.get('longitude', 0.0) < 123:
         spatial_correct += 1
         print(f"  ✓ Broome location correct (within expected range)")
-    if "Fitzroy" in entity.text and -18.5 < entity.latitude < -17.5 and 125 < entity.longitude < 126:
+    if "Fitzroy" in entity.get('text', '') and -18.5 < entity.get('latitude', 0.0) < -17.5 and 125 < entity.get('longitude', 0.0) < 126:
         spatial_correct += 1
         print(f"  ✓ Fitzroy Crossing location correct (within expected range)")
 
@@ -105,8 +104,8 @@ print("=" * 80)
 results_data = {
     "timestamp": timestamp,
     "input_text": text,
-    "temporal_entities": [{"text": e.text, "normalized": e.normalized, "type": e.temporal_type.value} for e in result.temporal_entities],
-    "spatial_entities": [{"text": e.text, "latitude": e.latitude, "longitude": e.longitude} for e in result.spatial_entities],
+    "temporal_entities": result.temporal_entities,
+    "spatial_entities": result.spatial_entities,
     "validation": {
         "temporal_correct": temporal_correct,
         "temporal_total": temporal_total,

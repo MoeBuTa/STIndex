@@ -4,7 +4,7 @@ Unit tests for time normalization module.
 
 import pytest
 from stindex.utils.time_normalizer import TimeNormalizer
-from stindex.models.schemas import TemporalType
+from stindex.agents.response.schemas import TemporalType
 
 
 class TestTimeNormalizer:
