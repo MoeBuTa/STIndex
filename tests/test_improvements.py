@@ -8,15 +8,27 @@ This script tests the key improvements made based on research:
 """
 
 import sys
+import json
 from pathlib import Path
+from datetime import datetime
 
 # Add project root to path (generic approach)
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 import time
 from stindex import STIndexExtractor
 from stindex.models.schemas import ExtractionConfig
+
+# Setup output directory
+output_dir = project_root / "data" / "output"
+output_dir.mkdir(parents=True, exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_file = output_dir / f"test_improvements_{timestamp}.json"
+output_txt = output_dir / f"test_improvements_{timestamp}.txt"
+
+# Collect test results
+test_results = {}
 
 print("=" * 80)
 print("STIndex Enhanced Features Test")
@@ -171,3 +183,35 @@ Performance Notes:
 """)
 
 print("=" * 80)
+
+# Save results to JSON and text file
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(test_results, f, indent=2, ensure_ascii=False)
+
+# Save summary to text file (copy of the console output)
+summary = """
+Key Improvements Tested:
+1. ✓ Temporal Year Inference - Context-aware year propagation
+2. ✓ Geographic Disambiguation - Using parent region hints
+3. ✓ Geocoding Cache - Performance optimization
+4. ✓ Batch Context Processing - Shared context across entities
+
+Research-Based Enhancements:
+• EnhancedTimeNormalizer: Inspired by SUTime/HeidelTime approaches
+• EnhancedGeocoderService: Based on geoparsepy's disambiguation strategies
+• Context propagation: Leveraging temporal coreference resolution research
+
+Performance Notes:
+• Cache significantly improves repeated geocoding requests
+• Context-aware processing adds minimal overhead
+• Year inference prevents common errors in temporal extraction
+"""
+
+with open(output_txt, 'w', encoding='utf-8') as f:
+    f.write("STIndex Enhanced Features Test\n")
+    f.write("=" * 80 + "\n")
+    f.write(summary)
+
+print(f"\n✓ Results saved to:")
+print(f"  JSON: {output_file}")
+print(f"  TXT:  {output_txt}")

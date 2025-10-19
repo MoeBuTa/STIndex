@@ -3,14 +3,23 @@ Test STIndex with Pure English Test Suite
 """
 
 import sys
+import json
 from pathlib import Path
+from datetime import datetime
 
 # Add project root to path (generic approach)
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from stindex import STIndexExtractor
 from stindex.models.schemas import ExtractionConfig
+
+# Setup output directory
+output_dir = project_root / "data" / "output"
+output_dir.mkdir(parents=True, exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_file = output_dir / f"test_english_suite_{timestamp}.json"
+output_txt = output_dir / f"test_english_suite_{timestamp}.txt"
 
 # Test configuration
 config = ExtractionConfig(
@@ -241,3 +250,31 @@ if stats['success'] > 0:
 print("\n" + "=" * 100)
 print("Evaluation Complete!")
 print("=" * 100)
+
+# Save results to JSON
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump({
+        "timestamp": timestamp,
+        "statistics": stats
+    }, f, indent=2, ensure_ascii=False)
+
+# Save summary to text file
+with open(output_txt, 'w', encoding='utf-8') as f:
+    f.write("STIndex - English Test Suite Evaluation\n")
+    f.write("=" * 100 + "\n\n")
+    f.write(f"Overall:\n")
+    f.write(f"  Total Tests: {stats['total']}\n")
+    f.write(f"  Success: {stats['success']} ({100*stats['success']/stats['total']:.1f}%)\n")
+    f.write(f"  Error: {stats['error']} ({100*stats['error']/stats['total']:.1f}%)\n\n")
+    f.write(f"Extraction Statistics:\n")
+    f.write(f"  Temporal Entities: {stats['temporal_extracted']}\n")
+    f.write(f"  Spatial Entities: {stats['spatial_extracted']}\n")
+    f.write(f"  Total Entities: {stats['temporal_extracted'] + stats['spatial_extracted']}\n\n")
+    if stats['success'] > 0:
+        f.write(f"Average per Test:\n")
+        f.write(f"  Temporal: {stats['temporal_extracted']/stats['success']:.1f}\n")
+        f.write(f"  Spatial: {stats['spatial_extracted']/stats['success']:.1f}\n")
+
+print(f"\n✓ Results saved to:")
+print(f"  JSON: {output_file}")
+print(f"  TXT:  {output_txt}")

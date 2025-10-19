@@ -14,7 +14,7 @@ class TestSTIndexExtractor:
         """Set up test fixtures."""
         # Use minimal config for testing
         config = ExtractionConfig(
-            enable_temporal=True, enable_spatial=True, model_name="gpt-4"
+            enable_temporal=True, enable_spatial=True, model_name="gpt-4o-mini"
         )
         self.extractor = STIndexExtractor(config=config)
 

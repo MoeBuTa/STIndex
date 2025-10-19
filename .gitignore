@@ -50,10 +50,9 @@ htmlcov/
 # Logs
 *.log
 
-# Data
-data/raw/*
-data/processed/*
-!data/.gitkeep
+# Data - ignore all contents but keep structure
+data
+data/*
 
 # Model files
 models/*.pt

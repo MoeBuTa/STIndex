@@ -5,8 +5,8 @@ Temporal entity extraction using LLMs (both local and API-based).
 from typing import List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel as LangChainBaseModel
-from langchain_core.pydantic_v1 import Field as LangChainField
+from pydantic import BaseModel as LangChainBaseModel
+from pydantic import Field as LangChainField
 
 from stindex.models.schemas import TemporalEntity, TemporalType
 from stindex.utils.enhanced_time_normalizer import EnhancedTimeNormalizer

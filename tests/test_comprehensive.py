@@ -4,19 +4,28 @@ Directly evaluates system capabilities without predefined answers
 """
 
 import sys
+import json
 from pathlib import Path
+from datetime import datetime
 
 # Add project root to path (generic approach)
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from stindex import STIndexExtractor
 from stindex.models.schemas import ExtractionConfig
 
+# Setup output directory
+output_dir = project_root / "data" / "output"
+output_dir.mkdir(parents=True, exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_file = output_dir / f"test_comprehensive_{timestamp}.json"
+output_txt = output_dir / f"test_comprehensive_{timestamp}.txt"
+
 # Test configuration
 config = ExtractionConfig(
-    llm_provider="local",
-    model_name="Qwen/Qwen3-8B",
+    llm_provider="openai",
+    model_name="gpt-4o-mini",
     enable_temporal=True,
     enable_spatial=True,
 )
@@ -222,9 +231,11 @@ run_test("边界", "4.5 多重歧义",
 # RESULTS SUMMARY
 # =============================================================================
 
-print("\n" + "=" * 100)
-print("测试结果汇总")
-print("=" * 100)
+summary_text = []
+
+summary_text.append("=" * 100)
+summary_text.append("测试结果汇总")
+summary_text.append("=" * 100)
 
 # Count by category
 categories = {}
@@ -243,30 +254,57 @@ total = len(test_results)
 success = sum(1 for r in test_results if r["status"] == "success")
 errors = total - success
 
-print(f"\n总体统计:")
-print(f"  总测试数: {total}")
-print(f"  成功: {success} ({100*success/total:.1f}%)")
-print(f"  错误: {errors} ({100*errors/total:.1f}%)")
+summary_text.append(f"\n总体统计:")
+summary_text.append(f"  总测试数: {total}")
+summary_text.append(f"  成功: {success} ({100*success/total:.1f}%)")
+summary_text.append(f"  错误: {errors} ({100*errors/total:.1f}%)")
 
-print(f"\n分类统计:")
+summary_text.append(f"\n分类统计:")
 for cat, stats in categories.items():
     success_rate = 100 * stats["success"] / stats["total"]
-    print(f"  [{cat}] {stats['success']}/{stats['total']} ({success_rate:.1f}%)")
+    summary_text.append(f"  [{cat}] {stats['success']}/{stats['total']} ({success_rate:.1f}%)")
 
 # Temporal/Spatial extraction stats
 temporal_counts = [r.get("temporal_count", 0) for r in test_results if r["status"] == "success"]
 spatial_counts = [r.get("spatial_count", 0) for r in test_results if r["status"] == "success"]
 
 if temporal_counts:
-    print(f"\n时间实体提取:")
-    print(f"  总计: {sum(temporal_counts)} 个")
-    print(f"  平均: {sum(temporal_counts)/len(temporal_counts):.1f} 个/测试")
+    summary_text.append(f"\n时间实体提取:")
+    summary_text.append(f"  总计: {sum(temporal_counts)} 个")
+    summary_text.append(f"  平均: {sum(temporal_counts)/len(temporal_counts):.1f} 个/测试")
 
 if spatial_counts:
-    print(f"\n空间实体提取:")
-    print(f"  总计: {sum(spatial_counts)} 个")
-    print(f"  平均: {sum(spatial_counts)/len(spatial_counts):.1f} 个/测试")
+    summary_text.append(f"\n空间实体提取:")
+    summary_text.append(f"  总计: {sum(spatial_counts)} 个")
+    summary_text.append(f"  平均: {sum(spatial_counts)/len(spatial_counts):.1f} 个/测试")
 
-print("\n" + "=" * 100)
-print("测试完成!")
-print("=" * 100)
+summary_text.append("\n" + "=" * 100)
+summary_text.append("测试完成!")
+summary_text.append("=" * 100)
+
+# Print summary
+for line in summary_text:
+    print(line)
+
+# Save results to JSON
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump({
+        "timestamp": timestamp,
+        "test_results": test_results,
+        "summary": {
+            "total": total,
+            "success": success,
+            "errors": errors,
+            "categories": categories,
+            "temporal_total": sum(temporal_counts) if temporal_counts else 0,
+            "spatial_total": sum(spatial_counts) if spatial_counts else 0,
+        }
+    }, f, indent=2, ensure_ascii=False)
+
+# Save summary to text file
+with open(output_txt, 'w', encoding='utf-8') as f:
+    f.write('\n'.join(summary_text))
+
+print(f"\n✓ Results saved to:")
+print(f"  JSON: {output_file}")
+print(f"  TXT:  {output_txt}")

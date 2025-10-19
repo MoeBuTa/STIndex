@@ -2,14 +2,23 @@
 Test the exact example from PDF
 """
 import sys
+import json
 from pathlib import Path
+from datetime import datetime
 
 # Add project root to path (generic approach)
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from stindex import STIndexExtractor
 from stindex.models.schemas import ExtractionConfig
+
+# Setup output directory
+output_dir = project_root / "data" / "output"
+output_dir.mkdir(parents=True, exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_file = output_dir / f"test_pdf_example_{timestamp}.json"
+output_txt = output_dir / f"test_pdf_example_{timestamp}.txt"
 
 # Exact text from PDF
 text = """On March 15, 2022, a strong cyclone hit the coastal areas near Broome, Western Australia and later moved inland towards Fitzroy Crossing by March 17."""
@@ -84,7 +93,43 @@ print(f"\nOverall: {temporal_correct + spatial_correct}/{temporal_total + spatia
 
 if temporal_correct == temporal_total and spatial_correct == spatial_total:
     print("\n✅ FULLY COMPLIANT WITH PDF REQUIREMENTS")
+    compliance_status = "FULLY COMPLIANT"
 else:
-    print(f"\n⚠️ Partial compliance: {((temporal_correct + spatial_correct)/(temporal_total + spatial_total))*100:.1f}%")
+    compliance_pct = ((temporal_correct + spatial_correct)/(temporal_total + spatial_total))*100
+    print(f"\n⚠️ Partial compliance: {compliance_pct:.1f}%")
+    compliance_status = f"Partial ({compliance_pct:.1f}%)"
 
 print("=" * 80)
+
+# Save results to JSON
+results_data = {
+    "timestamp": timestamp,
+    "input_text": text,
+    "temporal_entities": [{"text": e.text, "normalized": e.normalized, "type": e.temporal_type.value} for e in result.temporal_entities],
+    "spatial_entities": [{"text": e.text, "latitude": e.latitude, "longitude": e.longitude} for e in result.spatial_entities],
+    "validation": {
+        "temporal_correct": temporal_correct,
+        "temporal_total": temporal_total,
+        "spatial_correct": spatial_correct,
+        "spatial_total": spatial_total,
+        "overall_correct": temporal_correct + spatial_correct,
+        "overall_total": temporal_total + spatial_total,
+        "compliance_status": compliance_status
+    }
+}
+
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(results_data, f, indent=2, ensure_ascii=False)
+
+# Save summary to text file
+with open(output_txt, 'w', encoding='utf-8') as f:
+    f.write("PDF Example Validation Test\n")
+    f.write("=" * 80 + "\n\n")
+    f.write(f"Temporal: {temporal_correct}/{temporal_total} correct\n")
+    f.write(f"Spatial: {spatial_correct}/{spatial_total} correct\n")
+    f.write(f"Overall: {temporal_correct + spatial_correct}/{temporal_total + spatial_total} correct\n\n")
+    f.write(f"Status: {compliance_status}\n")
+
+print(f"\n✓ Results saved to:")
+print(f"  JSON: {output_file}")
+print(f"  TXT:  {output_txt}")
