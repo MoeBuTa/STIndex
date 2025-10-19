@@ -171,7 +171,7 @@ Key Improvements Tested:
 4. ✓ Batch Context Processing - Shared context across entities
 
 Research-Based Enhancements:
-• EnhancedTimeNormalizer: Inspired by SUTime/HeidelTime approaches
+• LLM-based temporal normalization: Context-aware ISO 8601 formatting
 • EnhancedGeocoderService: Based on geoparsepy's disambiguation strategies
 • Context propagation: Leveraging temporal coreference resolution research
 
@@ -196,7 +196,7 @@ Key Improvements Tested:
 4. ✓ Batch Context Processing - Shared context across entities
 
 Research-Based Enhancements:
-• EnhancedTimeNormalizer: Inspired by SUTime/HeidelTime approaches
+• LLM-based temporal normalization: Context-aware ISO 8601 formatting
 • EnhancedGeocoderService: Based on geoparsepy's disambiguation strategies
 • Context propagation: Leveraging temporal coreference resolution research
 

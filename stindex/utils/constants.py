@@ -1,96 +1,54 @@
 """
-Constants for STIndex.
+Constants for STIndex project.
 
-Centralized location for all constant values.
+Defines project directories, API endpoints, and other constants.
 """
 
-# LLM Providers
-LLM_PROVIDER_LOCAL = "local"
-LLM_PROVIDER_OPENAI = "openai"
-LLM_PROVIDER_ANTHROPIC = "anthropic"
+from pathlib import Path
 
-SUPPORTED_LLM_PROVIDERS = [
-    LLM_PROVIDER_LOCAL,
-    LLM_PROVIDER_OPENAI,
-    LLM_PROVIDER_ANTHROPIC,
-]
+# Project directories
+PROJECT_DIR = Path(__file__).resolve().parents[1].resolve().parents[0]
 
-# Default Models
-DEFAULT_LOCAL_MODEL = "Qwen/Qwen3-8B"
-DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
-DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022"
+DATA_DIR = PROJECT_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR = str(DATA_DIR)
 
-# Devices
-DEVICE_CUDA = "cuda"
-DEVICE_CPU = "cpu"
-DEVICE_AUTO = "auto"
+LOG_DIR = str(PROJECT_DIR / "data" / "logs")
+OUTPUT_DIR = PROJECT_DIR / "data" / "output"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = str(OUTPUT_DIR)
 
-# Geocoding
-GEOCODER_NOMINATIM = "nominatim"
-DEFAULT_USER_AGENT = "stindex"
-DEFAULT_RATE_LIMIT = 1.0  # seconds
+CFG_DIR = PROJECT_DIR / "cfg"
 
-# Temporal Types
-TEMPORAL_TYPE_DATE = "date"
-TEMPORAL_TYPE_TIME = "time"
-TEMPORAL_TYPE_DURATION = "duration"
-TEMPORAL_TYPE_INTERVAL = "interval"
+# Cache directories
+CACHE_DIR = Path.home() / ".stindex"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Spatial Types
-SPATIAL_TYPE_COUNTRY = "country"
-SPATIAL_TYPE_CITY = "city"
-SPATIAL_TYPE_REGION = "region"
-SPATIAL_TYPE_LANDMARK = "landmark"
-SPATIAL_TYPE_ADDRESS = "address"
-SPATIAL_TYPE_FEATURE = "feature"
-SPATIAL_TYPE_OTHER = "other"
+GEOCODE_CACHE_DIR = CACHE_DIR / "geocode_cache"
+GEOCODE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Confidence Thresholds
+# API endpoints and services
+NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
+DEFAULT_USER_AGENT = "stindex-spatiotemporal-extraction/1.0"
+
+# Rate limiting (seconds)
+NOMINATIM_RATE_LIMIT = 1.0
+GEOCODER_REQUEST_TIMEOUT = 10.0
+
+# Default model settings
+DEFAULT_LLM_PROVIDER = "openai"
+DEFAULT_MODEL_NAME = "gpt-4o-mini"
+DEFAULT_TEMPERATURE = 0.0
+DEFAULT_MAX_TOKENS = 2048
+
+# Extraction defaults
 DEFAULT_MIN_CONFIDENCE = 0.5
-HIGH_CONFIDENCE = 0.9
-MEDIUM_CONFIDENCE = 0.7
-LOW_CONFIDENCE = 0.5
+DEFAULT_ENABLE_CACHE = True
 
-# Language Codes
-LANG_EN = "en"
-LANG_ZH = "zh"
+# Spatial extraction
+SPACY_MODEL = "en_core_web_sm"
+DEFAULT_GEOCODER = "nominatim"
 
-SUPPORTED_LANGUAGES = [LANG_EN, LANG_ZH]
-
-# Environment Variable Names
-ENV_LLM_PROVIDER = "STINDEX_LLM_PROVIDER"
-ENV_MODEL_NAME = "STINDEX_MODEL_NAME"
-ENV_MODEL_PATH = "STINDEX_MODEL_PATH"
-ENV_DEVICE = "STINDEX_DEVICE"
-ENV_TEMPERATURE = "STINDEX_TEMPERATURE"
-ENV_REFERENCE_DATE = "STINDEX_REFERENCE_DATE"
-
-ENV_ENABLE_TEMPORAL = "STINDEX_ENABLE_TEMPORAL"
-ENV_ENABLE_SPATIAL = "STINDEX_ENABLE_SPATIAL"
-ENV_ENABLE_CACHE = "STINDEX_ENABLE_CACHE"
-ENV_USE_AGENTIC = "STINDEX_USE_AGENTIC"
-
-ENV_GEOCODER = "STINDEX_GEOCODER"
-ENV_USER_AGENT = "STINDEX_USER_AGENT"
-ENV_RATE_LIMIT = "STINDEX_RATE_LIMIT_PERIOD"
-
-ENV_MIN_CONFIDENCE = "STINDEX_MIN_CONFIDENCE"
-
-# Cache Directories
-CACHE_DIR_NAME = ".stindex"
-GEOCODE_CACHE_DIR = "geocode_cache"
-
-# Processing
-MAX_CONTEXT_WINDOW = 100  # characters
-MAX_YEAR_INFERENCE_WINDOW = 5  # sentences
-
-# Output Formats
-OUTPUT_FORMAT_JSON = "json"
-OUTPUT_FORMAT_TABLE = "table"
-OUTPUT_FORMAT_TEXT = "text"
-
-SUPPORTED_OUTPUT_FORMATS = [
-    OUTPUT_FORMAT_JSON,
-    OUTPUT_FORMAT_TABLE,
-    OUTPUT_FORMAT_TEXT,
-]
+# Temporal extraction
+ISO_8601_DATE_FORMAT = "%Y-%m-%d"
+ISO_8601_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"

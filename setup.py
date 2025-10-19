@@ -20,11 +20,10 @@ def read_long_description():
 
 # Core dependencies
 INSTALL_REQUIRES = [
-    "langchain>=0.1.0",
-    "langchain-openai>=0.0.5",
-    "langchain-anthropic>=0.1.0",
-    "pydantic>=2.0.0,<2.12",
-    "spacy>=3.7.0",
+    "instructor>=1.0.0",
+    "openai>=1.0.0",  # Required by instructor for API models
+    "anthropic>=0.18.0",  # For Claude API support
+    "pydantic>=2.0.0,<3.0.0",
     "dateparser>=1.2.0",
     "pendulum>=3.0.0",
     "geopy>=2.4.0",
@@ -32,8 +31,8 @@ INSTALL_REQUIRES = [
     "rich>=13.0.0",
     "typer>=0.9.0",
     "python-dotenv>=1.0.0",
-    # Spacy model - automatically downloaded during installation
-    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl",
+    "loguru>=0.7.0",
+    "pyyaml",
 ]
 
 # Optional dependencies
@@ -64,11 +63,11 @@ setup(
     long_description_content_type="text/markdown",
     author="STIndex Team",
     author_email="stindex@example.com",
-    url="https://github.com/Ameame1/stindex",
+    url="https://github.com/MoeBuTa/STIndex",
     project_urls={
-        "Documentation": "https://github.com/Ameame1/stindex#readme",
-        "Source": "https://github.com/Ameame1/stindex",
-        "Bug Tracker": "https://github.com/Ameame1/stindex/issues",
+        "Documentation": "https://github.com/MoeBuTa/STIndex#readme",
+        "Source": "https://github.com/MoeBuTa/STIndex",
+        "Bug Tracker": "https://github.com/MoeBuTa/STIndex/issues",
     },
     packages=find_packages(include=['stindex', 'stindex.*']),
     python_requires=">=3.9",

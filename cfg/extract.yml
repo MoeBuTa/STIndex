@@ -1,0 +1,28 @@
+# STIndex Extraction Configuration
+# Main configuration file that switches between different LLM providers
+
+# LLM Provider Selection
+# Options: hf, openai, anthropic
+llm_provider: openai
+
+# Extraction Configuration
+extraction:
+  # Enable caching
+  enable_cache: true
+
+  # Minimum confidence threshold (0.0-1.0)
+  min_confidence: 0.5
+
+  # Optional: Reference date for temporal resolution (ISO 8601 format)
+  reference_date: ""
+
+# Geocoding Configuration
+geocoding:
+  # Geocoding service: nominatim
+  geocoder: nominatim
+
+  # User agent for geocoding requests
+  user_agent: "stindex-spatiotemporal-extraction/1.0"
+
+  # Rate limit period in seconds
+  rate_limit_period: 1.0

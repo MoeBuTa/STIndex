@@ -6,7 +6,6 @@ This directory contains all test scripts for the STIndex project.
 
 ### Unit Tests (pytest)
 - `test_extractor.py` - Integration tests for main extraction pipeline
-- `test_time_normalizer.py` - Unit tests for time normalization
 
 Run with: `pytest` or `pytest tests/`
 

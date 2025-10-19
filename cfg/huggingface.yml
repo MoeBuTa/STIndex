@@ -1,0 +1,21 @@
+# HuggingFace Local LLM Configuration
+
+llm:
+  # Provider type
+  llm_provider: hf
+
+  # Model name/identifier (HuggingFace model ID or local path)
+  model_name: Qwen/Qwen3-8B
+
+  # Optional: Local model path (if model is stored locally)
+  model_path: ""
+
+  # Device: auto, cuda, cpu
+  device: auto
+
+  # Data type for model weights
+  torch_dtype: float16
+
+  # Generation parameters
+  temperature: 0.0
+  max_tokens: 2048

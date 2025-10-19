@@ -16,6 +16,13 @@ from pathlib import Path
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
+from stindex.utils.constants import (
+    GEOCODE_CACHE_DIR,
+    NOMINATIM_RATE_LIMIT,
+    GEOCODER_REQUEST_TIMEOUT,
+    DEFAULT_USER_AGENT,
+)
+
 
 class GeocodeCache:
     """Simple file-based cache for geocoding results."""
@@ -30,7 +37,7 @@ class GeocodeCache:
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
-            self.cache_dir = Path.home() / ".stindex" / "geocode_cache"
+            self.cache_dir = GEOCODE_CACHE_DIR
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_file = self.cache_dir / "geocode_cache.json"
@@ -99,7 +106,7 @@ class GeocodeCache:
             self.cache_file.unlink()
 
 
-class EnhancedGeocoderService:
+class GeocoderService:
     """
     Enhanced geocoding service with context-aware disambiguation and caching.
 
@@ -113,21 +120,24 @@ class EnhancedGeocoderService:
 
     def __init__(
         self,
-        user_agent: str = "stindex-enhanced",
+        user_agent: Optional[str] = None,
         enable_cache: bool = True,
         cache_dir: Optional[str] = None,
-        rate_limit: float = 1.0,
+        rate_limit: Optional[float] = None,
     ):
         """
-        Initialize EnhancedGeocoderService.
+        Initialize GeocoderService.
 
         Args:
-            user_agent: User agent for Nominatim
+            user_agent: User agent for Nominatim (uses default from constants if None)
             enable_cache: Enable caching
             cache_dir: Directory for cache files
-            rate_limit: Minimum seconds between requests
+            rate_limit: Minimum seconds between requests (uses default from constants if None)
         """
-        self.geolocator = Nominatim(user_agent=user_agent, timeout=10)
+        user_agent = user_agent or DEFAULT_USER_AGENT
+        rate_limit = rate_limit or NOMINATIM_RATE_LIMIT
+
+        self.geolocator = Nominatim(user_agent=user_agent, timeout=GEOCODER_REQUEST_TIMEOUT)
         self.rate_limit = rate_limit
         self.last_request_time = 0
 
@@ -140,6 +150,9 @@ class EnhancedGeocoderService:
 
         # Disambiguation context
         self.location_context: List[Tuple[float, float]] = []  # List of (lat, lon)
+
+        # Load spaCy model for parent region extraction
+        self._nlp = None  # Lazy load on first use
 
     def _rate_limit_wait(self):
         """Enforce rate limiting."""
@@ -159,9 +172,10 @@ class EnhancedGeocoderService:
 
         Disambiguation strategy (inspired by geoparsepy):
         1. Check cache first
-        2. If parent region provided, search within that region
-        3. If context locations exist, prefer nearby results
-        4. Use Nominatim's ranking as fallback
+        2. If parent region provided (from LLM), use it
+        3. If no parent region, extract from context using spaCy
+        4. If context locations exist, prefer nearby results
+        5. Use Nominatim's ranking as fallback
 
         Args:
             location: Location name
@@ -178,11 +192,16 @@ class EnhancedGeocoderService:
                 return (cached['lat'], cached['lon'])
 
         # Extract parent region from context if not provided
-        if not parent_region and context:
-            parent_region = self._extract_parent_region(context)
+        # This serves as fallback when LLM fails to extract parent_region
+        context_parent_region = None
+        if context:
+            context_parent_region = self._extract_parent_region(context)
+
+        # Prefer LLM-provided parent_region, but fallback to spaCy extraction
+        final_parent_region = parent_region or context_parent_region
 
         # Prepare search query with disambiguation
-        search_query = self._prepare_search_query(location, parent_region)
+        search_query = self._prepare_search_query(location, final_parent_region)
 
         # Geocode with retry
         result = self._geocode_with_retry(search_query)
@@ -216,26 +235,85 @@ class EnhancedGeocoderService:
 
     def _extract_parent_region(self, context: str) -> Optional[str]:
         """
-        Extract parent region hints from context.
+        Extract parent region hints from context using spaCy NER.
+
+        Uses spaCy to identify GPE (Geo-Political Entity) tags like countries,
+        states, and provinces. This is more robust than hardcoded regex patterns.
+
+        Strategy:
+        1. Use spaCy NER to find GPE entities
+        2. Also look for comma-separated patterns (e.g., "City, Region")
+        3. Return the broadest/last region found
 
         Examples:
         - "Broome, Western Australia" → "Western Australia"
         - "Tokyo, Japan" → "Japan"
         - "Paris, France" → "France"
-        """
-        # Common patterns for parent regions
-        region_patterns = [
-            # State/Province patterns
-            r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # ", Western Australia"
-            # Country patterns
-            r'\b(Australia|USA|United States|UK|United Kingdom|Canada|China|Japan|India|France|Germany|Italy|Spain)\b',
-        ]
 
+        Returns:
+            Parent region name or None if not found
+        """
+        # Lazy load spaCy model
+        if self._nlp is None:
+            try:
+                import spacy
+                self._nlp = spacy.load("en_core_web_sm")
+            except (ImportError, OSError):
+                # If spaCy not available, fall back to simple comma parsing
+                return self._extract_from_comma_pattern(context)
+
+        # Process context with spaCy
+        doc = self._nlp(context)
+
+        # Extract GPE entities (countries, states, cities, etc.)
+        gpe_entities = [ent.text for ent in doc.ents if ent.label_ == "GPE"]
+
+        # Also try comma-separated pattern as fallback for multi-word regions
+        # spaCy sometimes misses multi-word regions like "Western Australia"
+        comma_region = self._extract_from_comma_pattern(context)
+
+        # Prefer comma-separated pattern if it looks like a region (contains spaces or is longer)
+        if comma_region and (
+            " " in comma_region or  # Multi-word region
+            (gpe_entities and len(comma_region) > len(gpe_entities[-1]))  # Longer than last GPE
+        ):
+            return comma_region
+
+        # Otherwise return the last GPE entity (usually most relevant)
+        if gpe_entities:
+            return gpe_entities[-1]
+
+        # Final fallback to comma pattern
+        return comma_region
+
+    def _extract_from_comma_pattern(self, context: str) -> Optional[str]:
+        """
+        Extract parent region from common location patterns.
+
+        Patterns supported:
+        - Comma-separated: "Broome, Western Australia" → "Western Australia"
+        - Preposition-based: "Broome in Western Australia" → "Western Australia"
+        - Multi-level: "New York, NY, USA" → "USA"
+        """
         import re
-        for pattern in region_patterns:
-            match = re.search(pattern, context)
-            if match:
-                return match.group(1)
+
+        # Pattern 1: Comma-separated (", Region")
+        # This is most reliable, so prioritize it
+        comma_pattern = r',\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)'
+        comma_matches = re.findall(comma_pattern, context)
+
+        if comma_matches:
+            # Return the last comma-separated match (broadest region)
+            return comma_matches[-1]
+
+        # Pattern 2: Preposition-based ("in Region", "at Region", "near Region")
+        # Only use this as fallback when no comma pattern found
+        prep_pattern = r'\b(?:in|at|near)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)'
+        prep_matches = re.findall(prep_pattern, context)
+
+        if prep_matches:
+            # Return the last preposition-based match
+            return prep_matches[-1]
 
         return None
 

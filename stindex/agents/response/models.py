@@ -1,133 +1,134 @@
 """
-Response models for spatiotemporal extraction agents.
+Simplified Pydantic models for spatiotemporal extraction using Instructor.
 
-These Pydantic models structure the observe-reason-act flow.
+Clean, type-safe schemas for structured LLM outputs.
 """
 
-from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
+from datetime import datetime
+from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 # ============================================================================
-# OBSERVATION MODELS (Observe phase)
+# ENUMS
 # ============================================================================
 
-class ExtractionObservation(BaseModel):
-    """
-    What the extractor agent observes from the environment.
+class TemporalType(str, Enum):
+    """Types of temporal expressions."""
+    DATE = "date"
+    TIME = "time"
+    DATETIME = "datetime"
+    DURATION = "duration"
+    INTERVAL = "interval"
 
-    This is the output of the OBSERVE phase.
-    """
-    # Input
-    original_text: str = Field(description="Original input text")
-    cleaned_text: str = Field(description="Cleaned and normalized text")
 
-    # Document-level context
-    temporal_context: Dict = Field(
-        default_factory=dict,
-        description="Document-level temporal context (years, relative dates)"
-    )
-    spatial_context: Dict = Field(
-        default_factory=dict,
-        description="Document-level spatial context (regions, countries)"
-    )
-
-    # Metadata
-    language: str = Field(default="en", description="Detected language")
-    char_count: int = Field(description="Character count")
-    word_count: int = Field(description="Word count")
+class LocationType(str, Enum):
+    """Types of spatial locations."""
+    COUNTRY = "country"
+    CITY = "city"
+    REGION = "region"
+    LANDMARK = "landmark"
+    FEATURE = "feature"
+    OTHER = "other"
 
 
 # ============================================================================
-# REASONING MODELS (Reason phase - LLM output)
+# EXTRACTION MODELS (LLM Output)
 # ============================================================================
 
 class TemporalMention(BaseModel):
-    """Temporal mention extracted by LLM."""
-    text: str = Field(description="Exact temporal expression found")
-    context: str = Field(description="Surrounding context (up to 20 words)")
+    """Temporal mention extracted and normalized by LLM."""
+
+    text: str = Field(description="Original temporal expression from text")
+    normalized: str = Field(description="ISO 8601 normalized format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+    temporal_type: TemporalType = Field(description="Type of temporal expression")
+
+    @field_validator("normalized")
+    @classmethod
+    def validate_iso8601(cls, v: str) -> str:
+        """Validate ISO 8601 format."""
+        # Allow durations (P1D, P1M, etc.)
+        if v.startswith("P"):
+            return v
+
+        # Allow intervals (date/date)
+        if "/" in v:
+            parts = v.split("/")
+            if len(parts) == 2:
+                try:
+                    datetime.fromisoformat(parts[0].replace("Z", "+00:00"))
+                    datetime.fromisoformat(parts[1].replace("Z", "+00:00"))
+                    return v
+                except ValueError:
+                    raise ValueError(f"Invalid ISO 8601 interval: {v}")
+
+        # Regular datetime/date
+        try:
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+            return v
+        except ValueError:
+            raise ValueError(f"Invalid ISO 8601 format: {v}. Expected YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS")
 
 
 class SpatialMention(BaseModel):
-    """Spatial mention extracted by LLM."""
-    text: str = Field(description="Exact location name found")
-    context: str = Field(description="Surrounding context (up to 20 words)")
-    type: str = Field(
-        default="other",
-        description="Location type: country, city, region, landmark, address, feature, other"
+    """Spatial mention extracted and disambiguated by LLM."""
+
+    text: str = Field(description="Original location name from text")
+    location_type: LocationType = Field(description="Type of location")
+    parent_region: Optional[str] = Field(
+        default=None,
+        description="Parent region for disambiguation (e.g., 'Western Australia' for 'Broome')"
     )
 
 
-class ExtractionReasoning(BaseModel):
-    """
-    LLM reasoning output from the extractor agent.
+class ExtractionResult(BaseModel):
+    """Complete extraction result from LLM with CoT reasoning."""
 
-    This is the output of the REASON phase.
-    """
-    # LLM extracted mentions
     temporal_mentions: List[TemporalMention] = Field(
         default_factory=list,
-        description="Temporal expressions extracted by LLM"
+        description="All temporal expressions found and normalized to ISO 8601"
     )
     spatial_mentions: List[SpatialMention] = Field(
         default_factory=list,
-        description="Spatial mentions extracted by LLM"
-    )
-
-    # Raw LLM output (for debugging/tracing)
-    raw_output: str = Field(default="", description="Raw LLM response")
-
-    # Success flag
-    success: bool = Field(default=True, description="Whether extraction succeeded")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-
-
-# ============================================================================
-# ACTION MODELS (Act phase - final output)
-# ============================================================================
-
-class ExtractionActionResponse(BaseModel):
-    """
-    Final response from the extractor agent.
-
-    This is the output of the ACT phase, containing:
-    - Normalized temporal entities
-    - Geocoded spatial entities
-    """
-    # Structured entities (after tool calling postprocessing)
-    temporal_entities: List[Dict] = Field(
-        default_factory=list,
-        description="Temporal entities with ISO 8601 normalization"
-    )
-    spatial_entities: List[Dict] = Field(
-        default_factory=list,
-        description="Spatial entities with lat/lon coordinates"
-    )
-
-    # Metadata
-    success: bool = Field(default=True, description="Whether extraction succeeded")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-
-    processing_time: float = Field(default=0.0, description="Processing time in seconds")
-
-    metadata: Dict = Field(
-        default_factory=dict,
-        description="Additional metadata (config, counts, etc.)"
+        description="All spatial mentions found with parent regions for disambiguation"
     )
 
 
 # ============================================================================
-# TOOL CALL MODELS
+# FINAL OUTPUT MODELS (After Geocoding)
 # ============================================================================
 
-class ToolCallRequest(BaseModel):
-    """Request to call a tool."""
-    tool_name: str = Field(description="Name of the tool to call")
-    parameters: Dict = Field(default_factory=dict, description="Tool parameters")
+class TemporalEntity(BaseModel):
+    """Final temporal entity with metadata."""
+
+    text: str
+    normalized: str
+    temporal_type: TemporalType
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    start_char: Optional[int] = None
+    end_char: Optional[int] = None
 
 
-class ToolCallResponse(BaseModel):
-    """Response from a tool call."""
-    success: bool = Field(description="Whether tool call succeeded")
-    result: Optional[Dict] = Field(default=None, description="Tool result data")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
+class SpatialEntity(BaseModel):
+    """Final spatial entity with geocoded coordinates."""
+
+    text: str
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    location_type: LocationType
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    start_char: Optional[int] = None
+    end_char: Optional[int] = None
+    address: Optional[str] = None
+
+
+class SpatioTemporalResult(BaseModel):
+    """Complete spatiotemporal extraction result."""
+
+    temporal_entities: List[TemporalEntity] = Field(default_factory=list)
+    spatial_entities: List[SpatialEntity] = Field(default_factory=list)
+    success: bool = True
+    error: Optional[str] = None
+    processing_time: float = 0.0
