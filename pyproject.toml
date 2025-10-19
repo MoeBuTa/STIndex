@@ -25,42 +25,16 @@ classifiers = [
 ]
 keywords = ["nlp", "spatiotemporal", "information-extraction", "ner", "geocoding", "temporal-extraction"]
 requires-python = ">=3.9"
-dependencies = [
-    "langchain>=0.1.0",
-    "langchain-openai>=0.0.5",
-    "langchain-anthropic>=0.1.0",
-    "pydantic>=2.0.0,<2.12",
-    "spacy>=3.7.0",
-    "dateparser>=1.2.0",
-    "pendulum>=3.0.0",
-    "geopy>=2.4.0",
-    "pandas>=2.0.0",
-    "rich>=13.0.0",
-    "typer>=0.9.0",
-    "python-dotenv>=1.0.0",
-    "loguru>=0.7.0",
-    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl",
-]
+dynamic = ["dependencies"]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.5.0",
-]
-transformers = [
-    "transformers>=4.30.0",
-    "torch>=2.0.0",
-]
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [project.urls]
-Homepage = "https://github.com/yourusername/stindex"
+Homepage = "https://github.com/MoeBuTa/STIndex/"
 Documentation = "https://stindex.readthedocs.io"
-Repository = "https://github.com/yourusername/stindex"
-"Bug Tracker" = "https://github.com/yourusername/stindex/issues"
+Repository = "https://github.com/MoeBuTa/STIndex/"
+"Bug Tracker" = "https://github.com/MoeBuTa/STIndex/issues"
 
 [project.scripts]
 stindex = "stindex.cli:main"

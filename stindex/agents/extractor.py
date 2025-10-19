@@ -42,9 +42,11 @@ class STIndexExtractor:
         """
         # Load configuration from file
         config = load_config_from_file(config_path)
+        self.config = config  # Store config for reference
 
         # Create LLM client from config
-        llm_config = config.get("llm", {})
+        # Pass the full config so create_llm_client can access top-level llm_provider
+        llm_config = {**config.get("llm", {}), "llm_provider": config.get("llm_provider")}
         self.llm = create_llm_client(llm_config)
 
         # Initialize geocoder with config

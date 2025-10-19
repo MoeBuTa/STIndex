@@ -18,42 +18,23 @@ def read_long_description():
             return f.read()
     return ""
 
-# Core dependencies
-INSTALL_REQUIRES = [
-    "instructor>=1.0.0",
-    "openai>=1.0.0",  # Required by instructor for API models
-    "anthropic>=0.18.0",  # For Claude API support
-    "pydantic>=2.0.0,<3.0.0",
-    "dateparser>=1.2.0",
-    "pendulum>=3.0.0",
-    "geopy>=2.4.0",
-    "pandas>=2.0.0",
-    "rich>=13.0.0",
-    "typer>=0.9.0",
-    "python-dotenv>=1.0.0",
-    "loguru>=0.7.0",
-    "pyyaml",
-]
+# Read dependencies from requirements.txt
+def read_requirements():
+    here = os.path.abspath(os.path.dirname(__file__))
+    requirements_path = os.path.join(here, 'requirements.txt')
+    requirements = []
+    if os.path.exists(requirements_path):
+        with open(requirements_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines and comments
+                if line and not line.startswith('#'):
+                    requirements.append(line)
+    return requirements
 
-# Optional dependencies
-EXTRAS_REQUIRE = {
-    'dev': [
-        "pytest>=7.4.0",
-        "pytest-cov>=4.1.0",
-        "black>=23.0.0",
-        "isort>=5.12.0",
-        "flake8>=6.0.0",
-        "mypy>=1.5.0",
-    ],
-    'transformers': [
-        "transformers>=4.30.0",
-        "torch>=2.0.0",
-        "accelerate>=0.25.0",
-    ],
-}
+INSTALL_REQUIRES = read_requirements()
 
-# Add 'all' option to install all extras
-EXTRAS_REQUIRE['all'] = [dep for deps in EXTRAS_REQUIRE.values() for dep in deps]
+
 
 setup(
     name="stindex",
@@ -72,7 +53,6 @@ setup(
     packages=find_packages(include=['stindex', 'stindex.*']),
     python_requires=">=3.9",
     install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRE,
     entry_points={
         'console_scripts': [
             'stindex=stindex.cli:main',

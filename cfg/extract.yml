@@ -2,8 +2,8 @@
 # Main configuration file that switches between different LLM providers
 
 # LLM Provider Selection
-# Options: hf, openai, anthropic
-llm_provider: openai
+# Options: ollama, hf, openai, anthropic
+llm_provider: hf
 
 # Extraction Configuration
 extraction:

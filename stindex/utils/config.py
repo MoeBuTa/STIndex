@@ -55,8 +55,24 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
             with open(provider_config_file, "r") as f:
                 provider_config = yaml.safe_load(f) or {}
 
-            # Merge configs (provider config takes precedence for llm section)
-            merged_config = {**main_config, **provider_config}
+            # Merge configs with proper handling of nested llm section
+            # 1. Start with main_config
+            merged_config = {**main_config}
+
+            # 2. Merge llm section from provider config (preserving top-level llm_provider)
+            if "llm" in provider_config:
+                merged_config["llm"] = {
+                    **merged_config.get("llm", {}),
+                    **provider_config["llm"]
+                }
+
+            # 3. Ensure top-level llm_provider is preserved from main_config
+            if "llm_provider" in main_config:
+                merged_config["llm_provider"] = main_config["llm_provider"]
+                # Also set it in the llm section for backward compatibility
+                if "llm" not in merged_config:
+                    merged_config["llm"] = {}
+                merged_config["llm"]["llm_provider"] = main_config["llm_provider"]
         else:
             # If no provider config exists, use main config
             merged_config = main_config
