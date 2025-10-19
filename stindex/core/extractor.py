@@ -1,5 +1,8 @@
 """
-Main STIndex extractor combining temporal and spatial extraction.
+Main STIndex extractor - facade for the extraction pipeline.
+
+This is the main entry point for spatiotemporal extraction.
+Uses the new agentic architecture with observe-reason-act pattern.
 """
 
 import os
@@ -8,9 +11,8 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 
-from stindex.extractors.spatial import SpatialExtractor
-from stindex.extractors.temporal import TemporalExtractor
-from stindex.models.schemas import ExtractionConfig, SpatioTemporalResult
+from stindex.models.schemas import ExtractionConfig, SpatioTemporalResult, TemporalEntity, SpatialEntity
+from stindex.pipeline import ExtractionPipeline
 
 # Load environment variables
 load_dotenv()
@@ -20,7 +22,7 @@ class STIndexExtractor:
     """
     Main extractor for spatiotemporal indices.
 
-    Combines temporal and spatial extraction into a unified pipeline.
+    This is a facade that wraps the new agentic ExtractionPipeline.
     """
 
     def __init__(self, config: Optional[ExtractionConfig] = None):
@@ -36,29 +38,9 @@ class STIndexExtractor:
 
         self.config = config
 
-        # Initialize extractors
-        self.temporal_extractor = None
-        self.spatial_extractor = None
-
-        if config.enable_temporal:
-            self.temporal_extractor = TemporalExtractor(
-                llm_provider=config.llm_provider,
-                model_name=config.model_name,
-                model_path=getattr(config, 'model_path', None),
-                temperature=config.temperature,
-                reference_date=config.reference_date,
-                device=getattr(config, 'device', 'auto'),
-            )
-
-        if config.enable_spatial:
-            self.spatial_extractor = SpatialExtractor(
-                spacy_model="en_core_web_sm",
-                geocoder_provider=config.geocoder,
-                user_agent=config.user_agent,
-                rate_limit=config.rate_limit_period,  # Updated parameter name
-                enable_geocoding=True,
-                enable_cache=config.enable_cache,
-            )
+        # Initialize pipeline with config dict
+        config_dict = config.model_dump() if hasattr(config, 'model_dump') else config.dict()
+        self.pipeline = ExtractionPipeline(config_dict)
 
     def _load_config_from_env(self) -> ExtractionConfig:
         """Load configuration from environment variables."""
@@ -95,46 +77,25 @@ class STIndexExtractor:
         Returns:
             SpatioTemporalResult with extracted entities
         """
-        start_time = time.time()
+        # Run pipeline
+        result = self.pipeline.extract(text)
 
-        # Extract temporal entities
-        temporal_entities = []
-        if self.config.enable_temporal and self.temporal_extractor:
-            temporal_entities = self.temporal_extractor.extract(text)
+        # Convert to legacy format for compatibility
+        temporal_entities = [
+            TemporalEntity(**e) for e in result.temporal_entities
+        ]
 
-            # Filter by confidence
-            temporal_entities = [
-                e for e in temporal_entities if e.confidence >= self.config.min_confidence
-            ]
+        spatial_entities = [
+            SpatialEntity(**e) for e in result.spatial_entities
+        ]
 
-        # Extract spatial entities
-        spatial_entities = []
-        if self.config.enable_spatial and self.spatial_extractor:
-            spatial_entities = self.spatial_extractor.extract(text)
-
-            # Filter by confidence
-            spatial_entities = [
-                e for e in spatial_entities if e.confidence >= self.config.min_confidence
-            ]
-
-        processing_time = time.time() - start_time
-
-        # Create result
-        result = SpatioTemporalResult(
+        return SpatioTemporalResult(
             text=text,
             temporal_entities=temporal_entities,
             spatial_entities=spatial_entities,
-            processing_time=processing_time,
-            metadata={
-                "config": self.config.model_dump(),
-                "extractors_used": {
-                    "temporal": self.config.enable_temporal,
-                    "spatial": self.config.enable_spatial,
-                },
-            },
+            processing_time=result.processing_time,
+            metadata=result.metadata,
         )
-
-        return result
 
     def extract_batch(self, texts: List[str]) -> List[SpatioTemporalResult]:
         """
@@ -146,11 +107,22 @@ class STIndexExtractor:
         Returns:
             List of SpatioTemporalResult objects
         """
-        results = []
+        batch_result = self.pipeline.extract_batch(texts)
 
-        for text in texts:
-            result = self.extract(text)
-            results.append(result)
+        results = []
+        for r in batch_result.results:
+            temporal_entities = [TemporalEntity(**e) for e in r.temporal_entities]
+            spatial_entities = [SpatialEntity(**e) for e in r.spatial_entities]
+
+            results.append(
+                SpatioTemporalResult(
+                    text=r.text,
+                    temporal_entities=temporal_entities,
+                    spatial_entities=spatial_entities,
+                    processing_time=r.processing_time,
+                    metadata=r.metadata,
+                )
+            )
 
         return results
 
@@ -164,12 +136,20 @@ class STIndexExtractor:
         Returns:
             SpatioTemporalResult with extracted entities
         """
-        with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()
+        result = self.pipeline.extract_from_file(file_path)
 
-        return self.extract(text)
+        temporal_entities = [TemporalEntity(**e) for e in result.temporal_entities]
+        spatial_entities = [SpatialEntity(**e) for e in result.spatial_entities]
 
-    def extract_temporal_only(self, text: str) -> List:
+        return SpatioTemporalResult(
+            text=result.text,
+            temporal_entities=temporal_entities,
+            spatial_entities=spatial_entities,
+            processing_time=result.processing_time,
+            metadata=result.metadata,
+        )
+
+    def extract_temporal_only(self, text: str) -> List[TemporalEntity]:
         """
         Extract only temporal entities.
 
@@ -179,12 +159,10 @@ class STIndexExtractor:
         Returns:
             List of TemporalEntity objects
         """
-        if not self.temporal_extractor:
-            raise ValueError("Temporal extraction is not enabled")
+        result = self.extract(text)
+        return result.temporal_entities
 
-        return self.temporal_extractor.extract(text)
-
-    def extract_spatial_only(self, text: str) -> List:
+    def extract_spatial_only(self, text: str) -> List[SpatialEntity]:
         """
         Extract only spatial entities.
 
@@ -194,10 +172,8 @@ class STIndexExtractor:
         Returns:
             List of SpatialEntity objects
         """
-        if not self.spatial_extractor:
-            raise ValueError("Spatial extraction is not enabled")
-
-        return self.spatial_extractor.extract(text)
+        result = self.extract(text)
+        return result.spatial_entities
 
     def update_config(self, **kwargs):
         """
@@ -206,23 +182,16 @@ class STIndexExtractor:
         Args:
             **kwargs: Configuration parameters to update
         """
-        config_dict = self.config.model_dump()
+        config_dict = self.config.model_dump() if hasattr(self.config, 'model_dump') else self.config.dict()
         config_dict.update(kwargs)
         self.config = ExtractionConfig(**config_dict)
 
-        # Reinitialize extractors if needed
-        if "llm_provider" in kwargs or "model_name" in kwargs:
-            if self.config.enable_temporal:
-                self.temporal_extractor = TemporalExtractor(
-                    llm_provider=self.config.llm_provider,
-                    model_name=self.config.model_name,
-                    model_path=getattr(self.config, 'model_path', None),
-                    temperature=self.config.temperature,
-                    reference_date=self.config.reference_date,
-                    device=getattr(self.config, 'device', 'auto'),
-                )
+        # Reinitialize pipeline
+        self.pipeline = ExtractionPipeline(config_dict)
 
     def clear_cache(self):
         """Clear all caches."""
-        if self.spatial_extractor and self.spatial_extractor.geocoder:
-            self.spatial_extractor.geocoder.clear_cache()
+        # Access geocoder through pipeline -> agent -> tool_registry
+        if hasattr(self.pipeline.agent, 'tool_registry'):
+            if hasattr(self.pipeline.agent.tool_registry, 'geocoder'):
+                self.pipeline.agent.tool_registry.geocoder.clear_cache()
