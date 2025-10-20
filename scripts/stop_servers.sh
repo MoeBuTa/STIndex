@@ -3,8 +3,8 @@
 
 echo "Stopping all HuggingFace servers..."
 
-# Find all uvicorn processes running stindex.server.app
-PIDS=$(ps aux | grep "uvicorn stindex.server.app" | grep -v grep | awk '{print $2}')
+# Find all uvicorn processes running stindex.server.hf_server
+PIDS=$(ps aux | grep "uvicorn stindex.server.hf_server" | grep -v grep | awk '{print $2}')
 
 if [ -z "$PIDS" ]; then
     echo "No HuggingFace servers found running."

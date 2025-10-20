@@ -15,7 +15,7 @@ export STINDEX_CONFIG=$CONFIG
 mkdir -p logs
 
 # Start server in background
-nohup python -m uvicorn stindex.server.app:app \
+nohup python -m uvicorn stindex.server.hf_server:app \
     --host 0.0.0.0 \
     --port $PORT \
     --log-level info \

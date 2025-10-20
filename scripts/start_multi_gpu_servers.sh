@@ -25,7 +25,7 @@ for ((i=0; i<$NUM_GPUS; i++)); do
     # Set environment variables and launch server
     CUDA_VISIBLE_DEVICES=$GPU_ID \
     STINDEX_CONFIG=$CONFIG \
-    python -m uvicorn stindex.server.app:app \
+    python -m uvicorn stindex.server.hf_server:app \
         --host 0.0.0.0 \
         --port $PORT \
         --log-level info \
