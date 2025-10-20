@@ -45,8 +45,10 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
         with open(config_file, "r") as f:
             main_config = yaml.safe_load(f) or {}
 
-        # Get LLM provider from main config
-        llm_provider = main_config.get("llm_provider", DEFAULT_LLM_PROVIDER)
+        # Get LLM provider from llm section in main config
+        llm_provider = main_config.get("llm", {}).get("llm_provider")
+        if not llm_provider:
+            llm_provider = DEFAULT_LLM_PROVIDER
 
         # Load provider-specific config
         provider_config_file = Path(CFG_DIR) / f"{llm_provider}.yml"
@@ -56,23 +58,15 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
                 provider_config = yaml.safe_load(f) or {}
 
             # Merge configs with proper handling of nested llm section
-            # 1. Start with main_config
+            # Start with main_config and merge provider config's llm section
             merged_config = {**main_config}
 
-            # 2. Merge llm section from provider config (preserving top-level llm_provider)
+            # Merge llm section from provider config
             if "llm" in provider_config:
                 merged_config["llm"] = {
                     **merged_config.get("llm", {}),
                     **provider_config["llm"]
                 }
-
-            # 3. Ensure top-level llm_provider is preserved from main_config
-            if "llm_provider" in main_config:
-                merged_config["llm_provider"] = main_config["llm_provider"]
-                # Also set it in the llm section for backward compatibility
-                if "llm" not in merged_config:
-                    merged_config["llm"] = {}
-                merged_config["llm"]["llm_provider"] = main_config["llm_provider"]
         else:
             # If no provider config exists, use main config
             merged_config = main_config
