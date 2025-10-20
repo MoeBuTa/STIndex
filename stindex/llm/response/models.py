@@ -6,9 +6,50 @@ Clean, type-safe schemas for structured LLM outputs.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+# ============================================================================
+# LLM RESPONSE MODELS
+# ============================================================================
+
+class TokenUsage(BaseModel):
+    """Token usage statistics."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prompt_tokens: int = Field(default=0, description="Number of tokens in the prompt")
+    completion_tokens: int = Field(
+        default=0, description="Number of tokens in the completion"
+    )
+    total_tokens: int = Field(default=0, description="Total tokens used")
+
+
+class LLMResponse(BaseModel):
+    """Standardized response model for all LLM providers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(..., description="Model name used for the response")
+    input: List[Dict[str, str]] = Field(
+        ..., description="Input messages sent to the model"
+    )
+    status: str = Field(..., description="Response status (processed, error)")
+    response: Optional[Dict[str, Any]] = Field(
+        None, description="Parsed response content"
+    )
+    usage: Optional[TokenUsage] = Field(None, description="Token usage statistics")
+    error_msg: str = Field(default="", description="Error message if status is error")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now().isoformat(),
+        description="ISO timestamp when response was created",
+    )
+    content: str = Field(default="", description="Raw text content of the response")
+    success: bool = Field(
+        default=False, description="Whether the request was successful"
+    )
 
 
 # ============================================================================
@@ -107,8 +148,6 @@ class TemporalEntity(BaseModel):
     normalized: str
     temporal_type: TemporalType
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    start_char: Optional[int] = None
-    end_char: Optional[int] = None
 
 
 class SpatialEntity(BaseModel):
@@ -119,16 +158,32 @@ class SpatialEntity(BaseModel):
     longitude: float = Field(ge=-180, le=180)
     location_type: LocationType
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    start_char: Optional[int] = None
-    end_char: Optional[int] = None
     address: Optional[str] = None
+
+
+class ExtractionConfig(BaseModel):
+    """LLM configuration used for extraction."""
+
+    llm_provider: str = Field(description="LLM provider used (openai, anthropic, hf)")
+    model_name: str = Field(description="Model name/ID")
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    raw_llm_output: Optional[str] = Field(
+        default=None,
+        description="Raw output from LLM before parsing (for debugging)"
+    )
 
 
 class SpatioTemporalResult(BaseModel):
     """Complete spatiotemporal extraction result."""
 
+    input_text: str = Field(default="", description="Original input text that was processed")
     temporal_entities: List[TemporalEntity] = Field(default_factory=list)
     spatial_entities: List[SpatialEntity] = Field(default_factory=list)
     success: bool = True
     error: Optional[str] = None
     processing_time: float = 0.0
+    extraction_config: Optional[ExtractionConfig] = Field(
+        default=None,
+        description="LLM configuration and raw output used for this extraction"
+    )

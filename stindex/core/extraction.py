@@ -117,6 +117,7 @@ class STIndexExtractor:
             )
 
             return SpatioTemporalResult(
+                input_text=text,
                 temporal_entities=temporal_entities,
                 spatial_entities=spatial_entities,
                 success=True,
@@ -127,6 +128,7 @@ class STIndexExtractor:
         except Exception as e:
             logger.error(f"Extraction failed: {str(e)}")
             return SpatioTemporalResult(
+                input_text=text,
                 temporal_entities=[],
                 spatial_entities=[],
                 success=False,

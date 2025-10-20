@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 
 from stindex import __version__
-from stindex.exe import execute_extract
+from stindex.exe import execute_extract, execute_evaluate
 
 app = typer.Typer(
     name="stindex",
@@ -38,6 +38,24 @@ def extract(
         text=text,
         config=config,
         output=output,
+    )
+
+
+@app.command()
+def evaluate(
+    config: str = typer.Option("evaluate", "--config", "-c", help="Config file name (default: evaluate.yml)"),
+    dataset: Optional[Path] = typer.Option(None, "--dataset", "-d", help="Override dataset path"),
+    output_dir: Optional[Path] = typer.Option(None, "--output-dir", "-o", help="Override output directory"),
+    sample_limit: Optional[int] = typer.Option(None, "--sample-limit", "-n", help="Limit number of samples to evaluate"),
+    resume: Optional[bool] = typer.Option(None, "--resume/--no-resume", help="Resume from checkpoint"),
+):
+    """Run evaluation on a dataset."""
+    execute_evaluate(
+        config=config,
+        dataset=dataset,
+        output_dir=output_dir,
+        sample_limit=sample_limit,
+        resume=resume,
     )
 
 

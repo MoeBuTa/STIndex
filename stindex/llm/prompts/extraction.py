@@ -5,7 +5,9 @@ Uses OOP style with separate methods for system, user, and assistant prompts.
 Compatible with Instructor for all LLM providers.
 """
 
-from typing import Dict, List
+import json
+from typing import Dict, List, Optional
+from pydantic import BaseModel
 
 
 class ExtractionPrompt:
@@ -20,30 +22,27 @@ class ExtractionPrompt:
 
     @staticmethod
     def system_prompt() -> str:
-        """
-        Generate the system prompt with extraction instructions.
+        """Generate the system prompt with extraction instructions."""
+        return """You are a precise JSON extraction bot. Your ONLY output must be valid JSON.
 
-        Returns:
-            System prompt string defining the LLM's role and task
-        """
-        return """You are an expert at extracting temporal and spatial information from text.
+CRITICAL RULES:
+- Output ONLY the JSON object, nothing else
+- NO explanations, NO reasoning, NO extra text
+- Start your response with { and end with }
+- Do not write "Here is the JSON" or similar phrases
 
-Your task:
-1. Find ALL temporal expressions and normalize them to ISO 8601 format
+Task:
+1. Find ALL temporal expressions and normalize to ISO 8601:
    - Dates: YYYY-MM-DD
    - Datetimes: YYYY-MM-DDTHH:MM:SS
-   - Durations: P1D, P2M, P3Y (ISO 8601 duration format)
-   - Intervals: 2022-01-01/2022-01-31 (start/end format)
-   - For dates without years: use the most recent year mentioned in the document
+   - Durations: P1D, P2M, P3Y
+   - For dates without years: use most recent year in document
 
-2. Find ALL spatial/location mentions and identify parent regions for disambiguation
-   - If a parent region (state, country) is mentioned nearby, include it
-   - Example: "Broome" near "Western Australia" → parent_region: "Western Australia"
-   - This helps disambiguate common place names
+2. Find ALL spatial/location mentions with parent regions:
+   - Include nearby parent regions (state, country) for disambiguation
+   - Example: "Broome" + "Western Australia" → parent_region: "Western Australia"
 
-Provide structured output with:
-- temporal_mentions: List of temporal expressions with ISO 8601 normalization
-- spatial_mentions: List of locations with parent regions for disambiguation"""
+REMINDER: Return ONLY valid JSON, nothing else."""
 
     @staticmethod
     def user_prompt(text: str) -> str:
@@ -56,7 +55,7 @@ Provide structured output with:
         Returns:
             User prompt string with the text to analyze
         """
-        return f"Extract temporal and spatial information from this text:\n\n{text}"
+        return f"{text}"
 
     @staticmethod
     def assistant_prompt_example() -> str:
@@ -101,7 +100,7 @@ Provide structured output with:
         Returns:
             Example input text for demonstration
         """
-        return "Extract temporal and spatial information from this text:\n\nOn March 15, 2022, a cyclone hit Broome, Western Australia and moved to Fitzroy Crossing by March 17."
+        return "On March 15, 2022, a cyclone hit Broome, Western Australia and moved to Fitzroy Crossing by March 17."
 
     @classmethod
     def build_messages(cls, text: str, use_few_shot: bool = False) -> List[Dict[str, str]]:
@@ -124,10 +123,46 @@ Provide structured output with:
             messages.extend([
                 {"role": "user", "content": cls.user_prompt_example()},
                 {"role": "assistant", "content": cls.assistant_prompt_example()},
-                {"role": "user", "content": f"Now extract from this text:\n\n{text}"}
+                {"role": "user", "content": text}
             ])
         else:
             # Simple extraction without example
             messages.append({"role": "user", "content": cls.user_prompt(text)})
+
+        return messages
+
+    @staticmethod
+    def get_json_instruction(schema: Dict) -> str:
+        """Get JSON formatting instruction for structured output."""
+        schema_str = json.dumps(schema, indent=2)
+        return f"""
+
+Respond only in raw JSON. Schema:
+{schema_str}"""
+
+    @classmethod
+    def build_messages_with_schema(
+        cls,
+        text: str,
+        response_model: type[BaseModel],
+        use_few_shot: bool = False
+    ) -> List[Dict[str, str]]:
+        """
+        Build messages with JSON schema instruction (for HuggingFace models).
+
+        Args:
+            text: Input text to extract from
+            response_model: Pydantic model class for schema
+            use_few_shot: Whether to include few-shot example
+
+        Returns:
+            List of message dicts with schema instruction
+        """
+        messages = cls.build_messages(text, use_few_shot)
+
+        # Add schema instruction to the last user message
+        schema = response_model.model_json_schema()
+        json_instruction = cls.get_json_instruction(schema)
+        messages[-1]["content"] += json_instruction
 
         return messages

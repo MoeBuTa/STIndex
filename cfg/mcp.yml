@@ -1,0 +1,29 @@
+# MCP server configuration for STIndex
+# This config is used when running the MCP server
+
+# Default LLM provider for MCP server
+# Options: openai, anthropic, hf
+llm_provider: openai
+
+# Server settings
+server:
+  name: "STIndex"
+  version: "0.3.0"
+  description: "Spatiotemporal extraction server via Model Context Protocol"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}"
+
+# LLM configuration (merged with provider-specific config)
+llm:
+  provider: openai
+  temperature: 0.0
+  max_tokens: 2048
+
+# Geocoding configuration
+geocoding:
+  user_agent: "stindex-mcp-server/1.0"
+  enable_cache: true
+  cache_file: "data/cache/geocode_cache.json"

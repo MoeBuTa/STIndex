@@ -9,7 +9,7 @@ from typing import Optional
 from rich.console import Console
 
 from stindex import STIndexExtractor
-from .utils import get_output_dir, save_result, display_json
+from .utils import get_output_dir, get_output_filename, save_result, display_json
 
 
 console = Console()
@@ -36,13 +36,15 @@ def execute_extract(
         # Display results as JSON
         display_json(result, output if output else None)
 
-        # Auto-save to data/output/datetime/ unless custom output specified
+        # Auto-save based on config (unless custom output path is specified)
         if not output:
-            output_dir = get_output_dir()
-            json_file, txt_file = save_result(result, output_dir, "extract_result")
-            console.print(f"\n[green]✓ Auto-saved to:[/green] {output_dir}/")
-            console.print(f"  • JSON: {json_file.name}")
-            console.print(f"  • TXT:  {txt_file.name}")
+            # Check if auto_save is enabled in config
+            auto_save = extractor.config.get("extraction", {}).get("auto_save", True)
+            if auto_save:
+                output_dir = get_output_dir()
+                filename = get_output_filename()
+                json_file = save_result(result, output_dir, filename)
+                console.print(f"\n[green]✓ Auto-saved to:[/green] {json_file}")
 
         temporal_count = len(result.temporal_entities)
         spatial_count = len(result.spatial_entities)

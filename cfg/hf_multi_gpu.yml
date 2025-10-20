@@ -1,0 +1,38 @@
+# HuggingFace LLM Configuration - Multi-GPU Mode
+# For distributed inference across multiple GPUs
+# Use with: ./scripts/start_multi_gpu_servers.sh
+
+llm:
+  # Provider type
+  llm_provider: hf
+
+  # Model name/identifier (HuggingFace model ID or local path)
+  model_name: Qwen/Qwen3-8B
+
+  # Optional: Local model path (if model is stored locally)
+  model_path: ""
+
+  # Device: auto (uses GPU if available), cuda, cpu
+  device: auto
+
+  # Data type for model weights (float16 recommended for GPU)
+  torch_dtype: float16
+
+  # Generation parameters
+  temperature: 0.0
+  max_tokens: 512
+
+  # Multi-server configuration (for client mode)
+  # List of server URLs - client will load balance across these
+  # Example: 4 GPUs with servers on ports 8001-8004
+  server_urls:
+    - http://localhost:8001
+    - http://localhost:8002
+    - http://localhost:8003
+    - http://localhost:8004
+
+  # Load balancing strategy: "round_robin" or "random"
+  load_balancing: round_robin
+
+  # Note: Start servers with:
+  #   STINDEX_NUM_GPUS=4 STINDEX_HF_BASE_PORT=8001 ./scripts/start_multi_gpu_servers.sh

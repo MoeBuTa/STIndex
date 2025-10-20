@@ -18,62 +18,74 @@ console = Console()
 
 
 def get_output_dir() -> Path:
-    """Get timestamped output directory in data/output/."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path(OUTPUT_DIR) / timestamp
+    """Get output directory in data/output/yyyy-mm-dd/."""
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    output_dir = Path(OUTPUT_DIR) / date_str
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
+def get_output_filename() -> str:
+    """Get timestamped filename hh-mm-ss.json."""
+    time_str = datetime.now().strftime("%H-%M-%S")
+    return f"{time_str}.json"
+
+
 def save_result(result, output_dir: Path, filename: str):
-    """Save result to both JSON and TXT in the output directory."""
-    # Save JSON
-    json_file = output_dir / f"{filename}.json"
+    """Save result to JSON file with all extraction data.
+
+    Args:
+        result: SpatioTemporalResult object
+        output_dir: Directory to save the file
+        filename: Filename (should include .json extension)
+    """
+    # Save JSON (with extraction config and raw LLM output)
+    json_file = output_dir / filename
     result_dict = {
+        "input_text": result.input_text,
         "temporal_entities": [e.dict() for e in result.temporal_entities],
         "spatial_entities": [e.dict() for e in result.spatial_entities],
         "success": result.success,
         "error": result.error,
         "processing_time": result.processing_time,
     }
+
+    # Add extraction config if available
+    if result.extraction_config:
+        result_dict["extraction_config"] = {
+            "llm_provider": result.extraction_config.llm_provider,
+            "model_name": result.extraction_config.model_name,
+            "temperature": result.extraction_config.temperature,
+            "max_tokens": result.extraction_config.max_tokens,
+            "raw_llm_output": result.extraction_config.raw_llm_output,
+        }
+
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(result_dict, f, indent=2, ensure_ascii=False)
 
-    # Save TXT summary
-    txt_file = output_dir / f"{filename}.txt"
-    temporal_count = len(result.temporal_entities)
-    spatial_count = len(result.spatial_entities)
-
-    with open(txt_file, "w", encoding="utf-8") as f:
-        f.write(f"STIndex Extraction Results\n")
-        f.write(f"{'=' * 80}\n\n")
-        f.write(f"Temporal Entities: {temporal_count}\n")
-        f.write(f"Spatial Entities: {spatial_count}\n")
-        f.write(f"Processing Time: {result.processing_time:.2f}s\n\n")
-
-        if result.temporal_entities:
-            f.write(f"Temporal Entities:\n")
-            for entity in result.temporal_entities:
-                f.write(f"  • '{entity.text}' → {entity.normalized} [{entity.temporal_type.value}]\n")
-            f.write("\n")
-
-        if result.spatial_entities:
-            f.write(f"Spatial Entities:\n")
-            for entity in result.spatial_entities:
-                f.write(f"  • '{entity.text}' → ({entity.latitude:.4f}, {entity.longitude:.4f})\n")
-
-    return json_file, txt_file
+    return json_file
 
 
 def display_json(result, output: Optional[Path] = None):
     """Display results as JSON."""
     result_dict = {
+        "input_text": result.input_text,
         "temporal_entities": [e.dict() for e in result.temporal_entities],
         "spatial_entities": [e.dict() for e in result.spatial_entities],
         "success": result.success,
         "error": result.error,
         "processing_time": result.processing_time,
     }
+
+    # Add extraction config if available
+    if result.extraction_config:
+        result_dict["extraction_config"] = {
+            "llm_provider": result.extraction_config.llm_provider,
+            "model_name": result.extraction_config.model_name,
+            "temperature": result.extraction_config.temperature,
+            "max_tokens": result.extraction_config.max_tokens,
+        }
+
     json_str = json.dumps(result_dict, indent=2, ensure_ascii=False, default=str)
 
     if output:

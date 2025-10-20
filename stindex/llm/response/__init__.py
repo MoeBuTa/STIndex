@@ -1,17 +1,9 @@
-"""
-STIndex: Spatiotemporal Index Extraction from Unstructured Text
+"""Response models for LLM outputs."""
 
-A simple Python library for extracting and normalizing spatiotemporal information from text.
-Uses native LLM providers for clean, type-safe interactions.
-"""
-
-__version__ = "0.3.0"
-__author__ = "STIndex Team"
-__license__ = "MIT"
-
-from stindex.core.extraction import STIndexExtractor
 from stindex.llm.response.models import (
+    ExtractionConfig,
     ExtractionResult,
+    LLMResponse,
     LocationType,
     SpatialEntity,
     SpatialMention,
@@ -19,13 +11,13 @@ from stindex.llm.response.models import (
     TemporalEntity,
     TemporalMention,
     TemporalType,
+    TokenUsage,
 )
 
 __all__ = [
-    # Main API
-    "STIndexExtractor",
-    # Models
+    "ExtractionConfig",
     "ExtractionResult",
+    "LLMResponse",
     "SpatioTemporalResult",
     "TemporalEntity",
     "SpatialEntity",
@@ -33,5 +25,5 @@ __all__ = [
     "SpatialMention",
     "TemporalType",
     "LocationType",
+    "TokenUsage",
 ]
-

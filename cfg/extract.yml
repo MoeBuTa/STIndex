@@ -1,14 +1,19 @@
 # STIndex Extraction Configuration
 # Main configuration file that switches between different LLM providers
 
-# LLM Provider Selection
-# Options: ollama, hf, openai, anthropic
-llm_provider: hf
+# LLM Configuration
+llm:
+  # LLM Provider Selection
+  # Options: ollama, hf, openai, anthropic
+  llm_provider: hf
 
 # Extraction Configuration
 extraction:
   # Enable caching
   enable_cache: true
+
+  # Auto-save results to data/output/yyyy-mm-dd/hh-mm-ss.json
+  auto_save: true
 
   # Minimum confidence threshold (0.0-1.0)
   min_confidence: 0.5

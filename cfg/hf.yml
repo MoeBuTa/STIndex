@@ -1,21 +1,28 @@
-# HuggingFace Local LLM Configuration
+# HuggingFace LLM Configuration
+# The model will be loaded into GPU memory when the HF server starts
 
 llm:
   # Provider type
   llm_provider: hf
 
   # Model name/identifier (HuggingFace model ID or local path)
+  # This model will be loaded into GPU memory on server startup
   model_name: Qwen/Qwen3-8B
 
   # Optional: Local model path (if model is stored locally)
   model_path: ""
 
-  # Device: auto, cuda, cpu
+  # Device: auto (uses GPU if available), cuda, cpu
+  # "auto" will automatically load the model to GPU
   device: auto
 
-  # Data type for model weights
+  # Data type for model weights (float16 recommended for GPU)
   torch_dtype: float16
 
   # Generation parameters
   temperature: 0.0
   max_tokens: 2048
+
+  # Server URL (for client mode)
+  # The client will send requests to this server
+  server_url: http://localhost:8001
