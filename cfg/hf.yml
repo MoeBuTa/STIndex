@@ -1,4 +1,5 @@
 # HuggingFace LLM Configuration
+# Automatically supports both single-GPU and multi-GPU modes
 # The model will be loaded into GPU memory when the HF server starts
 
 llm:
@@ -6,14 +7,12 @@ llm:
   llm_provider: hf
 
   # Model name/identifier (HuggingFace model ID or local path)
-  # This model will be loaded into GPU memory on server startup
   model_name: Qwen/Qwen3-8B
 
   # Optional: Local model path (if model is stored locally)
   model_path: ""
 
   # Device: auto (uses GPU if available), cuda, cpu
-  # "auto" will automatically load the model to GPU
   device: auto
 
   # Data type for model weights (float16 recommended for GPU)
@@ -23,6 +22,31 @@ llm:
   temperature: 0.0
   max_tokens: 2048
 
-  # Server URL (for client mode)
-  # The client will send requests to this server
-  server_url: http://localhost:8001
+  # Server Configuration
+  # ------------------
+  # Multi-GPU mode: Multiple server instances for horizontal scaling
+  # Best for small models that fit on 1 GPU (like Qwen3-8B)
+  # Provides ~4x throughput with 4 GPUs vs single GPU
+  server_urls:
+    - http://localhost:8001
+    - http://localhost:8002
+    - http://localhost:8003
+    - http://localhost:8004
+
+  # Single-GPU mode: Use server_url (comment out server_urls above)
+  # server_url: http://localhost:8001
+
+  # Load balancing strategy: "round_robin" or "random"
+  load_balancing: round_robin
+
+# How to use:
+# -----------
+# Multi-GPU mode (default, best performance):
+#   1. Start servers: ./scripts/start_servers.sh  (auto-detects GPUs)
+#   2. Servers run on ports 8001-8004 (one per GPU)
+#   3. Client automatically distributes requests for max throughput
+#
+# Single-GPU mode:
+#   1. Start server: STINDEX_NUM_GPUS=1 ./scripts/start_servers.sh
+#   2. Comment out server_urls above and uncomment server_url
+

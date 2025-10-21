@@ -228,6 +228,143 @@ def evaluate_single_item(
     }
 
 
+def evaluate_batch_items(
+    extractor: STIndexExtractor,
+    items: List[Dict[str, Any]],
+    temporal_match_mode: str,
+    spatial_match_mode: str,
+) -> List[Dict[str, Any]]:
+    """
+    Evaluate a batch of dataset items using LLM batch API.
+
+    Args:
+        extractor: STIndexExtractor instance
+        items: List of dataset items with text and ground_truth
+        temporal_match_mode: Temporal matching mode
+        spatial_match_mode: Spatial matching mode
+
+    Returns:
+        List of evaluation result dicts
+    """
+    # Extract texts
+    texts = [item["text"] for item in items]
+
+    # Batch extraction using LLM batch API
+    start_time = time.time()
+    results = extractor.extract_batch(texts, use_batch_api=True)
+    batch_processing_time = time.time() - start_time
+
+    # Evaluate each result
+    evaluated_results = []
+    for item, result in zip(items, results):
+        # Initialize metrics for this item
+        temporal_metrics = TemporalMetrics()
+        spatial_metrics = SpatialMetrics()
+
+        error_msg = None
+        llm_raw_output = ""
+
+        # Initialize result variables
+        predicted_temporal = []
+        predicted_spatial = []
+        ground_truth_temporal = item.get("ground_truth", {}).get("temporal", [])
+        ground_truth_spatial = item.get("ground_truth", {}).get("spatial", [])
+
+        if not result.success:
+            error_msg = result.error
+        else:
+            # Get raw LLM output if available
+            if result.extraction_config and result.extraction_config.raw_llm_output:
+                llm_raw_output = result.extraction_config.raw_llm_output
+
+            # Evaluate temporal entities
+            predicted_temporal = [e.dict() for e in result.temporal_entities]
+
+            # Calculate temporal metrics
+            matched_gt = set()
+            for pred in predicted_temporal:
+                match_found = False
+                for i, gt in enumerate(ground_truth_temporal):
+                    if i in matched_gt:
+                        continue
+                    if calculate_temporal_match(pred, gt, temporal_match_mode):
+                        temporal_metrics.true_positives += 1
+                        matched_gt.add(i)
+                        match_found = True
+
+                        # Check normalization accuracy
+                        temporal_metrics.normalization_total += 1
+                        if pred.get("normalized") == gt.get("normalized"):
+                            temporal_metrics.normalization_correct += 1
+                        break
+
+                if not match_found:
+                    temporal_metrics.false_positives += 1
+
+            temporal_metrics.false_negatives = len(ground_truth_temporal) - len(matched_gt)
+
+            # Evaluate spatial entities
+            predicted_spatial = [e.dict() for e in result.spatial_entities]
+
+            # Calculate spatial metrics
+            matched_gt_spatial = set()
+            for pred in predicted_spatial:
+                match_found = False
+                for i, gt in enumerate(ground_truth_spatial):
+                    if i in matched_gt_spatial:
+                        continue
+                    is_match, distance_error = calculate_spatial_match(pred, gt, spatial_match_mode)
+                    if is_match:
+                        spatial_metrics.true_positives += 1
+                        matched_gt_spatial.add(i)
+                        match_found = True
+
+                        # Track geocoding
+                        if "latitude" in pred:
+                            spatial_metrics.geocoding_attempted += 1
+                            if pred.get("latitude") is not None:
+                                spatial_metrics.geocoding_successful += 1
+
+                                # Track distance error
+                                if distance_error is not None:
+                                    spatial_metrics.distance_errors.append(distance_error)
+                        break
+
+                if not match_found:
+                    spatial_metrics.false_positives += 1
+
+            spatial_metrics.false_negatives = len(ground_truth_spatial) - len(matched_gt_spatial)
+
+        # Build result dict
+        evaluated_results.append({
+            "id": item.get("id", "unknown"),
+            "input_text": item["text"],
+            "llm_raw_output": llm_raw_output,
+            "temporal_predicted": json.dumps(predicted_temporal),
+            "temporal_ground_truth": json.dumps(ground_truth_temporal),
+            "temporal_precision": temporal_metrics.precision(),
+            "temporal_recall": temporal_metrics.recall(),
+            "temporal_f1": temporal_metrics.f1_score(),
+            "temporal_normalization_accuracy": temporal_metrics.normalization_accuracy(),
+            "spatial_predicted": json.dumps(predicted_spatial),
+            "spatial_ground_truth": json.dumps(ground_truth_spatial),
+            "spatial_precision": spatial_metrics.precision(),
+            "spatial_recall": spatial_metrics.recall(),
+            "spatial_f1": spatial_metrics.f1_score(),
+            "spatial_geocoding_success_rate": spatial_metrics.geocoding_success_rate(),
+            "spatial_mean_distance_error_km": spatial_metrics.mean_distance_error(),
+            "spatial_accuracy_within_25km": spatial_metrics.accuracy_at_threshold(25),
+            "processing_time_seconds": result.processing_time,
+            "error": error_msg or "",
+            "_metrics": {
+                "temporal": temporal_metrics,
+                "spatial": spatial_metrics
+            }
+        })
+
+    return evaluated_results
+
+
 def execute_evaluate(
     config: str = "evaluate",
     dataset: Optional[Path] = None,
@@ -255,7 +392,22 @@ def execute_evaluate(
 
         # Resolve paths
         dataset_path = Path(dataset) if dataset else Path(PROJECT_DIR) / eval_settings.get("dataset_path", "data/input/eval_dataset_100.json")
-        output_directory = Path(output_dir) if output_dir else Path(PROJECT_DIR) / eval_settings.get("output_dir", "data/output/evaluations")
+
+        # Get dataset name (without extension) for subdirectory
+        dataset_name = dataset_path.stem  # e.g., "eval_dataset_100" from "eval_dataset_100.json"
+
+        # Get model name from config and normalize it (remove slashes, colons, etc.)
+        model_name = eval_config.get("llm", {}).get("model_name", "default")
+        # Normalize model name: replace slashes, colons, and other path-unsafe characters
+        normalized_model_name = model_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+
+        # If output_dir is provided, use it directly; otherwise create subdirectory based on dataset name and model
+        if output_dir:
+            output_directory = Path(output_dir)
+        else:
+            base_output_dir = Path(PROJECT_DIR) / eval_settings.get("output_dir", "data/output/evaluations")
+            # Create subdirectory: {dataset}-{normalized_model_name}
+            output_directory = base_output_dir / f"{dataset_name}-{normalized_model_name}"
 
         # Override sample limit if provided
         if sample_limit is not None:
@@ -332,6 +484,15 @@ def execute_evaluate(
         # Overall metrics aggregation
         overall_metrics = OverallMetrics()
 
+        # Get batch mode settings
+        batch_mode = eval_settings.get("batch_mode", False)
+        batch_size = eval_settings.get("batch_size", 10)
+
+        if batch_mode:
+            console.print(f"[yellow]Batch mode enabled:[/yellow] batch_size={batch_size}")
+        else:
+            console.print(f"[yellow]Single-item mode:[/yellow] processing one-by-one")
+
         # Process items with progress bar
         with open(csv_path, file_mode, newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
@@ -349,68 +510,237 @@ def execute_evaluate(
             ) as progress:
                 task = progress.add_task("[cyan]Evaluating...", total=len(remaining_items))
 
-                for i, item in enumerate(remaining_items):
-                    # Evaluate single item
-                    item_result = evaluate_single_item(
-                        extractor,
-                        item,
-                        eval_settings.get("temporal_match_mode", "exact"),
-                        eval_settings.get("spatial_match_mode", "exact")
-                    )
+                if batch_mode:
+                    # Batch processing mode
+                    for batch_start in range(0, len(remaining_items), batch_size):
+                        batch_end = min(batch_start + batch_size, len(remaining_items))
+                        batch_items = remaining_items[batch_start:batch_end]
+                        current_batch_size = len(batch_items)
 
-                    # Aggregate metrics
-                    item_metrics = item_result.pop("_metrics")
-                    overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
-                    overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
-                    overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
-                    overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
-                    overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
+                        # Evaluate batch
+                        batch_results = evaluate_batch_items(
+                            extractor,
+                            batch_items,
+                            eval_settings.get("temporal_match_mode", "exact"),
+                            eval_settings.get("spatial_match_mode", "exact")
+                        )
 
-                    overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
-                    overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
-                    overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
-                    overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
-                    overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
-                    overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+                        # Process and write results
+                        for i, item_result in enumerate(batch_results):
+                            # Aggregate metrics
+                            item_metrics = item_result.pop("_metrics")
+                            overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
+                            overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
+                            overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
+                            overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
+                            overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
 
-                    overall_metrics.total_documents += 1
-                    overall_metrics.successful_extractions += 1 if not item_result["error"] else 0
-                    overall_metrics.total_processing_time += item_result["processing_time_seconds"]
+                            overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
+                            overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
+                            overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
+                            overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
+                            overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
+                            overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
 
-                    # Write to CSV
-                    writer.writerow(item_result)
+                            overall_metrics.total_documents += 1
+                            overall_metrics.successful_extractions += 1 if not item_result["error"] else 0
+                            overall_metrics.total_processing_time += item_result["processing_time_seconds"]
 
-                    # Flush every checkpoint_interval items
-                    if (i + 1) % eval_settings.get("checkpoint_interval", 10) == 0:
-                        csvfile.flush()
+                            # Write to CSV
+                            writer.writerow(item_result)
 
-                    progress.update(task, advance=1)
+                        # Flush at checkpoint intervals
+                        if (batch_start + current_batch_size) % eval_settings.get("checkpoint_interval", 10) == 0:
+                            csvfile.flush()
+
+                        # Update progress bar once per batch
+                        progress.update(task, advance=current_batch_size)
+
+                else:
+                    # Single-item processing mode (original behavior)
+                    for i, item in enumerate(remaining_items):
+                        # Evaluate single item
+                        item_result = evaluate_single_item(
+                            extractor,
+                            item,
+                            eval_settings.get("temporal_match_mode", "exact"),
+                            eval_settings.get("spatial_match_mode", "exact")
+                        )
+
+                        # Aggregate metrics
+                        item_metrics = item_result.pop("_metrics")
+                        overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
+                        overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
+                        overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
+                        overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
+                        overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
+
+                        overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
+                        overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
+                        overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
+                        overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
+                        overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
+                        overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+
+                        overall_metrics.total_documents += 1
+                        overall_metrics.successful_extractions += 1 if not item_result["error"] else 0
+                        overall_metrics.total_processing_time += item_result["processing_time_seconds"]
+
+                        # Write to CSV
+                        writer.writerow(item_result)
+
+                        # Flush every checkpoint_interval items
+                        if (i + 1) % eval_settings.get("checkpoint_interval", 10) == 0:
+                            csvfile.flush()
+
+                        progress.update(task, advance=1)
 
         console.print(f"\n[green]✓ Evaluation complete![/green]")
         console.print(f"[blue]Results saved to:[/blue] {csv_path}")
 
-        # Display summary metrics
-        display_summary_metrics(overall_metrics)
+        # Calculate cumulative metrics from ALL rows in the CSV (including previous runs)
+        cumulative_metrics = calculate_cumulative_metrics(csv_path)
 
-        # Save summary JSON if configured
+        # Display cumulative summary metrics
+        console.print("\n[bold cyan]Cumulative Metrics (All Results):[/bold cyan]")
+        display_summary_metrics(cumulative_metrics)
+
+        # Save cumulative summary JSON if configured
         if output_settings.get("save_summary", True):
             summary_path = csv_path.with_suffix(".summary.json")
             with open(summary_path, "w", encoding="utf-8") as f:
-                json.dump(overall_metrics.to_dict(), f, indent=2)
-            console.print(f"[blue]Summary saved to:[/blue] {summary_path}")
-
-        # Save aggregated metrics if configured
-        if output_settings.get("save_aggregated_metrics", True):
-            metrics_path = output_directory / f"metrics_{timestamp}.json"
-            with open(metrics_path, "w", encoding="utf-8") as f:
-                json.dump(overall_metrics.to_dict(), f, indent=2)
-            console.print(f"[blue]Aggregated metrics saved to:[/blue] {metrics_path}")
+                json.dump(cumulative_metrics.to_dict(), f, indent=2)
+            console.print(f"[blue]Cumulative summary saved to:[/blue] {summary_path}")
 
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
+
+def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
+    """
+    Calculate cumulative metrics from all rows in the CSV file.
+
+    Args:
+        csv_path: Path to the CSV file
+
+    Returns:
+        OverallMetrics aggregated from all rows
+    """
+    cumulative_metrics = OverallMetrics()
+
+    if not csv_path.exists():
+        return cumulative_metrics
+
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            # Parse temporal metrics from the row
+            temporal_pred = json.loads(row.get("temporal_predicted", "[]"))
+            temporal_gt = json.loads(row.get("temporal_ground_truth", "[]"))
+
+            # Reconstruct temporal metrics for this row
+            # We need to recalculate TP, FP, FN based on the predictions
+            temporal_tp = 0
+            temporal_fp = 0
+            normalization_correct = 0
+            normalization_total = 0
+
+            matched_gt = set()
+            for pred in temporal_pred:
+                match_found = False
+                for i, gt in enumerate(temporal_gt):
+                    if i in matched_gt:
+                        continue
+                    # Simple text match (could use more sophisticated matching)
+                    if pred.get("text", "").strip() == gt.get("text", "").strip():
+                        temporal_tp += 1
+                        matched_gt.add(i)
+                        match_found = True
+
+                        # Check normalization
+                        normalization_total += 1
+                        if pred.get("normalized") == gt.get("normalized"):
+                            normalization_correct += 1
+                        break
+
+                if not match_found:
+                    temporal_fp += 1
+
+            temporal_fn = len(temporal_gt) - len(matched_gt)
+
+            # Parse spatial metrics
+            spatial_pred = json.loads(row.get("spatial_predicted", "[]"))
+            spatial_gt = json.loads(row.get("spatial_ground_truth", "[]"))
+
+            spatial_tp = 0
+            spatial_fp = 0
+            geocoding_attempted = 0
+            geocoding_successful = 0
+
+            matched_gt_spatial = set()
+            for pred in spatial_pred:
+                match_found = False
+                for i, gt in enumerate(spatial_gt):
+                    if i in matched_gt_spatial:
+                        continue
+                    # Simple text match
+                    if pred.get("text", "").strip() == gt.get("text", "").strip():
+                        spatial_tp += 1
+                        matched_gt_spatial.add(i)
+                        match_found = True
+
+                        # Track geocoding
+                        if "latitude" in pred:
+                            geocoding_attempted += 1
+                            if pred.get("latitude") is not None:
+                                geocoding_successful += 1
+
+                                # Track distance error
+                                if "latitude" in gt and gt.get("latitude") is not None:
+                                    from math import radians, sin, cos, sqrt, atan2
+                                    lat1, lon1 = radians(pred["latitude"]), radians(pred["longitude"])
+                                    lat2, lon2 = radians(gt["latitude"]), radians(gt["longitude"])
+
+                                    dlat = lat2 - lat1
+                                    dlon = lon2 - lon1
+                                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                                    c = 2 * atan2(sqrt(a), sqrt(1-a))
+                                    distance_km = 6371 * c
+                                    cumulative_metrics.spatial.distance_errors.append(distance_km)
+                        break
+
+                if not match_found:
+                    spatial_fp += 1
+
+            spatial_fn = len(spatial_gt) - len(matched_gt_spatial)
+
+            # Aggregate into cumulative metrics
+            cumulative_metrics.temporal.true_positives += temporal_tp
+            cumulative_metrics.temporal.false_positives += temporal_fp
+            cumulative_metrics.temporal.false_negatives += temporal_fn
+            cumulative_metrics.temporal.normalization_correct += normalization_correct
+            cumulative_metrics.temporal.normalization_total += normalization_total
+
+            cumulative_metrics.spatial.true_positives += spatial_tp
+            cumulative_metrics.spatial.false_positives += spatial_fp
+            cumulative_metrics.spatial.false_negatives += spatial_fn
+            cumulative_metrics.spatial.geocoding_attempted += geocoding_attempted
+            cumulative_metrics.spatial.geocoding_successful += geocoding_successful
+
+            cumulative_metrics.total_documents += 1
+            cumulative_metrics.successful_extractions += 1 if not row.get("error") else 0
+
+            try:
+                processing_time = float(row.get("processing_time_seconds", 0))
+                cumulative_metrics.total_processing_time += processing_time
+            except (ValueError, TypeError):
+                pass
+
+    return cumulative_metrics
 
 
 def display_summary_metrics(metrics: OverallMetrics):

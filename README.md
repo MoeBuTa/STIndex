@@ -41,7 +41,7 @@ print(f"Spatial: {len(result.spatial_entities)} entities")
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)**: Comprehensive developer guide and architecture documentation
-- **[docs/MULTI_GPU_DEPLOYMENT.md](docs/MULTI_GPU_DEPLOYMENT.md)**: Multi-GPU server deployment guide
+- **[docs/HF_SERVER_CLIENT.md](docs/HF_SERVER_CLIENT.md)**: Multi-GPU server deployment guide
 
 ## Server Deployment
 
@@ -51,13 +51,26 @@ print(f"Spatial: {len(result.spatial_entities)} entities")
 ./scripts/start_server.sh
 ```
 
-### Multi-GPU
+### Multi-GPU (Auto-detect)
 
 ```bash
-./scripts/start_multi_gpu_servers.sh
+./scripts/start_servers.sh
 ```
 
-See [docs/MULTI_GPU_DEPLOYMENT.md](docs/MULTI_GPU_DEPLOYMENT.md) for detailed deployment instructions.
+### Server Management
+
+```bash
+# Check server status
+./scripts/check_servers.sh
+
+# Stop servers
+./scripts/stop_servers.sh
+
+# Restart servers
+./scripts/restart_servers.sh
+```
+
+See [docs/HF_SERVER_CLIENT.md](docs/HF_SERVER_CLIENT.md) for detailed deployment instructions.
 
 ## Configuration
 
@@ -66,7 +79,7 @@ Configuration files in `cfg/`:
 - `openai.yml`: OpenAI settings
 - `anthropic.yml`: Anthropic settings
 - `hf.yml`: HuggingFace single-server
-- `hf_multi_gpu.yml`: HuggingFace multi-GPU
+- `hf.yml`: HuggingFace multi-GPU
 
 ## License
 

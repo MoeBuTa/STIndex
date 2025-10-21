@@ -141,8 +141,6 @@ class HuggingFaceLLM:
                     "temperature": self.config.get("temperature"),
                 }
 
-                logger.info(f"Sending generation request to {server_url}/generate (attempt {attempt + 1})")
-
                 # Send request to server
                 response = requests.post(
                     f"{server_url}/generate",
@@ -255,8 +253,6 @@ class HuggingFaceLLM:
         batch_size = len(messages_batch)
         chunks_per_server = (batch_size + num_servers - 1) // num_servers
 
-        logger.info(f"Distributing batch of {batch_size} across {num_servers} servers ({chunks_per_server} per server)")
-
         # Create sub-batches
         sub_batches = []
         for i in range(0, batch_size, chunks_per_server):
@@ -275,8 +271,6 @@ class HuggingFaceLLM:
                     "max_tokens": max_tokens or self.config.get("max_tokens"),
                     "temperature": temperature if temperature is not None else self.config.get("temperature"),
                 }
-
-                logger.info(f"Sending sub-batch ({len(sub_batch)} items) to {server_url}")
 
                 response = requests.post(
                     f"{server_url}/generate_batch",
@@ -340,8 +334,7 @@ class HuggingFaceLLM:
                 for i, result in enumerate(sub_results):
                     results[start_idx + i] = result
 
-        logger.info(f"Completed distributed batch generation: {len(results)} results")
-        return results
+            return results
 
     def _generate_batch_single(
         self,
@@ -361,8 +354,6 @@ class HuggingFaceLLM:
                 "max_tokens": max_tokens or self.config.get("max_tokens"),
                 "temperature": temperature if temperature is not None else self.config.get("temperature"),
             }
-
-            logger.info(f"Sending batch generation request ({len(messages_batch)} items) to {server_url}/generate_batch")
 
             # Send request to server
             response = requests.post(
@@ -401,7 +392,6 @@ class HuggingFaceLLM:
                         )
                     )
 
-            logger.info(f"Successfully received {len(responses)} batch completions")
             return responses
 
         except requests.exceptions.ConnectionError as e:

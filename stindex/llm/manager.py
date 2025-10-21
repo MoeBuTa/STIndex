@@ -56,6 +56,10 @@ class LLMManager:
             provider_config["trust_remote_code"] = self.config.get("trust_remote_code", False)
             provider_config["max_input_length"] = self.config.get("max_input_length", 4096)
             provider_config["top_p"] = self.config.get("top_p", 1.0)
+            # Add server configuration for client mode
+            provider_config["server_url"] = self.config.get("server_url")
+            provider_config["server_urls"] = self.config.get("server_urls")
+            provider_config["load_balancing"] = self.config.get("load_balancing", "round_robin")
 
         # Create provider instance
         if self.provider_name == "openai":

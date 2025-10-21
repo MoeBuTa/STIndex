@@ -149,7 +149,6 @@ class STIndexExtractor:
             )
             entities.append(entity)
 
-        logger.info(f"✓ Processed {len(entities)} temporal entities")
         return entities
 
     def _process_spatial(self, mentions, document_text: str) -> list[SpatialEntity]:
@@ -184,17 +183,96 @@ class STIndexExtractor:
                 logger.warning(f"Error geocoding '{mention.text}': {e}")
                 continue
 
-        logger.info(f"✓ Processed {len(entities)} spatial entities")
         return entities
 
-    def extract_batch(self, texts: list[str]) -> list[SpatioTemporalResult]:
+    def extract_batch(self, texts: list[str], use_batch_api: bool = False) -> list[SpatioTemporalResult]:
         """
         Extract from multiple texts.
 
         Args:
             texts: List of input texts
+            use_batch_api: If True, uses LLM batch API for parallel processing (faster with multi-GPU)
+                          If False, processes one-by-one (default, safer)
 
         Returns:
             List of SpatioTemporalResult objects
         """
-        return [self.extract(text) for text in texts]
+        if not use_batch_api:
+            # Single-item mode: process one-by-one (current behavior)
+            return [self.extract(text) for text in texts]
+
+        # Batch mode: use LLM batch API for parallel processing
+        try:
+            start_time = time.time()
+
+            # Step 1: Build messages for all texts
+            messages_batch = []
+            for text in texts:
+                messages = ExtractionPrompt.build_messages_with_schema(
+                    text.strip(),
+                    response_model=ExtractionResult,
+                    use_few_shot=False
+                )
+                messages_batch.append(messages)
+
+            # Step 2: Send batch to LLM
+            llm_responses = self.llm_manager.generate_batch(messages_batch)
+
+            # Step 3: Process each response
+            results = []
+            for i, (text, llm_response) in enumerate(zip(texts, llm_responses)):
+                item_start_time = time.time()
+
+                try:
+                    # Check if LLM call was successful
+                    if not llm_response.success:
+                        raise ValueError(f"LLM generation failed: {llm_response.error_msg}")
+
+                    raw_output = llm_response.content
+
+                    # Extract and validate JSON
+                    extraction = extract_json_from_text(raw_output, ExtractionResult)
+
+                    # Process temporal entities
+                    temporal_entities = self._process_temporal(extraction.temporal_mentions, text)
+
+                    # Process spatial entities (geocode)
+                    spatial_entities = self._process_spatial(extraction.spatial_mentions, text)
+
+                    processing_time = time.time() - item_start_time
+
+                    # Build extraction config info
+                    extraction_config = ExtractionConfig(
+                        llm_provider=self.config.get("llm", {}).get("llm_provider", "unknown"),
+                        model_name=self.config.get("llm", {}).get("model_name", "unknown"),
+                        temperature=self.config.get("llm", {}).get("temperature"),
+                        max_tokens=self.config.get("llm", {}).get("max_tokens"),
+                        raw_llm_output=raw_output,
+                    )
+
+                    results.append(SpatioTemporalResult(
+                        input_text=text,
+                        temporal_entities=temporal_entities,
+                        spatial_entities=spatial_entities,
+                        success=True,
+                        processing_time=processing_time,
+                        extraction_config=extraction_config,
+                    ))
+
+                except Exception as e:
+                    logger.error(f"Extraction failed for text {i+1}: {str(e)}")
+                    results.append(SpatioTemporalResult(
+                        input_text=text,
+                        temporal_entities=[],
+                        spatial_entities=[],
+                        success=False,
+                        error=str(e),
+                        processing_time=time.time() - item_start_time,
+                    ))
+
+            return results
+
+        except Exception as e:
+            # Fallback to single-item mode if batch fails
+            logger.error(f"Batch extraction failed: {str(e)}, falling back to single-item mode")
+            return [self.extract(text) for text in texts]

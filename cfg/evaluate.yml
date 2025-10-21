@@ -4,7 +4,7 @@
 # LLM Configuration
 llm:
   # LLM Provider Selection
-  # Options: ollama, hf, openai, anthropic
+  # Options: hf, openai, anthropic
   llm_provider: hf
 
 # Evaluation Configuration
@@ -16,13 +16,19 @@ evaluation:
   output_dir: "data/output/evaluations"
 
   # Sample limit (null for all samples)
-  sample_limit: 10
+  sample_limit: null
 
   # Resume from last checkpoint (looks for incomplete CSV in output_dir)
   resume: true
 
-  # Batch size for processing (depends on provider capabilities)
-  batch_size: 1
+  # Batch processing mode
+  # - false: Process items one-by-one (default, safer, works with all providers)
+  # - true: Process items in batches using LLM batch API (faster with multi-GPU)
+  batch_mode: true
+
+  # Batch size for batch_mode=true (how many items to send to LLM at once)
+  # Recommended: 10-50 for multi-GPU, lower for single GPU
+  batch_size: 10
 
   # Save intermediate results every N samples (for fault tolerance)
   checkpoint_interval: 10

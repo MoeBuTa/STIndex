@@ -120,7 +120,7 @@ def get_config(config_name: str) -> str:
     """
     Get STIndex configuration as JSON.
 
-    Available configs: extract, openai, anthropic, hf, hf_multi_gpu
+    Available configs: extract, openai, anthropic, hf
 
     Args:
         config_name: Name of config file (without .yml extension)
@@ -154,8 +154,7 @@ def list_providers() -> str:
             "extract": "cfg/extract.yml (default - uses configured provider)",
             "openai": "cfg/openai.yml",
             "anthropic": "cfg/anthropic.yml",
-            "hf": "cfg/hf.yml (single-server)",
-            "hf_multi_gpu": "cfg/hf_multi_gpu.yml (multi-GPU with load balancing)",
+            "hf": "cfg/hf.yml (HuggingFace, auto-detects single or multi-GPU)",
         },
     }
     return json.dumps(providers, indent=2)
