@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
+from loguru import logger
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
 from rich.table import Table
@@ -99,6 +100,161 @@ def get_config_hash(config: Dict[str, Any]) -> str:
     return f"{provider}_{model}".replace("/", "_").replace(":", "_")
 
 
+def _evaluate_extraction_result(
+    result: Any,
+    ground_truth_temporal: List[Dict[str, Any]],
+    ground_truth_spatial: List[Dict[str, Any]],
+    temporal_match_mode: str,
+    spatial_match_mode: str,
+) -> tuple[TemporalMetrics, SpatialMetrics, List[Dict], List[Dict], str]:
+    """
+    Common evaluation logic for extraction results.
+
+    Args:
+        result: Extraction result from STIndexExtractor
+        ground_truth_temporal: Ground truth temporal entities
+        ground_truth_spatial: Ground truth spatial entities
+        temporal_match_mode: Temporal matching mode
+        spatial_match_mode: Spatial matching mode
+
+    Returns:
+        Tuple of (temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output)
+    """
+    temporal_metrics = TemporalMetrics()
+    spatial_metrics = SpatialMetrics()
+    llm_raw_output = ""
+    predicted_temporal = []
+    predicted_spatial = []
+
+    if not result.success:
+        return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
+
+    # Get raw LLM output if available
+    if result.extraction_config and result.extraction_config.raw_llm_output:
+        llm_raw_output = result.extraction_config.raw_llm_output
+
+    # Evaluate temporal entities (only if ground truth exists)
+    predicted_temporal = [e.dict() for e in result.temporal_entities]
+
+    if ground_truth_temporal:
+        matched_gt = set()
+        for pred in predicted_temporal:
+            match_found = False
+            for i, gt in enumerate(ground_truth_temporal):
+                if i in matched_gt:
+                    continue
+                if calculate_temporal_match(pred, gt, temporal_match_mode):
+                    temporal_metrics.true_positives += 1
+                    matched_gt.add(i)
+                    match_found = True
+
+                    # Check normalization accuracy
+                    temporal_metrics.normalization_total += 1
+                    if pred.get("normalized") == gt.get("normalized"):
+                        temporal_metrics.normalization_correct += 1
+
+                    # Check type accuracy (case-insensitive)
+                    temporal_metrics.type_total += 1
+                    pred_type = str(pred.get("temporal_type", "")).lower()
+                    gt_type = str(gt.get("temporal_type", "")).lower()
+                    if pred_type and gt_type and pred_type == gt_type:
+                        temporal_metrics.type_correct += 1
+                    break
+
+            if not match_found:
+                temporal_metrics.false_positives += 1
+
+        temporal_metrics.false_negatives = len(ground_truth_temporal) - len(matched_gt)
+
+    # Evaluate spatial entities (only if ground truth exists)
+    predicted_spatial = [e.dict() for e in result.spatial_entities]
+
+    if ground_truth_spatial:
+        matched_gt_spatial = set()
+        for pred in predicted_spatial:
+            match_found = False
+            for i, gt in enumerate(ground_truth_spatial):
+                if i in matched_gt_spatial:
+                    continue
+                is_match, distance_error = calculate_spatial_match(pred, gt, spatial_match_mode)
+                if is_match:
+                    spatial_metrics.true_positives += 1
+                    matched_gt_spatial.add(i)
+                    match_found = True
+
+                    # Track geocoding
+                    if "latitude" in pred:
+                        spatial_metrics.geocoding_attempted += 1
+                        if pred.get("latitude") is not None:
+                            spatial_metrics.geocoding_successful += 1
+
+                            # Track distance error
+                            if distance_error is not None:
+                                spatial_metrics.distance_errors.append(distance_error)
+
+                    # Check type accuracy (case-insensitive)
+                    spatial_metrics.type_total += 1
+                    pred_type = str(pred.get("location_type", "")).lower()
+                    gt_type = str(gt.get("location_type", "")).lower()
+                    if pred_type and gt_type and pred_type == gt_type:
+                        spatial_metrics.type_correct += 1
+                    break
+
+            if not match_found:
+                spatial_metrics.false_positives += 1
+
+        spatial_metrics.false_negatives = len(ground_truth_spatial) - len(matched_gt_spatial)
+
+    return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
+
+
+def _build_result_dict(
+    item_id: str,
+    input_text: str,
+    llm_raw_output: str,
+    predicted_temporal: List[Dict],
+    predicted_spatial: List[Dict],
+    ground_truth_temporal: List[Dict],
+    ground_truth_spatial: List[Dict],
+    temporal_metrics: TemporalMetrics,
+    spatial_metrics: SpatialMetrics,
+    processing_time: float,
+    error_msg: str = "",
+) -> Dict[str, Any]:
+    """
+    Build result dictionary with metrics.
+
+    Returns dict with empty string for metrics where ground truth doesn't exist.
+    """
+    return {
+        "id": item_id,
+        "input_text": input_text,
+        "llm_raw_output": llm_raw_output,
+        "temporal_predicted": json.dumps(predicted_temporal),
+        "temporal_ground_truth": json.dumps(ground_truth_temporal),
+        "temporal_precision": temporal_metrics.precision() if ground_truth_temporal else "",
+        "temporal_recall": temporal_metrics.recall() if ground_truth_temporal else "",
+        "temporal_f1": temporal_metrics.f1_score() if ground_truth_temporal else "",
+        "temporal_normalization_accuracy": temporal_metrics.normalization_accuracy() if ground_truth_temporal else "",
+        "spatial_predicted": json.dumps(predicted_spatial),
+        "spatial_ground_truth": json.dumps(ground_truth_spatial),
+        "spatial_precision": spatial_metrics.precision() if ground_truth_spatial else "",
+        "spatial_recall": spatial_metrics.recall() if ground_truth_spatial else "",
+        "spatial_f1": spatial_metrics.f1_score() if ground_truth_spatial else "",
+        "spatial_geocoding_success_rate": spatial_metrics.geocoding_success_rate() if ground_truth_spatial else "",
+        "spatial_mean_distance_error_km": spatial_metrics.mean_distance_error() if ground_truth_spatial else "",
+        "spatial_accuracy_within_25km": spatial_metrics.accuracy_at_threshold(25) if ground_truth_spatial else "",
+        "processing_time_seconds": processing_time,
+        "error": error_msg,
+        "_metrics": {
+            "temporal": temporal_metrics,
+            "spatial": spatial_metrics,
+            "has_temporal_gt": bool(ground_truth_temporal),
+            "has_spatial_gt": bool(ground_truth_spatial)
+        }
+    }
+
+
 def evaluate_single_item(
     extractor: STIndexExtractor,
     item: Dict[str, Any],
@@ -122,110 +278,34 @@ def evaluate_single_item(
     result = extractor.extract(item["text"])
     processing_time = time.time() - start_time
 
-    # Initialize metrics for this item
-    temporal_metrics = TemporalMetrics()
-    spatial_metrics = SpatialMetrics()
-
-    error_msg = None
-    llm_raw_output = ""
-
-    # Initialize result variables
-    predicted_temporal = []
-    predicted_spatial = []
+    # Get ground truth
     ground_truth_temporal = item.get("ground_truth", {}).get("temporal", [])
     ground_truth_spatial = item.get("ground_truth", {}).get("spatial", [])
 
-    if not result.success:
-        error_msg = result.error
-    else:
-        # Get raw LLM output if available
-        if result.extraction_config and result.extraction_config.raw_llm_output:
-            llm_raw_output = result.extraction_config.raw_llm_output
+    # Evaluate using common logic
+    temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output = _evaluate_extraction_result(
+        result,
+        ground_truth_temporal,
+        ground_truth_spatial,
+        temporal_match_mode,
+        spatial_match_mode
+    )
 
-        # Evaluate temporal entities
-        predicted_temporal = [e.dict() for e in result.temporal_entities]
-
-        # Calculate temporal metrics
-        matched_gt = set()
-        for pred in predicted_temporal:
-            match_found = False
-            for i, gt in enumerate(ground_truth_temporal):
-                if i in matched_gt:
-                    continue
-                if calculate_temporal_match(pred, gt, temporal_match_mode):
-                    temporal_metrics.true_positives += 1
-                    matched_gt.add(i)
-                    match_found = True
-
-                    # Check normalization accuracy
-                    temporal_metrics.normalization_total += 1
-                    if pred.get("normalized") == gt.get("normalized"):
-                        temporal_metrics.normalization_correct += 1
-                    break
-
-            if not match_found:
-                temporal_metrics.false_positives += 1
-
-        temporal_metrics.false_negatives = len(ground_truth_temporal) - len(matched_gt)
-
-        # Evaluate spatial entities
-        predicted_spatial = [e.dict() for e in result.spatial_entities]
-
-        # Calculate spatial metrics
-        matched_gt_spatial = set()
-        for pred in predicted_spatial:
-            match_found = False
-            for i, gt in enumerate(ground_truth_spatial):
-                if i in matched_gt_spatial:
-                    continue
-                is_match, distance_error = calculate_spatial_match(pred, gt, spatial_match_mode)
-                if is_match:
-                    spatial_metrics.true_positives += 1
-                    matched_gt_spatial.add(i)
-                    match_found = True
-
-                    # Track geocoding
-                    if "latitude" in pred:
-                        spatial_metrics.geocoding_attempted += 1
-                        if pred.get("latitude") is not None:
-                            spatial_metrics.geocoding_successful += 1
-
-                            # Track distance error
-                            if distance_error is not None:
-                                spatial_metrics.distance_errors.append(distance_error)
-                    break
-
-            if not match_found:
-                spatial_metrics.false_positives += 1
-
-        spatial_metrics.false_negatives = len(ground_truth_spatial) - len(matched_gt_spatial)
-
-    # Return detailed results
-    return {
-        "id": item.get("id", "unknown"),
-        "input_text": item["text"],
-        "llm_raw_output": llm_raw_output,
-        "temporal_predicted": json.dumps(predicted_temporal),
-        "temporal_ground_truth": json.dumps(ground_truth_temporal),
-        "temporal_precision": temporal_metrics.precision(),
-        "temporal_recall": temporal_metrics.recall(),
-        "temporal_f1": temporal_metrics.f1_score(),
-        "temporal_normalization_accuracy": temporal_metrics.normalization_accuracy(),
-        "spatial_predicted": json.dumps(predicted_spatial),
-        "spatial_ground_truth": json.dumps(ground_truth_spatial),
-        "spatial_precision": spatial_metrics.precision(),
-        "spatial_recall": spatial_metrics.recall(),
-        "spatial_f1": spatial_metrics.f1_score(),
-        "spatial_geocoding_success_rate": spatial_metrics.geocoding_success_rate(),
-        "spatial_mean_distance_error_km": spatial_metrics.mean_distance_error(),
-        "spatial_accuracy_within_25km": spatial_metrics.accuracy_at_threshold(25),
-        "processing_time_seconds": processing_time,
-        "error": error_msg or "",
-        "_metrics": {
-            "temporal": temporal_metrics,
-            "spatial": spatial_metrics
-        }
-    }
+    # Build and return result dict
+    error_msg = result.error if not result.success else ""
+    return _build_result_dict(
+        item.get("id", "unknown"),
+        item["text"],
+        llm_raw_output,
+        predicted_temporal,
+        predicted_spatial,
+        ground_truth_temporal,
+        ground_truth_spatial,
+        temporal_metrics,
+        spatial_metrics,
+        processing_time,
+        error_msg
+    )
 
 
 def evaluate_batch_items(
@@ -250,117 +330,40 @@ def evaluate_batch_items(
     texts = [item["text"] for item in items]
 
     # Batch extraction using LLM batch API
-    start_time = time.time()
     results = extractor.extract_batch(texts, use_batch_api=True)
-    batch_processing_time = time.time() - start_time
 
     # Evaluate each result
     evaluated_results = []
     for item, result in zip(items, results):
-        # Initialize metrics for this item
-        temporal_metrics = TemporalMetrics()
-        spatial_metrics = SpatialMetrics()
-
-        error_msg = None
-        llm_raw_output = ""
-
-        # Initialize result variables
-        predicted_temporal = []
-        predicted_spatial = []
+        # Get ground truth
         ground_truth_temporal = item.get("ground_truth", {}).get("temporal", [])
         ground_truth_spatial = item.get("ground_truth", {}).get("spatial", [])
 
-        if not result.success:
-            error_msg = result.error
-        else:
-            # Get raw LLM output if available
-            if result.extraction_config and result.extraction_config.raw_llm_output:
-                llm_raw_output = result.extraction_config.raw_llm_output
-
-            # Evaluate temporal entities
-            predicted_temporal = [e.dict() for e in result.temporal_entities]
-
-            # Calculate temporal metrics
-            matched_gt = set()
-            for pred in predicted_temporal:
-                match_found = False
-                for i, gt in enumerate(ground_truth_temporal):
-                    if i in matched_gt:
-                        continue
-                    if calculate_temporal_match(pred, gt, temporal_match_mode):
-                        temporal_metrics.true_positives += 1
-                        matched_gt.add(i)
-                        match_found = True
-
-                        # Check normalization accuracy
-                        temporal_metrics.normalization_total += 1
-                        if pred.get("normalized") == gt.get("normalized"):
-                            temporal_metrics.normalization_correct += 1
-                        break
-
-                if not match_found:
-                    temporal_metrics.false_positives += 1
-
-            temporal_metrics.false_negatives = len(ground_truth_temporal) - len(matched_gt)
-
-            # Evaluate spatial entities
-            predicted_spatial = [e.dict() for e in result.spatial_entities]
-
-            # Calculate spatial metrics
-            matched_gt_spatial = set()
-            for pred in predicted_spatial:
-                match_found = False
-                for i, gt in enumerate(ground_truth_spatial):
-                    if i in matched_gt_spatial:
-                        continue
-                    is_match, distance_error = calculate_spatial_match(pred, gt, spatial_match_mode)
-                    if is_match:
-                        spatial_metrics.true_positives += 1
-                        matched_gt_spatial.add(i)
-                        match_found = True
-
-                        # Track geocoding
-                        if "latitude" in pred:
-                            spatial_metrics.geocoding_attempted += 1
-                            if pred.get("latitude") is not None:
-                                spatial_metrics.geocoding_successful += 1
-
-                                # Track distance error
-                                if distance_error is not None:
-                                    spatial_metrics.distance_errors.append(distance_error)
-                        break
-
-                if not match_found:
-                    spatial_metrics.false_positives += 1
-
-            spatial_metrics.false_negatives = len(ground_truth_spatial) - len(matched_gt_spatial)
+        # Evaluate using common logic
+        temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output = _evaluate_extraction_result(
+            result,
+            ground_truth_temporal,
+            ground_truth_spatial,
+            temporal_match_mode,
+            spatial_match_mode
+        )
 
         # Build result dict
-        evaluated_results.append({
-            "id": item.get("id", "unknown"),
-            "input_text": item["text"],
-            "llm_raw_output": llm_raw_output,
-            "temporal_predicted": json.dumps(predicted_temporal),
-            "temporal_ground_truth": json.dumps(ground_truth_temporal),
-            "temporal_precision": temporal_metrics.precision(),
-            "temporal_recall": temporal_metrics.recall(),
-            "temporal_f1": temporal_metrics.f1_score(),
-            "temporal_normalization_accuracy": temporal_metrics.normalization_accuracy(),
-            "spatial_predicted": json.dumps(predicted_spatial),
-            "spatial_ground_truth": json.dumps(ground_truth_spatial),
-            "spatial_precision": spatial_metrics.precision(),
-            "spatial_recall": spatial_metrics.recall(),
-            "spatial_f1": spatial_metrics.f1_score(),
-            "spatial_geocoding_success_rate": spatial_metrics.geocoding_success_rate(),
-            "spatial_mean_distance_error_km": spatial_metrics.mean_distance_error(),
-            "spatial_accuracy_within_25km": spatial_metrics.accuracy_at_threshold(25),
-            "processing_time_seconds": result.processing_time,
-            "error": error_msg or "",
-            "_metrics": {
-                "temporal": temporal_metrics,
-                "spatial": spatial_metrics
-            }
-        })
+        error_msg = result.error if not result.success else ""
+        result_dict = _build_result_dict(
+            item.get("id", "unknown"),
+            item["text"],
+            llm_raw_output,
+            predicted_temporal,
+            predicted_spatial,
+            ground_truth_temporal,
+            ground_truth_spatial,
+            temporal_metrics,
+            spatial_metrics,
+            result.processing_time,
+            error_msg
+        )
+        evaluated_results.append(result_dict)
 
     return evaluated_results
 
@@ -493,6 +496,13 @@ def execute_evaluate(
         else:
             console.print(f"[yellow]Single-item mode:[/yellow] processing one-by-one")
 
+        # Suppress INFO-level logs during evaluation to avoid interfering with progress bar
+        # Store original log level
+        logger.info("Starting evaluation...")
+        original_level = logger._core.min_level
+        logger.remove()  # Remove default handler
+        logger.add(sys.stderr, level="WARNING")  # Only show WARNING and above during progress
+
         # Process items with progress bar
         with open(csv_path, file_mode, newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
@@ -527,20 +537,29 @@ def execute_evaluate(
 
                         # Process and write results
                         for i, item_result in enumerate(batch_results):
-                            # Aggregate metrics
+                            # Aggregate metrics (only for entries with ground truth)
                             item_metrics = item_result.pop("_metrics")
-                            overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
-                            overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
-                            overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
-                            overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
-                            overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
 
-                            overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
-                            overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
-                            overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
-                            overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
-                            overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
-                            overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+                            # Only aggregate temporal metrics if ground truth exists
+                            if item_metrics.get("has_temporal_gt"):
+                                overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
+                                overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
+                                overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
+                                overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
+                                overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
+                                overall_metrics.temporal.type_correct += item_metrics["temporal"].type_correct
+                                overall_metrics.temporal.type_total += item_metrics["temporal"].type_total
+
+                            # Only aggregate spatial metrics if ground truth exists
+                            if item_metrics.get("has_spatial_gt"):
+                                overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
+                                overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
+                                overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
+                                overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
+                                overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
+                                overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+                                overall_metrics.spatial.type_correct += item_metrics["spatial"].type_correct
+                                overall_metrics.spatial.type_total += item_metrics["spatial"].type_total
 
                             overall_metrics.total_documents += 1
                             overall_metrics.successful_extractions += 1 if not item_result["error"] else 0
@@ -567,20 +586,29 @@ def execute_evaluate(
                             eval_settings.get("spatial_match_mode", "exact")
                         )
 
-                        # Aggregate metrics
+                        # Aggregate metrics (only for entries with ground truth)
                         item_metrics = item_result.pop("_metrics")
-                        overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
-                        overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
-                        overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
-                        overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
-                        overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
 
-                        overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
-                        overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
-                        overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
-                        overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
-                        overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
-                        overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+                        # Only aggregate temporal metrics if ground truth exists
+                        if item_metrics.get("has_temporal_gt"):
+                            overall_metrics.temporal.true_positives += item_metrics["temporal"].true_positives
+                            overall_metrics.temporal.false_positives += item_metrics["temporal"].false_positives
+                            overall_metrics.temporal.false_negatives += item_metrics["temporal"].false_negatives
+                            overall_metrics.temporal.normalization_correct += item_metrics["temporal"].normalization_correct
+                            overall_metrics.temporal.normalization_total += item_metrics["temporal"].normalization_total
+                            overall_metrics.temporal.type_correct += item_metrics["temporal"].type_correct
+                            overall_metrics.temporal.type_total += item_metrics["temporal"].type_total
+
+                        # Only aggregate spatial metrics if ground truth exists
+                        if item_metrics.get("has_spatial_gt"):
+                            overall_metrics.spatial.true_positives += item_metrics["spatial"].true_positives
+                            overall_metrics.spatial.false_positives += item_metrics["spatial"].false_positives
+                            overall_metrics.spatial.false_negatives += item_metrics["spatial"].false_negatives
+                            overall_metrics.spatial.geocoding_attempted += item_metrics["spatial"].geocoding_attempted
+                            overall_metrics.spatial.geocoding_successful += item_metrics["spatial"].geocoding_successful
+                            overall_metrics.spatial.distance_errors.extend(item_metrics["spatial"].distance_errors)
+                            overall_metrics.spatial.type_correct += item_metrics["spatial"].type_correct
+                            overall_metrics.spatial.type_total += item_metrics["spatial"].type_total
 
                         overall_metrics.total_documents += 1
                         overall_metrics.successful_extractions += 1 if not item_result["error"] else 0
@@ -594,6 +622,10 @@ def execute_evaluate(
                             csvfile.flush()
 
                         progress.update(task, advance=1)
+
+        # Restore logger to INFO level after progress bar
+        logger.remove()
+        logger.add(sys.stderr, level="INFO")
 
         console.print(f"\n[green]✓ Evaluation complete![/green]")
         console.print(f"[blue]Results saved to:[/blue] {csv_path}")
@@ -642,37 +674,46 @@ def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
             temporal_pred = json.loads(row.get("temporal_predicted", "[]"))
             temporal_gt = json.loads(row.get("temporal_ground_truth", "[]"))
 
-            # Reconstruct temporal metrics for this row
-            # We need to recalculate TP, FP, FN based on the predictions
+            # Reconstruct temporal metrics for this row (only if ground truth exists)
             temporal_tp = 0
             temporal_fp = 0
             normalization_correct = 0
             normalization_total = 0
 
-            matched_gt = set()
-            for pred in temporal_pred:
-                match_found = False
-                for i, gt in enumerate(temporal_gt):
-                    if i in matched_gt:
-                        continue
-                    # Simple text match (could use more sophisticated matching)
-                    if pred.get("text", "").strip() == gt.get("text", "").strip():
-                        temporal_tp += 1
-                        matched_gt.add(i)
-                        match_found = True
+            if temporal_gt:  # Only calculate if ground truth has temporal entities
+                matched_gt = set()
+                for pred in temporal_pred:
+                    match_found = False
+                    for i, gt in enumerate(temporal_gt):
+                        if i in matched_gt:
+                            continue
+                        # Simple text match (could use more sophisticated matching)
+                        if pred.get("text", "").strip() == gt.get("text", "").strip():
+                            temporal_tp += 1
+                            matched_gt.add(i)
+                            match_found = True
 
-                        # Check normalization
-                        normalization_total += 1
-                        if pred.get("normalized") == gt.get("normalized"):
-                            normalization_correct += 1
-                        break
+                            # Check normalization
+                            normalization_total += 1
+                            if pred.get("normalized") == gt.get("normalized"):
+                                normalization_correct += 1
 
-                if not match_found:
-                    temporal_fp += 1
+                            # Check type (case-insensitive)
+                            cumulative_metrics.temporal.type_total += 1
+                            pred_type = str(pred.get("temporal_type", "")).lower()
+                            gt_type = str(gt.get("temporal_type", "")).lower()
+                            if pred_type and gt_type and pred_type == gt_type:
+                                cumulative_metrics.temporal.type_correct += 1
+                            break
 
-            temporal_fn = len(temporal_gt) - len(matched_gt)
+                    if not match_found:
+                        temporal_fp += 1
 
-            # Parse spatial metrics
+                temporal_fn = len(temporal_gt) - len(matched_gt)
+            else:
+                temporal_fn = 0
+
+            # Parse spatial metrics (only if ground truth exists)
             spatial_pred = json.loads(row.get("spatial_predicted", "[]"))
             spatial_gt = json.loads(row.get("spatial_ground_truth", "[]"))
 
@@ -681,42 +722,52 @@ def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
             geocoding_attempted = 0
             geocoding_successful = 0
 
-            matched_gt_spatial = set()
-            for pred in spatial_pred:
-                match_found = False
-                for i, gt in enumerate(spatial_gt):
-                    if i in matched_gt_spatial:
-                        continue
-                    # Simple text match
-                    if pred.get("text", "").strip() == gt.get("text", "").strip():
-                        spatial_tp += 1
-                        matched_gt_spatial.add(i)
-                        match_found = True
+            if spatial_gt:  # Only calculate if ground truth has spatial entities
+                matched_gt_spatial = set()
+                for pred in spatial_pred:
+                    match_found = False
+                    for i, gt in enumerate(spatial_gt):
+                        if i in matched_gt_spatial:
+                            continue
+                        # Simple text match
+                        if pred.get("text", "").strip() == gt.get("text", "").strip():
+                            spatial_tp += 1
+                            matched_gt_spatial.add(i)
+                            match_found = True
 
-                        # Track geocoding
-                        if "latitude" in pred:
-                            geocoding_attempted += 1
-                            if pred.get("latitude") is not None:
-                                geocoding_successful += 1
+                            # Track geocoding
+                            if "latitude" in pred:
+                                geocoding_attempted += 1
+                                if pred.get("latitude") is not None:
+                                    geocoding_successful += 1
 
-                                # Track distance error
-                                if "latitude" in gt and gt.get("latitude") is not None:
-                                    from math import radians, sin, cos, sqrt, atan2
-                                    lat1, lon1 = radians(pred["latitude"]), radians(pred["longitude"])
-                                    lat2, lon2 = radians(gt["latitude"]), radians(gt["longitude"])
+                                    # Track distance error
+                                    if "latitude" in gt and gt.get("latitude") is not None:
+                                        from math import radians, sin, cos, sqrt, atan2
+                                        lat1, lon1 = radians(pred["latitude"]), radians(pred["longitude"])
+                                        lat2, lon2 = radians(gt["latitude"]), radians(gt["longitude"])
 
-                                    dlat = lat2 - lat1
-                                    dlon = lon2 - lon1
-                                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-                                    c = 2 * atan2(sqrt(a), sqrt(1-a))
-                                    distance_km = 6371 * c
-                                    cumulative_metrics.spatial.distance_errors.append(distance_km)
-                        break
+                                        dlat = lat2 - lat1
+                                        dlon = lon2 - lon1
+                                        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                                        c = 2 * atan2(sqrt(a), sqrt(1-a))
+                                        distance_km = 6371 * c
+                                        cumulative_metrics.spatial.distance_errors.append(distance_km)
 
-                if not match_found:
-                    spatial_fp += 1
+                            # Check type (case-insensitive)
+                            cumulative_metrics.spatial.type_total += 1
+                            pred_type = str(pred.get("location_type", "")).lower()
+                            gt_type = str(gt.get("location_type", "")).lower()
+                            if pred_type and gt_type and pred_type == gt_type:
+                                cumulative_metrics.spatial.type_correct += 1
+                            break
 
-            spatial_fn = len(spatial_gt) - len(matched_gt_spatial)
+                    if not match_found:
+                        spatial_fp += 1
+
+                spatial_fn = len(spatial_gt) - len(matched_gt_spatial)
+            else:
+                spatial_fn = 0
 
             # Aggregate into cumulative metrics
             cumulative_metrics.temporal.true_positives += temporal_tp
