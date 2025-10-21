@@ -5,7 +5,7 @@
 llm:
   # LLM Provider Selection
   # Options: hf, openai, anthropic
-  llm_provider: hf
+  llm_provider: openai
 
 # Evaluation Configuration
 evaluation:
