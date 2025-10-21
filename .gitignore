@@ -49,6 +49,7 @@ htmlcov/
 
 # Logs
 *.log
+logs/
 
 # Data - ignore all contents but keep structure
 data
