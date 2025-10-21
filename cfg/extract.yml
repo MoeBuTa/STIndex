@@ -4,7 +4,7 @@
 # LLM Configuration
 llm:
   # LLM Provider Selection
-  # Options: ollama, hf, openai, anthropic
+  # Options: hf, openai, anthropic
   llm_provider: hf
 
 # Extraction Configuration

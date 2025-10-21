@@ -18,17 +18,17 @@ from stindex.utils.config import load_config_from_file
 # Initialize MCP server
 mcp = FastMCP("STIndex")
 
-# Global extractor instance (lazy initialization)
-_extractor: Optional[STIndexExtractor] = None
+# Global extractor instances (one per config)
+_extractors: Dict[str, STIndexExtractor] = {}
 
 
 def _get_extractor(config_name: str = "extract") -> STIndexExtractor:
-    """Get or create the global extractor instance."""
-    global _extractor
-    if _extractor is None:
+    """Get or create an extractor instance for the given config."""
+    global _extractors
+    if config_name not in _extractors:
         logger.info(f"Initializing STIndexExtractor with config: {config_name}")
-        _extractor = STIndexExtractor(config_path=config_name)
-    return _extractor
+        _extractors[config_name] = STIndexExtractor(config_path=config_name)
+    return _extractors[config_name]
 
 
 # ============================================================================
@@ -73,8 +73,7 @@ def extract_spatiotemporal(
                     "text": entity.text,
                     "normalized": entity.normalized,
                     "temporal_type": entity.temporal_type.value,
-                    "start_char": entity.start_char,
-                    "end_char": entity.end_char,
+                    "confidence": entity.confidence,
                 }
                 for entity in result.temporal_entities
             ],
@@ -84,7 +83,7 @@ def extract_spatiotemporal(
                     "location_type": entity.location_type.value,
                     "latitude": entity.latitude,
                     "longitude": entity.longitude,
-                    "formatted_address": entity.formatted_address,
+                    "address": entity.address,
                     "confidence": entity.confidence,
                 }
                 for entity in result.spatial_entities
