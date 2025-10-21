@@ -646,7 +646,11 @@ def execute_evaluate(
         console.print(f"[blue]Results saved to:[/blue] {csv_path}")
 
         # Calculate cumulative metrics from ALL rows in the CSV (including previous runs)
-        cumulative_metrics = calculate_cumulative_metrics(csv_path)
+        cumulative_metrics = calculate_cumulative_metrics(
+            csv_path,
+            temporal_match_mode=eval_settings.get("temporal_match_mode", "exact"),
+            spatial_match_mode=eval_settings.get("spatial_match_mode", "exact")
+        )
 
         # Display cumulative summary metrics
         console.print("\n[bold cyan]Cumulative Metrics (All Results):[/bold cyan]")
@@ -666,12 +670,14 @@ def execute_evaluate(
         sys.exit(1)
 
 
-def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
+def calculate_cumulative_metrics(csv_path: Path, temporal_match_mode: str = "exact", spatial_match_mode: str = "exact") -> OverallMetrics:
     """
     Calculate cumulative metrics from all rows in the CSV file.
 
     Args:
         csv_path: Path to the CSV file
+        temporal_match_mode: Temporal matching mode (exact, overlap, normalized)
+        spatial_match_mode: Spatial matching mode (exact, fuzzy)
 
     Returns:
         OverallMetrics aggregated from all rows
@@ -702,8 +708,8 @@ def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
                     for i, gt in enumerate(temporal_gt):
                         if i in matched_gt:
                             continue
-                        # Simple text match (could use more sophisticated matching)
-                        if pred.get("text", "").strip() == gt.get("text", "").strip():
+                        # Use proper matching function (case-insensitive by default in "exact" mode)
+                        if calculate_temporal_match(pred, gt, temporal_match_mode):
                             temporal_tp += 1
                             matched_gt.add(i)
                             match_found = True
@@ -744,8 +750,9 @@ def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
                     for i, gt in enumerate(spatial_gt):
                         if i in matched_gt_spatial:
                             continue
-                        # Simple text match
-                        if pred.get("text", "").strip() == gt.get("text", "").strip():
+                        # Use proper matching function (case-insensitive by default in "exact" mode)
+                        is_match, distance_error = calculate_spatial_match(pred, gt, spatial_match_mode)
+                        if is_match:
                             spatial_tp += 1
                             matched_gt_spatial.add(i)
                             match_found = True
@@ -756,18 +763,9 @@ def calculate_cumulative_metrics(csv_path: Path) -> OverallMetrics:
                                 if pred.get("latitude") is not None:
                                     geocoding_successful += 1
 
-                                    # Track distance error
-                                    if "latitude" in gt and gt.get("latitude") is not None:
-                                        from math import radians, sin, cos, sqrt, atan2
-                                        lat1, lon1 = radians(pred["latitude"]), radians(pred["longitude"])
-                                        lat2, lon2 = radians(gt["latitude"]), radians(gt["longitude"])
-
-                                        dlat = lat2 - lat1
-                                        dlon = lon2 - lon1
-                                        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-                                        c = 2 * atan2(sqrt(a), sqrt(1-a))
-                                        distance_km = 6371 * c
-                                        cumulative_metrics.spatial.distance_errors.append(distance_km)
+                                    # Track distance error (calculated by matching function)
+                                    if distance_error is not None:
+                                        cumulative_metrics.spatial.distance_errors.append(distance_error)
 
                             # Check type (case-insensitive)
                             cumulative_metrics.spatial.type_total += 1
