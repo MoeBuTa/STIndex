@@ -20,31 +20,53 @@ class HuggingFaceLLM:
 
         Args:
             config: Configuration dictionary with:
-                - server_url: Single server URL (e.g., "http://localhost:8001")
-                - server_urls: List of server URLs for load balancing (overrides server_url)
+                - base_port: Starting port number (default: 8001)
+                - num_gpus: Number of GPUs/servers ("auto" or integer, default: "auto")
                 - load_balancing: "round_robin" or "random" (default: "round_robin")
                 - model_name: HuggingFace model ID (for reference only)
                 - temperature: Sampling temperature
                 - max_tokens: Maximum tokens to generate
+
+                Legacy support (deprecated):
+                - server_url: Single server URL (e.g., "http://localhost:8001")
+                - server_urls: List of server URLs for load balancing
         """
         self.config = config
 
-        # Get server URLs - support both single and multi-server modes
+        # Get server URLs - support both new dynamic detection and legacy hardcoded URLs
         server_urls = config.get("server_urls")
         if server_urls:
-            # Multi-server mode
+            # Legacy mode: hardcoded URLs (deprecated)
             self.server_urls = [url.rstrip("/") for url in server_urls]
-            self.multi_server = True
+            self.multi_server = len(self.server_urls) > 1
+            logger.warning("Using legacy hardcoded server_urls (deprecated). Consider using base_port + num_gpus instead.")
             logger.info(f"HuggingFace client initialized with {len(self.server_urls)} servers")
-        else:
-            # Single-server mode
-            server_url = config.get(
-                "server_url",
-                os.getenv("STINDEX_HF_SERVER_URL", "http://localhost:8001")
-            ).rstrip("/")
+        elif config.get("server_url"):
+            # Legacy mode: single server URL (deprecated)
+            server_url = config.get("server_url").rstrip("/")
             self.server_urls = [server_url]
             self.multi_server = False
+            logger.warning("Using legacy server_url (deprecated). Consider using base_port + num_gpus instead.")
             logger.info(f"HuggingFace client initialized, server: {server_url}")
+        else:
+            # New dynamic detection mode
+            base_port = config.get("base_port", int(os.getenv("STINDEX_HF_BASE_PORT", "8001")))
+            num_gpus = config.get("num_gpus", os.getenv("STINDEX_NUM_GPUS", "auto"))
+
+            # Auto-detect servers by probing ports
+            if num_gpus == "auto":
+                self.server_urls = self._auto_detect_servers(base_port)
+            else:
+                # Use specified number of GPUs
+                try:
+                    num_gpus = int(num_gpus)
+                    self.server_urls = [f"http://localhost:{base_port + i}" for i in range(num_gpus)]
+                except (ValueError, TypeError):
+                    logger.error(f"Invalid num_gpus value: {num_gpus}, defaulting to auto-detect")
+                    self.server_urls = self._auto_detect_servers(base_port)
+
+            self.multi_server = len(self.server_urls) > 1
+            logger.info(f"HuggingFace client initialized with {len(self.server_urls)} server(s) starting at port {base_port}")
 
         # Load balancing strategy
         self.load_balancing = config.get("load_balancing", "round_robin")
@@ -53,6 +75,42 @@ class HuggingFaceLLM:
 
         # Verify servers are reachable
         self._verify_servers()
+
+    def _auto_detect_servers(self, base_port: int, max_ports: int = 8) -> List[str]:
+        """
+        Auto-detect available servers by probing ports.
+
+        Args:
+            base_port: Starting port to probe
+            max_ports: Maximum number of ports to check
+
+        Returns:
+            List of server URLs that responded to health check
+        """
+        detected_servers = []
+
+        for i in range(max_ports):
+            port = base_port + i
+            url = f"http://localhost:{port}"
+
+            try:
+                response = requests.get(f"{url}/health", timeout=2)
+                if response.status_code == 200:
+                    detected_servers.append(url)
+                    logger.debug(f"Detected server at {url}")
+                else:
+                    # Stop checking after first non-responsive port
+                    break
+            except Exception:
+                # Stop checking after first unreachable port
+                break
+
+        if not detected_servers:
+            # Fallback to single server on base port if none detected
+            logger.warning(f"No servers detected, falling back to {base_port}")
+            detected_servers = [f"http://localhost:{base_port}"]
+
+        return detected_servers
 
     def _verify_servers(self):
         """Verify all servers are reachable and update health status."""

@@ -7,7 +7,7 @@ llm:
   llm_provider: hf
 
   # Model name/identifier (HuggingFace model ID or local path)
-  model_name: Qwen/Qwen3-8B
+  model_name: Qwen/Qwen3-4B-Thinking-2507
 
   # Optional: Local model path (if model is stored locally)
   model_path: ""
@@ -24,29 +24,27 @@ llm:
 
   # Server Configuration
   # ------------------
-  # Multi-GPU mode: Multiple server instances for horizontal scaling
-  # Best for small models that fit on 1 GPU (like Qwen3-8B)
-  # Provides ~4x throughput with 4 GPUs vs single GPU
-  server_urls:
-    - http://localhost:8001
-    - http://localhost:8002
-    - http://localhost:8003
-    - http://localhost:8004
+  # Dynamic server detection based on base port and number of GPUs
+  # Servers will be auto-detected at: base_port, base_port+1, base_port+2, ...
 
-  # Single-GPU mode: Use server_url (comment out server_urls above)
-  # server_url: http://localhost:8001
+  base_port: 8001  # Starting port for server detection
+  num_gpus: auto   # Auto-detect available servers, or specify number (1, 2, 4, etc.)
 
   # Load balancing strategy: "round_robin" or "random"
   load_balancing: round_robin
 
 # How to use:
 # -----------
-# Multi-GPU mode (default, best performance):
+# Multi-GPU mode (auto-detect):
 #   1. Start servers: ./scripts/start_servers.sh  (auto-detects GPUs)
-#   2. Servers run on ports 8001-8004 (one per GPU)
-#   3. Client automatically distributes requests for max throughput
+#   2. Servers run on ports 8001, 8002, 8003, 8004... (one per GPU)
+#   3. Client automatically detects and uses all available servers
 #
 # Single-GPU mode:
 #   1. Start server: STINDEX_NUM_GPUS=1 ./scripts/start_servers.sh
-#   2. Comment out server_urls above and uncomment server_url
+#   2. Set num_gpus: 1 in this config (or leave as auto)
+#
+# Custom port range:
+#   1. Start with custom base port: STINDEX_HF_BASE_PORT=9001 ./scripts/start_servers.sh
+#   2. Update base_port in this config to match
 
