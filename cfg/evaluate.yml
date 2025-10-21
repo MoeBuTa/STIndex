@@ -33,11 +33,11 @@ evaluation:
   # Save intermediate results every N samples (for fault tolerance)
   checkpoint_interval: 10
 
-  # Match mode for temporal entities: "exact", "overlap", or "normalized"
-  temporal_match_mode: "exact"
-
-  # Match mode for spatial entities: "exact" or "fuzzy"
-  spatial_match_mode: "exact"
+  # Match mode for spatial entities: "exact" or "fuzzy" (default: fuzzy)
+  # - "exact": Exact match of location text
+  # - "fuzzy": Substring or word overlap >= 50% (RECOMMENDED)
+  # Note: Temporal matching always uses "value_exact" mode (compares ISO 8601 values)
+  spatial_match_mode: "fuzzy"
 
   # Geocoding distance threshold for accuracy calculation (in km)
   geocoding_threshold_km: 25

@@ -238,7 +238,7 @@ class OverallMetrics:
 def calculate_temporal_match(
     predicted: Dict[str, Any],
     ground_truth: Dict[str, Any],
-    match_mode: str = "exact"
+    match_mode: str = "value_exact"
 ) -> bool:
     """
     Calculate if a predicted temporal entity matches ground truth.
@@ -246,15 +246,26 @@ def calculate_temporal_match(
     Args:
         predicted: Predicted temporal entity dict
         ground_truth: Ground truth temporal entity dict
-        match_mode: "exact" (exact text match), "overlap" (text overlap), or "normalized" (normalized value match)
+        match_mode:
+            - "text_exact": Exact match of raw text field
+            - "text_fuzzy": Fuzzy match of raw text (word overlap >= 50%)
+            - "value_exact": Exact match of normalized ISO 8601 values (RECOMMENDED)
 
     Returns:
         True if match, False otherwise
     """
+    # Legacy support for old mode names
     if match_mode == "exact":
+        match_mode = "text_exact"
+    elif match_mode == "overlap":
+        match_mode = "text_fuzzy"
+    elif match_mode == "normalized":
+        match_mode = "value_exact"
+
+    if match_mode == "text_exact":
         return predicted.get("text", "").lower().strip() == ground_truth.get("text", "").lower().strip()
 
-    elif match_mode == "overlap":
+    elif match_mode == "text_fuzzy":
         pred_text = predicted.get("text", "").lower()
         gt_text = ground_truth.get("text", "").lower()
         # Check if there's substantial overlap (IoU-style)
@@ -266,8 +277,8 @@ def calculate_temporal_match(
         union = len(pred_words | gt_words)
         return intersection / union >= 0.5
 
-    elif match_mode == "normalized":
-        # Match based on normalized temporal value
+    elif match_mode == "value_exact":
+        # Match based on normalized temporal value (RECOMMENDED for temporal evaluation)
         pred_norm = predicted.get("normalized", "")
         gt_norm = ground_truth.get("normalized", "")
         if not pred_norm or not gt_norm:
@@ -280,7 +291,7 @@ def calculate_temporal_match(
 def calculate_spatial_match(
     predicted: Dict[str, Any],
     ground_truth: Dict[str, Any],
-    match_mode: str = "exact"
+    match_mode: str = "fuzzy"
 ) -> Tuple[bool, Optional[float]]:
     """
     Calculate if a predicted spatial entity matches ground truth.
@@ -288,7 +299,9 @@ def calculate_spatial_match(
     Args:
         predicted: Predicted spatial entity dict
         ground_truth: Ground truth spatial entity dict
-        match_mode: "exact" (exact text match) or "fuzzy" (text similarity)
+        match_mode:
+            - "exact": Exact match of location text
+            - "fuzzy": Fuzzy match (substring or word overlap >= 50%) (RECOMMENDED)
 
     Returns:
         Tuple of (is_match, distance_error_km)

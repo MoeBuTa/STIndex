@@ -70,6 +70,7 @@ class STIndexExtractor:
             SpatioTemporalResult with temporal and spatial entities
         """
         start_time = time.time()
+        raw_output = None  # Initialize outside try block to capture on failure
 
         try:
             # Step 1: Build messages using prompt module
@@ -127,6 +128,18 @@ class STIndexExtractor:
 
         except Exception as e:
             logger.error(f"Extraction failed: {str(e)}")
+
+            # Build extraction config with raw output even on failure
+            extraction_config = None
+            if raw_output:
+                extraction_config = ExtractionConfig(
+                    llm_provider=self.config.get("llm", {}).get("llm_provider", "unknown"),
+                    model_name=self.config.get("llm", {}).get("model_name", "unknown"),
+                    temperature=self.config.get("llm", {}).get("temperature"),
+                    max_tokens=self.config.get("llm", {}).get("max_tokens"),
+                    raw_llm_output=raw_output,
+                )
+
             return SpatioTemporalResult(
                 input_text=text,
                 temporal_entities=[],
@@ -134,6 +147,7 @@ class STIndexExtractor:
                 success=False,
                 error=str(e),
                 processing_time=time.time() - start_time,
+                extraction_config=extraction_config,
             )
 
     def _process_temporal(self, mentions, document_text: str) -> list[TemporalEntity]:
@@ -222,6 +236,7 @@ class STIndexExtractor:
             results = []
             for i, (text, llm_response) in enumerate(zip(texts, llm_responses)):
                 item_start_time = time.time()
+                raw_output = None  # Initialize to capture even on failure
 
                 try:
                     # Check if LLM call was successful
@@ -261,6 +276,18 @@ class STIndexExtractor:
 
                 except Exception as e:
                     logger.error(f"Extraction failed for text {i+1}: {str(e)}")
+
+                    # Build extraction config with raw output even on failure
+                    extraction_config = None
+                    if raw_output:
+                        extraction_config = ExtractionConfig(
+                            llm_provider=self.config.get("llm", {}).get("llm_provider", "unknown"),
+                            model_name=self.config.get("llm", {}).get("model_name", "unknown"),
+                            temperature=self.config.get("llm", {}).get("temperature"),
+                            max_tokens=self.config.get("llm", {}).get("max_tokens"),
+                            raw_llm_output=raw_output,
+                        )
+
                     results.append(SpatioTemporalResult(
                         input_text=text,
                         temporal_entities=[],
@@ -268,6 +295,7 @@ class STIndexExtractor:
                         success=False,
                         error=str(e),
                         processing_time=time.time() - item_start_time,
+                        extraction_config=extraction_config,
                     ))
 
             return results

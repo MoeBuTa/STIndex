@@ -104,7 +104,6 @@ def _evaluate_extraction_result(
     result: Any,
     ground_truth_temporal: List[Dict[str, Any]],
     ground_truth_spatial: List[Dict[str, Any]],
-    temporal_match_mode: str,
     spatial_match_mode: str,
 ) -> tuple[TemporalMetrics, SpatialMetrics, List[Dict], List[Dict], str]:
     """
@@ -114,8 +113,7 @@ def _evaluate_extraction_result(
         result: Extraction result from STIndexExtractor
         ground_truth_temporal: Ground truth temporal entities
         ground_truth_spatial: Ground truth spatial entities
-        temporal_match_mode: Temporal matching mode
-        spatial_match_mode: Spatial matching mode
+        spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
 
     Returns:
         Tuple of (temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output)
@@ -126,12 +124,12 @@ def _evaluate_extraction_result(
     predicted_temporal = []
     predicted_spatial = []
 
-    if not result.success:
-        return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
-
-    # Get raw LLM output if available
+    # Get raw LLM output if available (even on failure)
     if result.extraction_config and result.extraction_config.raw_llm_output:
         llm_raw_output = result.extraction_config.raw_llm_output
+
+    if not result.success:
+        return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
 
     # Evaluate temporal entities (only if ground truth exists)
     predicted_temporal = [e.dict() for e in result.temporal_entities]
@@ -143,7 +141,8 @@ def _evaluate_extraction_result(
             for i, gt in enumerate(ground_truth_temporal):
                 if i in matched_gt:
                     continue
-                if calculate_temporal_match(pred, gt, temporal_match_mode):
+                # Always use value_exact matching for temporal (compare ISO 8601 values)
+                if calculate_temporal_match(pred, gt, "value_exact"):
                     temporal_metrics.true_positives += 1
                     matched_gt.add(i)
                     match_found = True
@@ -258,7 +257,6 @@ def _build_result_dict(
 def evaluate_single_item(
     extractor: STIndexExtractor,
     item: Dict[str, Any],
-    temporal_match_mode: str,
     spatial_match_mode: str,
 ) -> Dict[str, Any]:
     """
@@ -267,8 +265,7 @@ def evaluate_single_item(
     Args:
         extractor: STIndexExtractor instance
         item: Dataset item with text and ground_truth
-        temporal_match_mode: Temporal matching mode
-        spatial_match_mode: Spatial matching mode
+        spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
 
     Returns:
         Dict with evaluation results for this item
@@ -287,7 +284,6 @@ def evaluate_single_item(
         result,
         ground_truth_temporal,
         ground_truth_spatial,
-        temporal_match_mode,
         spatial_match_mode
     )
 
@@ -311,7 +307,6 @@ def evaluate_single_item(
 def evaluate_batch_items(
     extractor: STIndexExtractor,
     items: List[Dict[str, Any]],
-    temporal_match_mode: str,
     spatial_match_mode: str,
 ) -> List[Dict[str, Any]]:
     """
@@ -320,8 +315,7 @@ def evaluate_batch_items(
     Args:
         extractor: STIndexExtractor instance
         items: List of dataset items with text and ground_truth
-        temporal_match_mode: Temporal matching mode
-        spatial_match_mode: Spatial matching mode
+        spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
 
     Returns:
         List of evaluation result dicts
@@ -344,7 +338,6 @@ def evaluate_batch_items(
             result,
             ground_truth_temporal,
             ground_truth_spatial,
-            temporal_match_mode,
             spatial_match_mode
         )
 
@@ -546,8 +539,7 @@ def execute_evaluate(
                         batch_results = evaluate_batch_items(
                             extractor,
                             batch_items,
-                            eval_settings.get("temporal_match_mode", "exact"),
-                            eval_settings.get("spatial_match_mode", "exact")
+                            eval_settings.get("spatial_match_mode", "fuzzy")
                         )
 
                         # Process and write results
@@ -597,8 +589,7 @@ def execute_evaluate(
                         item_result = evaluate_single_item(
                             extractor,
                             item,
-                            eval_settings.get("temporal_match_mode", "exact"),
-                            eval_settings.get("spatial_match_mode", "exact")
+                            eval_settings.get("spatial_match_mode", "fuzzy")
                         )
 
                         # Aggregate metrics (only for entries with ground truth)

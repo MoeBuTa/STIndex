@@ -119,7 +119,9 @@ class HuggingFaceLLM:
                 response = requests.get(f"{url}/health", timeout=5)
                 if response.status_code == 200:
                     health = response.json()
-                    logger.info(f"✓ Connected to HF server: {url} ({health.get('config', {}).get('llm', {}).get('model_name', 'unknown')})")
+                    # The config field contains the llm section directly
+                    model_name = health.get('config', {}).get('model_name', 'unknown') if health.get('config') else 'unknown'
+                    logger.info(f"✓ Connected to HF server: {url} ({model_name})")
                     self.server_health[url] = True
                 else:
                     logger.warning(f"HF server {url} returned status {response.status_code}")

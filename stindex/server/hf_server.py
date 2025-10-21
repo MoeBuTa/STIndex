@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from stindex.utils.config import load_config_from_file
+from stindex.utils.tokenizer import apply_qwen3_8b_template
 
 # Global model and tokenizer (loaded once on startup)
 model: Optional[Any] = None
@@ -57,24 +58,39 @@ class GenerateResponse(BaseModel):
     error_msg: Optional[str] = None
 
 
-def _format_messages(messages: List[Dict[str, str]]) -> str:
+def _format_messages(messages: List[Dict[str, str]], enable_thinking: bool = True) -> str:
     """
     Format messages into a prompt string using the tokenizer's chat template.
 
     Args:
         messages: List of message dicts with 'role' and 'content' keys
+        enable_thinking: Whether to enable thinking mode for Qwen3 models (default: True)
 
     Returns:
         Formatted prompt string
     """
-    global tokenizer
+    global tokenizer, config
 
     # Try to use the tokenizer's chat template if available
     if hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template is not None:
         try:
-            prompt = tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
+            # Check if this is a Qwen3 model
+            model_name = config.get("llm", {}).get("model_name", "").lower()
+            is_qwen3 = "qwen3" in model_name
+
+            if is_qwen3:
+                # Use chat template with enable_thinking for Qwen3
+                prompt = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    enable_thinking=enable_thinking
+                )
+            else:
+                # Use chat template without enable_thinking for other models
+                prompt = tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
             return prompt
         except Exception as e:
             logger.warning(f"Chat template failed, falling back to simple formatting: {e}")
@@ -130,6 +146,9 @@ async def startup_event():
             model_name,
             trust_remote_code=llm_config.get("trust_remote_code", False),
         )
+
+        # Apply Qwen3-8B chat template for Qwen3 models to ensure consistent behavior
+        tokenizer = apply_qwen3_8b_template(tokenizer, model_name)
 
         # Load model to GPU
         model = AutoModelForCausalLM.from_pretrained(
@@ -198,8 +217,12 @@ async def generate(request: GenerateRequest):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
+        # Get enable_thinking from config (default: True for Qwen3 models)
+        llm_config = config.get("llm", {})
+        enable_thinking = llm_config.get("enable_thinking", True)
+
         # Format messages into prompt
-        prompt = _format_messages(request.messages)
+        prompt = _format_messages(request.messages, enable_thinking=enable_thinking)
         logger.debug(f"Formatted prompt length: {len(prompt)} chars")
 
         # Tokenize input
@@ -283,8 +306,12 @@ async def generate_batch(request: GenerateBatchRequest):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
+        # Get enable_thinking from config (default: True for Qwen3 models)
+        llm_config = config.get("llm", {})
+        enable_thinking = llm_config.get("enable_thinking", True)
+
         # Format all messages
-        prompts = [_format_messages(msgs) for msgs in request.messages_batch]
+        prompts = [_format_messages(msgs, enable_thinking=enable_thinking) for msgs in request.messages_batch]
 
         # Tokenize with padding
         tokenizer.padding_side = "left"

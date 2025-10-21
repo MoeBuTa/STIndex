@@ -13,8 +13,8 @@ def extract_json_from_text(text: str, model: Type[T]) -> T:
     """
     Extract and validate JSON from LLM output text.
 
-    Simple approach:
-    1. Try to find JSON object in text (between { and })
+    Approach:
+    1. Find the LAST complete JSON object in text (model may generate multiple attempts)
     2. Parse it
     3. Validate with Pydantic model
 
@@ -32,23 +32,67 @@ def extract_json_from_text(text: str, model: Type[T]) -> T:
     text = re.sub(r'```json\s*', '', text)
     text = re.sub(r'```\s*', '', text)
 
-    # Find JSON object (simple approach: find outermost { ... })
-    start = text.find('{')
-    end = text.rfind('}')
+    # Find all complete JSON objects with balanced braces
+    json_candidates = []
 
-    if start == -1 or end == -1 or start >= end:
-        raise ValueError(f"No JSON object found in text: {text[:200]}")
+    i = 0
+    while i < len(text):
+        # Find next opening brace
+        start = text.find('{', i)
+        if start == -1:
+            break
 
-    json_str = text[start:end+1]
+        # Track brace depth to find matching closing brace
+        brace_count = 0
+        in_string = False
+        escape = False
+        end = -1
 
-    # Parse JSON
-    try:
-        data = json.loads(json_str)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON: {e}")
+        for j in range(start, len(text)):
+            char = text[j]
 
-    # Validate with Pydantic
-    try:
-        return model(**data)
-    except ValidationError as e:
-        raise ValueError(f"JSON validation failed: {e}")
+            # Handle string escaping
+            if escape:
+                escape = False
+                continue
+            if char == '\\':
+                escape = True
+                continue
+
+            # Track if we're inside a string
+            if char == '"':
+                in_string = not in_string
+                continue
+
+            # Only count braces outside of strings
+            if not in_string:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end = j
+                        break
+
+        if end != -1:
+            json_candidates.append(text[start:end+1])
+            i = end + 1
+        else:
+            i = start + 1
+
+    if not json_candidates:
+        raise ValueError(f"No complete JSON object found in text: {text[:200]}")
+
+    # Try parsing JSON candidates from last to first (prefer most recent)
+    last_error = None
+    for json_str in reversed(json_candidates):
+        try:
+            data = json.loads(json_str)
+            # Validate with Pydantic
+            return model(**data)
+        except (json.JSONDecodeError, ValidationError) as e:
+            last_error = e
+            continue
+
+    # If we get here, none of the candidates were valid
+    raise ValueError(f"No valid JSON found. Last error: {last_error}")
