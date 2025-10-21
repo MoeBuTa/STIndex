@@ -44,17 +44,18 @@ evaluation:
 
 # Output Configuration
 output:
-  # CSV column order and naming
+  # CSV column order and naming (predictions next to ground truth for easy comparison)
   csv_columns:
     - id
     - input_text
-    - llm_raw_output
+    # Temporal results
     - temporal_predicted
     - temporal_ground_truth
     - temporal_precision
     - temporal_recall
     - temporal_f1
     - temporal_normalization_accuracy
+    # Spatial results
     - spatial_predicted
     - spatial_ground_truth
     - spatial_precision
@@ -63,8 +64,10 @@ output:
     - spatial_geocoding_success_rate
     - spatial_mean_distance_error_km
     - spatial_accuracy_within_25km
+    # Processing metadata
     - processing_time_seconds
     - error
+    - llm_raw_output
 
   # Save detailed metrics summary JSON alongside CSV
   save_summary: true

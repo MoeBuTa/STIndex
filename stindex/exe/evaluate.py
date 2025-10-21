@@ -473,15 +473,30 @@ def execute_evaluate(
             csv_path = checkpoint_data["checkpoint_path"]
             file_mode = "a"
 
-        # CSV columns
+        # CSV columns - organized with predictions next to ground truth for easy comparison
         csv_columns = output_settings.get("csv_columns", [
-            "id", "input_text", "llm_raw_output",
-            "temporal_predicted", "temporal_ground_truth",
-            "temporal_precision", "temporal_recall", "temporal_f1", "temporal_normalization_accuracy",
-            "spatial_predicted", "spatial_ground_truth",
-            "spatial_precision", "spatial_recall", "spatial_f1",
-            "spatial_geocoding_success_rate", "spatial_mean_distance_error_km", "spatial_accuracy_within_25km",
-            "processing_time_seconds", "error"
+            "id",
+            "input_text",
+            # Temporal results
+            "temporal_predicted",
+            "temporal_ground_truth",
+            "temporal_precision",
+            "temporal_recall",
+            "temporal_f1",
+            "temporal_normalization_accuracy",
+            # Spatial results
+            "spatial_predicted",
+            "spatial_ground_truth",
+            "spatial_precision",
+            "spatial_recall",
+            "spatial_f1",
+            "spatial_geocoding_success_rate",
+            "spatial_mean_distance_error_km",
+            "spatial_accuracy_within_25km",
+            # Processing metadata
+            "processing_time_seconds",
+            "error",
+            "llm_raw_output"
         ])
 
         # Overall metrics aggregation
