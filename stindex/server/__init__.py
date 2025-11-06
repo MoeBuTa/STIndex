@@ -1,8 +1,5 @@
-"""STIndex server module.
+"""Server module for Tagent."""
 
-Available servers:
-- hf_server: HuggingFace FastAPI server for local model serving
-- mcp_server: MCP (Model Context Protocol) server for Claude Desktop integration
-"""
+from stindex.server.vllm import main as run_vllm_server
 
-__all__ = ["hf_server", "mcp_server"]
+__all__ = ["run_vllm_server"]

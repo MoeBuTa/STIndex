@@ -19,7 +19,7 @@ from stindex.llm.response.models import (
     SpatioTemporalResult,
     TemporalEntity,
 )
-from stindex.spatio.geocoder import GeocoderService
+from stindex.spatial.geocoder import GeocoderService
 from stindex.utils.config import load_config_from_file
 
 
@@ -33,6 +33,8 @@ class STIndexExtractor:
     def __init__(
         self,
         config_path: str = "extract",
+        model_name: str = None,
+        auto_start: bool = True,
     ):
         """
         Initialize extractor.
@@ -41,6 +43,8 @@ class STIndexExtractor:
             config_path: Path to config file (default: "extract" loads cfg/extract.yml)
                         The config file specifies the LLM provider (hf/openai/anthropic)
                         and automatically loads provider-specific settings
+            model_name: Override model name from config (optional, for runtime model selection)
+            auto_start: Auto-start servers if not running (default: True, for vLLM only)
         """
         # Load configuration from file
         config = load_config_from_file(config_path)
@@ -48,6 +52,16 @@ class STIndexExtractor:
 
         # Create LLM manager with config from llm section
         llm_config = config.get("llm", {})
+
+        # Override model_name if provided at runtime
+        if model_name:
+            llm_config["model_name"] = model_name
+            logger.info(f"Using runtime model override: {model_name}")
+
+        # Override auto_start if provided at runtime
+        if "auto_start" not in llm_config:
+            llm_config["auto_start"] = auto_start
+
         self.llm_manager = LLMManager(llm_config)
 
         # Initialize geocoder with config

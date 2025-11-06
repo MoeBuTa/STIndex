@@ -31,12 +31,16 @@ def version():
 def extract(
     text: str = typer.Argument(..., help="Text to extract spatiotemporal indices from"),
     config: str = typer.Option("extract", "--config", "-c", help="Config file name (default: extract.yml)"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model name to use (overrides config, e.g., 'Qwen/Qwen3-8B')"),
+    auto_start: bool = typer.Option(True, "--auto-start/--no-auto-start", help="Enable/disable automatic server startup (default: enabled)"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Custom output file path (overrides auto-save)"),
 ):
     """Extract spatiotemporal indices from text."""
     execute_extract(
         text=text,
         config=config,
+        model=model,
+        auto_start=auto_start,
         output=output,
     )
 

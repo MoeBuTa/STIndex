@@ -18,12 +18,14 @@ console = Console()
 def execute_extract(
     text: str,
     config: str = "extract",
+    model: Optional[str] = None,
+    auto_start: bool = True,
     output: Optional[Path] = None,
 ):
     """Execute extraction from text string."""
     try:
         # Create extractor with config file
-        extractor = STIndexExtractor(config_path=config)
+        extractor = STIndexExtractor(config_path=config, model_name=model, auto_start=auto_start)
 
         # Extract
         with console.status("[bold green]Extracting spatiotemporal indices..."):

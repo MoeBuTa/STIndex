@@ -20,13 +20,11 @@ class LLMManager:
 
         Args:
             config: Configuration dictionary with:
-                - llm_provider: "openai", "anthropic", or "hf"
+                - llm_provider: "openai", "anthropic", or "vllm"
                 - model_name: Model identifier
                 - temperature: Sampling temperature
                 - max_tokens: Maximum tokens to generate
-                - device: Device for HuggingFace models (optional)
-                - torch_dtype: Data type for HuggingFace models (optional)
-                - trust_remote_code: Whether to trust remote code for HuggingFace (optional)
+                - (vLLM-specific) router_url: URL of vLLM router server
         """
         self.config = config
         self.provider_name = config.get("llm_provider", "openai")
@@ -37,7 +35,7 @@ class LLMManager:
         Create LLM provider instance based on configuration.
 
         Returns:
-            Configured LLM provider instance (OpenAILLM, AnthropicLLM, or HuggingFaceLLM)
+            Configured LLM provider instance (OpenAILLM, AnthropicLLM, or VLLMClient)
 
         Raises:
             ValueError: If provider is not supported
@@ -50,16 +48,8 @@ class LLMManager:
         }
 
         # Provider-specific kwargs
-        if self.provider_name == "hf":
-            provider_config["device"] = self.config.get("device", "auto")
-            provider_config["torch_dtype"] = self.config.get("torch_dtype", "float16")
-            provider_config["trust_remote_code"] = self.config.get("trust_remote_code", False)
-            provider_config["max_input_length"] = self.config.get("max_input_length", 4096)
-            provider_config["top_p"] = self.config.get("top_p", 1.0)
-            # Add server configuration for client mode
-            provider_config["server_url"] = self.config.get("server_url")
-            provider_config["server_urls"] = self.config.get("server_urls")
-            provider_config["load_balancing"] = self.config.get("load_balancing", "round_robin")
+        if self.provider_name == "vllm":
+            provider_config["router_url"] = self.config.get("router_url", "http://localhost:8000")
 
         # Create provider instance
         if self.provider_name == "openai":
@@ -72,15 +62,15 @@ class LLMManager:
             logger.info(f"Creating Anthropic provider with model: {provider_config['model_name']}")
             return AnthropicLLM(provider_config)
 
-        elif self.provider_name == "hf":
-            from stindex.llm.hf import HuggingFaceLLM
-            logger.info(f"Creating HuggingFace provider with model: {provider_config['model_name']}")
-            return HuggingFaceLLM(provider_config)
+        elif self.provider_name == "vllm":
+            from stindex.llm.vllm_client import VLLMClient
+            logger.info(f"Creating vLLM provider with model: {provider_config['model_name']}")
+            return VLLMClient(provider_config)
 
         else:
             raise ValueError(
                 f"Unsupported provider: {self.provider_name}. "
-                f"Supported providers: openai, anthropic, hf"
+                f"Supported providers: openai, anthropic, vllm"
             )
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:
