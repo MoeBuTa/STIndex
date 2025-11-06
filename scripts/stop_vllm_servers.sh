@@ -1,6 +1,31 @@
 #!/bin/bash
 # STIndex vLLM Server Stop Script
 # Gracefully stops router and all running vLLM backend servers using Python ServerManager
+#
+# Usage:
+#   bash scripts/stop_vllm_servers.sh
+
+# Parse arguments (for --help)
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+            echo "Usage: $0"
+            echo ""
+            echo "Stops all running vLLM servers (router + backends)."
+            echo ""
+            echo "This script gracefully shuts down:"
+            echo "  - Router server"
+            echo "  - All backend vLLM model servers"
+            echo "  - Releases GPU memory"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 echo "============================================================"
 echo "Stopping STIndex vLLM Servers (Router + Backends)"

@@ -1,0 +1,231 @@
+# Health Surveillance Dimension Configuration
+# Defines extractable dimensions for public health monitoring
+
+# Base extraction settings
+extraction:
+  use_few_shot: true
+  enable_thinking: true  # For Qwen3 models with <think> tags
+
+# Document metadata (will be passed at runtime)
+document_metadata:
+  publication_date: null  # ISO 8601 date (e.g., "2025-10-27")
+  source_location: null   # e.g., "Western Australia"
+  source_url: null        # Original URL
+  language: "en"
+
+# Dimension definitions
+dimensions:
+  # Standard spatiotemporal dimensions
+  temporal:
+    enabled: true
+    description: "Extract temporal expressions (dates, times, durations, intervals)"
+    extraction_type: "normalized"  # Will normalize to ISO 8601
+    schema_type: "TemporalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original temporal expression from text"
+      - name: normalized
+        type: string
+        description: "ISO 8601 normalized format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS or interval)"
+      - name: temporal_type
+        type: enum
+        values: ["date", "time", "datetime", "duration", "interval"]
+    normalization:
+      handle_relative: true  # Resolve "Monday" using document_metadata.publication_date
+      default_year: "document"  # Use document year if not specified
+      timezone: "Australia/Perth"  # Default timezone for this case study
+    examples:
+      - text: "Monday 27/10/2025 from 11:00 am to 7:00 pm"
+        normalized: "2025-10-27T11:00:00/2025-10-27T19:00:00"
+        temporal_type: "interval"
+      - text: "March 15, 2022"
+        normalized: "2022-03-15"
+        temporal_type: "date"
+
+  spatial:
+    enabled: true
+    description: "Extract spatial/location mentions with parent regions for disambiguation"
+    extraction_type: "geocoded"  # Will geocode to coordinates
+    schema_type: "SpatialMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original location name from text"
+      - name: location_type
+        type: enum
+        values: ["country", "city", "region", "landmark", "feature", "venue", "address"]
+      - name: parent_region
+        type: string
+        description: "Parent region for disambiguation (e.g., 'Western Australia', 'Washington State')"
+        optional: true
+    disambiguation:
+      use_parent_region: true
+      use_document_context: true  # Extract parent region from full document
+      use_source_location: true   # Prefer document_metadata.source_location
+    examples:
+      - text: "Margaret River Emergency Department"
+        location_type: "venue"
+        parent_region: "Western Australia"
+      - text: "Broome"
+        location_type: "city"
+        parent_region: "Western Australia"
+
+  # Health-specific dimensions
+  event_type:
+    enabled: true
+    description: "Type of health event (exposure site, case report, outbreak alert, etc.)"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original text mentioning the event type"
+      - name: category
+        type: enum
+        values:
+          - "exposure_site"       # Location where disease exposure occurred
+          - "case_report"         # Confirmed case announcement
+          - "outbreak_alert"      # Official outbreak declaration
+          - "risk_warning"        # General risk warning
+          - "surveillance_update" # Regular surveillance data
+          - "vaccination_clinic"  # Vaccination event/location
+          - "other"
+      - name: confidence
+        type: float
+        description: "Confidence score (0.0-1.0)"
+        default: 1.0
+    examples:
+      - text: "exposure site at Margaret River Emergency Department"
+        category: "exposure_site"
+        confidence: 1.0
+      - text: "measles outbreak in the Pilbara"
+        category: "outbreak_alert"
+        confidence: 1.0
+
+  venue_type:
+    enabled: true
+    description: "Type of venue/location where health event occurred"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original venue description"
+      - name: category
+        type: enum
+        values:
+          - "hospital_emergency"    # Emergency department
+          - "hospital_inpatient"    # Hospital ward
+          - "clinic_gp"             # General practice clinic
+          - "clinic_specialist"     # Specialist clinic
+          - "pharmacy"              # Pharmacy/chemist
+          - "aged_care"             # Aged care facility
+          - "childcare"             # Childcare center
+          - "school"                # School
+          - "public_transport"      # Bus, train, etc.
+          - "shopping_center"       # Shopping mall
+          - "entertainment"         # Cinema, theater, etc.
+          - "workplace"             # Office, factory, etc.
+          - "community"             # Community center, church, etc.
+          - "outdoor"               # Park, beach, etc.
+          - "other"
+      - name: venue_name
+        type: string
+        description: "Specific name of the venue"
+        optional: true
+    examples:
+      - text: "Margaret River Emergency Department"
+        category: "hospital_emergency"
+        venue_name: "Margaret River Hospital"
+      - text: "Coles supermarket in Broome"
+        category: "shopping_center"
+        venue_name: "Coles Broome"
+
+  disease:
+    enabled: true
+    description: "Disease or health condition mentioned"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Disease name as mentioned in text"
+      - name: category
+        type: enum
+        values:
+          - "measles"
+          - "influenza"
+          - "covid19"
+          - "pertussis"          # Whooping cough
+          - "meningococcal"
+          - "hepatitis"
+          - "gastroenteritis"
+          - "dengue"
+          - "ross_river_virus"
+          - "other"
+      - name: disease_code
+        type: string
+        description: "ICD-10 or SNOMED code if applicable"
+        optional: true
+    examples:
+      - text: "measles"
+        category: "measles"
+        disease_code: "B05"  # ICD-10
+      - text: "flu"
+        category: "influenza"
+        disease_code: "J11"
+
+  patient_demographics:
+    enabled: false  # Optional dimension, disabled by default
+    description: "Patient demographic information if mentioned (age, vaccination status)"
+    extraction_type: "structured"
+    schema_type: "StructuredMention"
+    fields:
+      - name: age_group
+        type: enum
+        values: ["infant", "child", "adolescent", "adult", "elderly", "unknown"]
+        optional: true
+      - name: vaccination_status
+        type: enum
+        values: ["vaccinated", "unvaccinated", "partially_vaccinated", "unknown"]
+        optional: true
+      - name: additional_info
+        type: string
+        optional: true
+    privacy_note: "This dimension should only be enabled for aggregated/anonymized data"
+
+# Post-processing rules
+post_processing:
+  temporal:
+    - resolve_relative_dates  # Convert "Monday" to ISO 8601 using document date
+    - validate_iso8601        # Ensure valid ISO 8601 format
+
+  spatial:
+    - geocode_locations       # Convert to lat/lon coordinates
+    - validate_coordinates    # Ensure within bounds
+
+  categorical:
+    - normalize_case          # Lowercase for matching
+    - validate_categories     # Ensure in allowed values
+
+# Linking rules (for cross-dimensional relationships)
+linking:
+  enabled: true
+  rules:
+    - name: "event_location_time"
+      description: "Link event_type + spatial + temporal to create complete health event"
+      dimensions: ["event_type", "spatial", "temporal"]
+      output_schema: "HealthEvent"
+
+    - name: "disease_outbreak_location"
+      description: "Link disease + spatial for outbreak mapping"
+      dimensions: ["disease", "spatial"]
+      output_schema: "DiseaseLocation"
+
+# Output format
+output:
+  format: "json"
+  include_raw_llm_output: true
+  include_confidence_scores: true
+  group_by_event: true  # Group linked dimensions into events

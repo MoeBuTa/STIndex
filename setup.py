@@ -34,7 +34,26 @@ def read_requirements():
 
 INSTALL_REQUIRES = read_requirements()
 
-
+# Extra dependencies for case studies
+EXTRAS_REQUIRE = {
+    'case_studies': [
+        'beautifulsoup4>=4.12.0',
+        'unstructured[local-inference]>=0.10.0',
+        'nltk>=3.8.0',  # Required by unstructured
+        'folium>=0.14.0',
+        'geopandas>=0.14.0',
+        'matplotlib>=3.7.0',
+        'seaborn>=0.12.0',
+        'plotly>=5.17.0',
+    ],
+    'dev': [
+        'pytest>=7.4.0',
+        'pytest-cov>=4.1.0',
+        'black>=23.7.0',
+        'flake8>=6.1.0',
+        'mypy>=1.5.0',
+    ],
+}
 
 setup(
     name="stindex",
@@ -53,6 +72,7 @@ setup(
     packages=find_packages(include=['stindex', 'stindex.*']),
     python_requires=">=3.9",
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRE,
     entry_points={
         'console_scripts': [
             'stindex=stindex.cli:main',

@@ -40,11 +40,63 @@ class ServerManager:
         self.router_port = self.router_config.get("port", 8000)
         self.router_url = f"http://localhost:{self.router_port}"
 
-        # Get enabled models
-        self.enabled_models = [
-            model for model in self.server_config.get("models", [])
-            if model.get("enabled", False)
-        ]
+        # Get enabled models from router configuration (source of truth)
+        # Only models listed in router.models will be started
+        router_models = self.router_config.get("models", {})
+        server_models = self.server_config.get("models", [])
+
+        if not router_models:
+            logger.warning("No models configured in router.models (cfg/vllm.yml)")
+
+        # Build enabled_models list by matching router models with server configs
+        self.enabled_models = []
+        for model_name, backend_url in router_models.items():
+            # Find matching server config
+            server_config = None
+            for model_cfg in server_models:
+                if model_cfg.get("name") == model_name:
+                    server_config = model_cfg
+                    break
+
+            if server_config is None:
+                logger.error(
+                    f"Model '{model_name}' is in router.models but has no configuration "
+                    f"in server.models. Skipping."
+                )
+                continue
+
+            # Validate required fields in server config
+            required_fields = ["name", "port"]
+            missing_fields = [f for f in required_fields if f not in server_config]
+            if missing_fields:
+                logger.error(
+                    f"Model '{model_name}' config is missing required fields: {missing_fields}. "
+                    f"Skipping."
+                )
+                continue
+
+            # Validate backend URL port matches server config port
+            # Extract port from backend_url (e.g., "http://localhost:8001" → 8001)
+            import re
+            port_match = re.search(r':(\d+)', backend_url)
+            if port_match:
+                backend_port = int(port_match.group(1))
+                config_port = server_config.get("port")
+                if backend_port != config_port:
+                    logger.warning(
+                        f"Model '{model_name}': router backend URL port ({backend_port}) "
+                        f"doesn't match server config port ({config_port}). "
+                        f"Using server config port {config_port}."
+                    )
+
+            self.enabled_models.append(server_config)
+            logger.debug(f"Enabled model: {model_name} (port {server_config.get('port')})")
+
+        if not self.enabled_models:
+            logger.warning(
+                "No models will be started. Ensure models are configured in both "
+                "router.models and server.models sections of cfg/vllm.yml"
+            )
 
         # Directories
         self.project_root = Path.cwd()
@@ -497,7 +549,11 @@ class ServerManager:
 
         # Check if no servers are configured
         if not self.enabled_models:
-            logger.error("No enabled models found in config. Enable at least one model in cfg/vllm.yml")
+            logger.error(
+                "No enabled models found in config. "
+                "Ensure models are configured in both router.models and server.models "
+                "sections of cfg/vllm.yml"
+            )
             return False
 
         # Start backends first

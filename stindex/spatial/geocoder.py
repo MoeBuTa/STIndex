@@ -5,16 +5,21 @@ Based on research from:
 - geoparsepy's evidential disambiguation approach
 - "nearby parent region" and "nearby locations" strategies
 - Performance optimization with caching
+
+Includes Google Maps API fallback for better geocoding accuracy.
 """
 
 import hashlib
 import json
+import os
+import re
 import time
 from typing import Optional, Tuple, List, Dict
 from pathlib import Path
 
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+from loguru import logger
 
 from stindex.utils.constants import (
     GEOCODE_CACHE_DIR,
@@ -22,6 +27,14 @@ from stindex.utils.constants import (
     GEOCODER_REQUEST_TIMEOUT,
     DEFAULT_USER_AGENT,
 )
+
+# Google Maps API (optional)
+try:
+    import googlemaps
+    GOOGLE_MAPS_AVAILABLE = True
+except ImportError:
+    GOOGLE_MAPS_AVAILABLE = False
+    logger.debug("googlemaps package not found. Install with: pip install googlemaps for better geocoding")
 
 
 class GeocodeCache:
@@ -124,6 +137,7 @@ class GeocoderService:
         enable_cache: bool = True,
         cache_dir: Optional[str] = None,
         rate_limit: Optional[float] = None,
+        google_api_key: Optional[str] = None,
     ):
         """
         Initialize GeocoderService.
@@ -133,6 +147,7 @@ class GeocoderService:
             enable_cache: Enable caching
             cache_dir: Directory for cache files
             rate_limit: Minimum seconds between requests (uses default from constants if None)
+            google_api_key: Google Maps API key (optional, for fallback geocoding)
         """
         user_agent = user_agent or DEFAULT_USER_AGENT
         rate_limit = rate_limit or NOMINATIM_RATE_LIMIT
@@ -154,12 +169,77 @@ class GeocoderService:
         # Load spaCy model for parent region extraction
         self._nlp = None  # Lazy load on first use
 
+        # Initialize Google Maps API (optional fallback)
+        self.gmaps_client = None
+        if GOOGLE_MAPS_AVAILABLE:
+            api_key = google_api_key or os.getenv('GOOGLE_MAPS_API_KEY')
+            if api_key:
+                try:
+                    self.gmaps_client = googlemaps.Client(key=api_key)
+                    logger.info("✓ Google Maps API enabled for geocoding fallback")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize Google Maps API: {e}")
+            else:
+                logger.debug("Google Maps API key not provided (optional). Set GOOGLE_MAPS_API_KEY env var for better geocoding.")
+
     def _rate_limit_wait(self):
         """Enforce rate limiting."""
         elapsed = time.time() - self.last_request_time
         if elapsed < self.rate_limit:
             time.sleep(self.rate_limit - elapsed)
         self.last_request_time = time.time()
+
+    @staticmethod
+    def _extract_city_from_venue(venue_name: str) -> Optional[str]:
+        """
+        Extract city/location name from venue name.
+
+        Examples:
+        - "Margaret River Emergency Department" → "Margaret River"
+        - "Broome Regional Hospital" → "Broome"
+        - "Seattle Children's Hospital Emergency Department" → "Seattle"
+        - "Perth CBD Medical Centre" → "Perth"
+
+        Args:
+            venue_name: Full venue name
+
+        Returns:
+            Extracted city name or None
+        """
+        if not venue_name:
+            return None
+
+        # Common venue type suffixes to remove
+        suffixes = [
+            r'\bEmergency Department\b',
+            r'\bRegional Hospital\b',
+            r'\bCommunity Hospital\b',
+            r'\bMedical Centre\b',
+            r'\bMedical Center\b',
+            r'\bHealth Centre\b',
+            r'\bHealth Center\b',
+            r'\bClinic\b',
+            r'\bHospital\b',
+            r'\bCBD\b',
+            r'\bDistrict\b',
+            r"Children's\b",
+        ]
+
+        city_name = venue_name
+        for suffix in suffixes:
+            city_name = re.sub(suffix, '', city_name, flags=re.IGNORECASE)
+
+        # Clean up
+        city_name = city_name.strip()
+        city_name = re.sub(r"'s\b", '', city_name)  # Remove possessive
+
+        # Take first significant part (before commas or dashes)
+        if city_name:
+            parts = re.split(r'[,\-]', city_name)
+            if parts and parts[0].strip():
+                return parts[0].strip()
+
+        return None
 
     def get_coordinates(
         self,
@@ -168,14 +248,14 @@ class GeocoderService:
         parent_region: Optional[str] = None,
     ) -> Optional[Tuple[float, float]]:
         """
-        Get coordinates for a location with context-aware disambiguation.
+        Get coordinates for a location with context-aware disambiguation and Google Maps fallback.
 
-        Disambiguation strategy (inspired by geoparsepy):
+        Fallback strategy:
         1. Check cache first
-        2. If parent region provided (from LLM), use it
-        3. If no parent region, extract from context using spaCy
-        4. If context locations exist, prefer nearby results
-        5. Use Nominatim's ranking as fallback
+        2. Try Nominatim with full location name
+        3. If fails, extract city from venue name and try Nominatim
+        4. If fails and Google Maps available, try Google Maps with full name
+        5. If fails, try Google Maps with extracted city
 
         Args:
             location: Location name
@@ -192,7 +272,6 @@ class GeocoderService:
                 return (cached['lat'], cached['lon'])
 
         # Extract parent region from context if not provided
-        # This serves as fallback when LLM fails to extract parent_region
         context_parent_region = None
         if context:
             context_parent_region = self._extract_parent_region(context)
@@ -203,35 +282,116 @@ class GeocoderService:
         # Prepare search query with disambiguation
         search_query = self._prepare_search_query(location, final_parent_region)
 
-        # Geocode with retry
+        # Level 1: Try Nominatim with full location name
         result = self._geocode_with_retry(search_query)
 
         if result:
             coords = (result.latitude, result.longitude)
-
-            # Apply nearby location scoring if we have context
-            if self.location_context:
-                result = self._apply_nearby_scoring(result, search_query)
-                if result:
-                    coords = (result.latitude, result.longitude)
-
-            # Cache result
-            if self.enable_cache and self.cache:
-                self.cache.set(
-                    location,
-                    {'lat': coords[0], 'lon': coords[1], 'address': result.address},
-                    context
-                )
-
-            # Update location context for future disambiguations
-            self.location_context.append(coords)
-            # Keep only recent 10 locations
-            if len(self.location_context) > 10:
-                self.location_context.pop(0)
-
+            logger.debug(f"Geocoded '{location}' with Nominatim (full name)")
+            self._cache_and_update_context(location, coords, result.address, context)
             return coords
 
+        # Level 2: Extract city from venue name and try Nominatim
+        city = self._extract_city_from_venue(location)
+        if city and city != location:
+            logger.debug(f"Extracted city '{city}' from venue '{location}'")
+            city_query = self._prepare_search_query(city, final_parent_region)
+            result = self._geocode_with_retry(city_query)
+
+            if result:
+                coords = (result.latitude, result.longitude)
+                logger.info(f"✓ Geocoded '{location}' via city extraction → '{city}'")
+                self._cache_and_update_context(location, coords, result.address, context)
+                return coords
+
+        # Level 3 & 4: Try Google Maps API if available
+        if self.gmaps_client:
+            coords = self._try_google_maps(location, city, final_parent_region)
+            if coords:
+                self._cache_and_update_context(location, coords, None, context)
+                return coords
+
+        logger.warning(f"All geocoding attempts failed for: {location}")
         return None
+
+    def _try_google_maps(
+        self,
+        location: str,
+        city: Optional[str],
+        parent_region: Optional[str]
+    ) -> Optional[Tuple[float, float]]:
+        """
+        Try geocoding with Google Maps API.
+
+        Args:
+            location: Full location name
+            city: Extracted city name (if available)
+            parent_region: Parent region hint
+
+        Returns:
+            Tuple of (latitude, longitude) or None
+        """
+        # Determine region bias from parent_region
+        region_code = None
+        if parent_region:
+            parent_lower = parent_region.lower()
+            if 'australia' in parent_lower or 'western australia' in parent_lower:
+                region_code = 'au'
+            elif 'usa' in parent_lower or 'united states' in parent_lower or 'washington state' in parent_lower:
+                region_code = 'us'
+
+        # Try with full location name first
+        try:
+            query = self._prepare_search_query(location, parent_region)
+            logger.debug(f"Google Maps geocoding: {query}")
+            results = self.gmaps_client.geocode(query, region=region_code)
+
+            if results and len(results) > 0:
+                lat = results[0]['geometry']['location']['lat']
+                lon = results[0]['geometry']['location']['lng']
+                logger.info(f"✓ Geocoded '{location}' with Google Maps (full name)")
+                return (lat, lon)
+        except Exception as e:
+            logger.debug(f"Google Maps failed for full name '{location}': {e}")
+
+        # Try with extracted city if available
+        if city and city != location:
+            try:
+                query = self._prepare_search_query(city, parent_region)
+                logger.debug(f"Google Maps geocoding city: {query}")
+                results = self.gmaps_client.geocode(query, region=region_code)
+
+                if results and len(results) > 0:
+                    lat = results[0]['geometry']['location']['lat']
+                    lon = results[0]['geometry']['location']['lng']
+                    logger.info(f"✓ Geocoded '{location}' with Google Maps via city '{city}'")
+                    return (lat, lon)
+            except Exception as e:
+                logger.debug(f"Google Maps failed for city '{city}': {e}")
+
+        return None
+
+    def _cache_and_update_context(
+        self,
+        location: str,
+        coords: Tuple[float, float],
+        address: Optional[str],
+        context: Optional[str]
+    ):
+        """Cache result and update location context."""
+        # Cache result
+        if self.enable_cache and self.cache:
+            self.cache.set(
+                location,
+                {'lat': coords[0], 'lon': coords[1], 'address': address or ''},
+                context
+            )
+
+        # Update location context for future disambiguations
+        self.location_context.append(coords)
+        # Keep only recent 10 locations
+        if len(self.location_context) > 10:
+            self.location_context.pop(0)
 
     def _extract_parent_region(self, context: str) -> Optional[str]:
         """

@@ -1,6 +1,36 @@
 #!/bin/bash
 # STIndex vLLM Server Status Check Script
 # Checks health of router and all running vLLM backend servers
+#
+# Usage:
+#   bash scripts/check_vllm_servers.sh
+
+# Parse arguments (for --help)
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+            echo "Usage: $0"
+            echo ""
+            echo "Checks status and health of all vLLM servers."
+            echo ""
+            echo "Displays:"
+            echo "  - Router status and health"
+            echo "  - Backend server status (per model)"
+            echo "  - GPU utilization and memory usage"
+            echo "  - Recent log entries"
+            echo ""
+            echo "Exit codes:"
+            echo "  0 - All servers running and healthy"
+            echo "  1 - No servers running or some unhealthy"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 PID_DIR="logs/vllm/pids"
 LOG_DIR="logs/vllm"

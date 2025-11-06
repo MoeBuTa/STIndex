@@ -207,6 +207,28 @@ data/output/evaluations/
     └── eval_{timestamp}_{config}.summary.json # Aggregate metrics
 ```
 
+
+## Slurm
+
+```bash
+sinfo -o "%20N %10P %10T %15G"
+salloc -p gpu -n 16 --mem=128G --gres=gpu:v100:1
+salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:1
+salloc -p data-inst -n 48 --mem=256G --gres=gpu:h100:2
+```
+
+```bash
+accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag train_reasoner_sft
+accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag train_reasoner
+accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag evaluate_reasoner
+```
+
+```bash
+squeue -u $USER
+watch -n 1 "srun --jobid=43462 -n1 bash -lc 'nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu --format=csv,noheader,nounits'"
+
+```
+
 ## License
 
 MIT License

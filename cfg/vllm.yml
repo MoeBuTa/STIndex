@@ -8,7 +8,7 @@ llm:
   # Model name/identifier (HuggingFace model ID or local path)
   # This is the DEFAULT model if not specified via --model argument
   # Can be overridden at runtime: stindex extract "text" --model "Qwen/Qwen3-8B"
-  model_name: Qwen/Qwen3-0.6B
+  model_name: Qwen/Qwen3-8B
 
   # Generation parameters
   temperature: 0.0

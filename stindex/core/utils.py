@@ -2,28 +2,33 @@
 
 import json
 import re
-from typing import Type, TypeVar
+from typing import Dict, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
 
-def extract_json_from_text(text: str, model: Type[T]) -> T:
+def extract_json_from_text(
+    text: str,
+    model: Optional[Type[T]] = None,
+    return_dict: bool = False
+) -> Union[T, Dict]:
     """
     Extract and validate JSON from LLM output text.
 
     Approach:
     1. Find the LAST complete JSON object in text (model may generate multiple attempts)
     2. Parse it
-    3. Validate with Pydantic model
+    3. Validate with Pydantic model (if provided)
 
     Args:
         text: Raw LLM output text (may contain markdown, extra text, etc.)
-        model: Pydantic model class for validation
+        model: Pydantic model class for validation (optional)
+        return_dict: If True, return dict instead of validated model
 
     Returns:
-        Validated Pydantic model instance
+        Validated Pydantic model instance or dict
 
     Raises:
         ValueError: If no valid JSON found or validation fails
@@ -88,6 +93,11 @@ def extract_json_from_text(text: str, model: Type[T]) -> T:
     for json_str in reversed(json_candidates):
         try:
             data = json.loads(json_str)
+
+            # Return dict if requested or model not provided
+            if return_dict or model is None:
+                return data
+
             # Validate with Pydantic
             return model(**data)
         except (json.JSONDecodeError, ValidationError) as e:
