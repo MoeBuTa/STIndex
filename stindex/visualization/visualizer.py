@@ -6,6 +6,7 @@ analysis reports from extraction results.
 """
 
 import json
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -81,6 +82,8 @@ class STIndexVisualizer:
         """
         Generate comprehensive visualization report.
 
+        Automatically creates a zip archive containing the HTML report and all source files.
+
         Args:
             results: Extraction results (list of dicts)
             results_file: Path to results JSON file (if results not provided)
@@ -89,7 +92,7 @@ class STIndexVisualizer:
             dimensions: List of dimensions to visualize (None = all)
 
         Returns:
-            Path to generated HTML report
+            Path to generated zip file
         """
         logger.info("=" * 80)
         logger.info("STIndex Visualization")
@@ -107,7 +110,7 @@ class STIndexVisualizer:
 
         # Setup output directory
         if output_dir is None:
-            output_dir = "data/output/visualizations"
+            output_dir = "data/visualizations"
 
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -122,7 +125,7 @@ class STIndexVisualizer:
         source_dir.mkdir(exist_ok=True)
 
         # Step 1: Generate statistical summary
-        logger.info("\n[1/4] Generating statistical summary...")
+        logger.info("\n[1/5] Generating statistical summary...")
         summary = self.summary_generator.generate_summary(results)
 
         # Save summary JSON
@@ -133,7 +136,7 @@ class STIndexVisualizer:
         # Step 2: Generate plots
         plot_files = []
         if self.plot_generator:
-            logger.info("\n[2/4] Generating statistical plots...")
+            logger.info("\n[2/5] Generating statistical plots...")
             try:
                 plot_files = self.plot_generator.generate_plots(
                     results=results,
@@ -146,7 +149,7 @@ class STIndexVisualizer:
         # Step 3: Generate map
         map_file = None
         if self.map_generator:
-            logger.info("\n[3/4] Generating interactive map...")
+            logger.info("\n[3/5] Generating interactive map...")
             try:
                 map_file = self.map_generator.generate_map(
                     results=results,
@@ -160,7 +163,7 @@ class STIndexVisualizer:
                 logger.error(f"Map generation failed: {e}")
 
         # Step 4: Generate HTML report
-        logger.info("\n[4/4] Generating HTML report...")
+        logger.info("\n[4/5] Generating HTML report...")
         report_path = output_path / report_name
 
         try:
@@ -175,11 +178,25 @@ class STIndexVisualizer:
             logger.error(f"HTML report generation failed: {e}")
             raise
 
+        # Step 5: Create zip file
+        logger.info("\n[5/5] Creating zip archive...")
+        try:
+            zip_path = self._create_zip_archive(
+                report_path=report_path,
+                source_dir=source_dir,
+                output_dir=output_path
+            )
+        except Exception as e:
+            logger.error(f"Zip creation failed: {e}")
+            # Fall back to returning HTML path if zip fails
+            zip_path = str(report_path)
+
         logger.info("\n" + "=" * 80)
         logger.info("Visualization Complete!")
         logger.info("=" * 80)
         logger.info(f"\n✓ HTML Report: {report_path}")
         logger.info(f"  Source files: {source_dir}")
+        logger.info(f"📦 Zip Archive: {zip_path}")
         logger.info(f"\n📊 Summary:")
         logger.info(f"  - Total chunks: {summary['overview']['total_chunks']}")
         logger.info(f"  - Success rate: {summary['overview']['success_rate']:.1f}%")
@@ -187,7 +204,7 @@ class STIndexVisualizer:
         logger.info(f"  - Plots generated: {len(plot_files)}")
         logger.info(f"  - Map: {'Yes' if map_file else 'No'}")
 
-        return str(report_path)
+        return str(zip_path)
 
     def visualize_from_file(
         self,
@@ -211,6 +228,48 @@ class STIndexVisualizer:
             output_dir=output_dir,
             **kwargs
         )
+
+    def _create_zip_archive(
+        self,
+        report_path: Path,
+        source_dir: Path,
+        output_dir: Path
+    ) -> str:
+        """
+        Create zip archive containing HTML report and source files.
+
+        Args:
+            report_path: Path to HTML report file
+            source_dir: Path to source directory with assets
+            output_dir: Output directory for zip file
+
+        Returns:
+            Path to created zip file
+        """
+        # Create zip file name (same as HTML report, but with .zip extension)
+        zip_name = report_path.stem + ".zip"
+        zip_path = output_dir / zip_name
+
+        logger.info(f"Creating zip archive: {zip_path}")
+
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add HTML report
+            zipf.write(report_path, report_path.name)
+            logger.debug(f"  Added: {report_path.name}")
+
+            # Add all files from source directory
+            file_count = 0
+            for file_path in source_dir.rglob('*'):
+                if file_path.is_file():
+                    # Create relative path in zip (preserve directory structure)
+                    arcname = source_dir.name / file_path.relative_to(source_dir)
+                    zipf.write(file_path, arcname)
+                    file_count += 1
+                    logger.debug(f"  Added: {arcname}")
+
+            logger.info(f"✓ Zip archive created with {file_count + 1} files")
+
+        return str(zip_path)
 
     def _load_results(self, results_file: str) -> List[Dict[str, Any]]:
         """Load extraction results from JSON file."""

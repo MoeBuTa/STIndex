@@ -32,13 +32,14 @@ docs = [
     InputDocument.from_text("Your text here")
 ]
 
-# Run full pipeline: preprocessing → extraction → visualization
+# Run full pipeline: preprocessing → extraction → visualization (default)
 pipeline = STIndexPipeline(
     dimension_config="dimensions",
     output_dir="data/output"
 )
-results = pipeline.run_pipeline(docs, visualize=True)
-# Generates: data/output/visualizations/{timestamp}.html
+results = pipeline.run_pipeline(docs)
+# Automatically generates zip archive: data/visualizations/stindex_report_{timestamp}.zip
+# Contains: HTML report + all plots, maps, and source files
 ```
 
 ### Python API (Direct Extraction)
@@ -254,16 +255,6 @@ stindex evaluate --llm-config openai
 stindex evaluate --sample-limit 10
 ```
 
-### Distributed Evaluation (Multi-GPU)
-
-```bash
-# Using convenience script
-bash scripts/eval_distributed.sh
-
-# Or directly with Accelerate
-accelerate launch --config cfg/deepspeed_zero2.yaml eval/evaluate.py --distributed
-```
-
 ### Output Structure
 
 Results are organized by dataset and model:
@@ -284,11 +275,6 @@ salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:1
 salloc -p data-inst -n 48 --mem=256G --gres=gpu:h100:2
 ```
 
-```bash
-accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag train_reasoner_sft
-accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag train_reasoner
-accelerate launch --config_file configs/deepspeed_zero2.yaml -m mcrag evaluate_reasoner
-```
 
 ```bash
 squeue -u $USER

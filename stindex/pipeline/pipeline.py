@@ -103,7 +103,8 @@ class STIndexPipeline:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.chunks_dir = self.output_dir / "chunks"
         self.results_dir = self.output_dir / "results"
-        self.viz_dir = self.output_dir / "visualizations"
+        # Use data/visualizations for viz output (separate from other data)
+        self.viz_dir = Path("data/visualizations")
 
         if save_intermediate:
             self.chunks_dir.mkdir(parents=True, exist_ok=True)
@@ -113,15 +114,17 @@ class STIndexPipeline:
         self,
         input_docs: List[InputDocument],
         save_results: bool = True,
-        visualize: bool = False
+        visualize: bool = True
     ) -> List[Dict[str, Any]]:
         """
-        Run full pipeline: preprocessing → extraction → (optional visualization).
+        Run full pipeline: preprocessing → extraction → visualization.
+
+        Visualization is enabled by default and creates a zip archive with HTML report and all assets.
 
         Args:
             input_docs: List of InputDocument objects
             save_results: Save extraction results to file
-            visualize: Generate visualizations
+            visualize: Generate visualizations (default: True, creates zip archive)
 
         Returns:
             List of extraction results (one per chunk)
@@ -264,6 +267,8 @@ class STIndexPipeline:
         """
         Run visualization only (requires extraction results).
 
+        Automatically creates a zip archive containing the HTML report and all source files.
+
         Args:
             results: Extraction results or path to results file
             output_dir: Output directory for visualizations
@@ -273,7 +278,7 @@ class STIndexPipeline:
             category_dim: Name of categorical dimension for color coding
 
         Returns:
-            Path to generated HTML report
+            Path to generated zip file
         """
         logger.info("=" * 80)
         logger.info("STIndex Pipeline: Visualization Mode")
@@ -296,21 +301,21 @@ class STIndexPipeline:
         try:
             if isinstance(results, str):
                 # Results file path provided
-                report_path = visualizer.visualize(
+                zip_path = visualizer.visualize(
                     results_file=results,
                     output_dir=str(viz_dir),
                     animated_map=animated_map
                 )
             else:
                 # Results list provided
-                report_path = visualizer.visualize(
+                zip_path = visualizer.visualize(
                     results=results,
                     output_dir=str(viz_dir),
                     animated_map=animated_map
                 )
 
-            logger.info(f"\n✓ Visualization complete: {report_path}")
-            return report_path
+            logger.info(f"\n✓ Visualization complete: {zip_path}")
+            return zip_path
 
         except Exception as e:
             logger.error(f"Visualization failed: {e}")
