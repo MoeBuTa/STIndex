@@ -1,6 +1,6 @@
 # STIndex - Spatiotemporal Information Extraction
 
-STIndex is a spatiotemporal information extraction system that uses LLMs to extract and normalize temporal expressions (dates, times, durations) and spatial entities (locations) from unstructured text, with geocoding support.
+STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features end-to-end pipeline with preprocessing, extraction, and visualization.
 
 ## Quick Start
 
@@ -10,20 +10,38 @@ STIndex is a spatiotemporal information extraction system that uses LLMs to extr
 pip install -e .
 ```
 
-### Basic Usage
+### Basic Extraction
 
 ```bash
 # Extract spatiotemporal entities
 stindex extract "On March 15, 2022, a cyclone hit Broome, Western Australia."
 
-# Run evaluation on a dataset
-stindex evaluate
-
 # Use specific LLM provider
 stindex extract "Text here..." --config openai  # or anthropic, hf
 ```
 
-### Python API
+### End-to-End Pipeline (NEW in v0.4.0)
+
+```python
+from stindex import InputDocument, STIndexPipeline
+
+# Create input documents (URL, file, or text)
+docs = [
+    InputDocument.from_url("https://example.com/article"),
+    InputDocument.from_file("/path/to/document.pdf"),
+    InputDocument.from_text("Your text here")
+]
+
+# Run full pipeline: preprocessing → extraction → visualization
+pipeline = STIndexPipeline(
+    dimension_config="dimensions",
+    output_dir="data/output"
+)
+results = pipeline.run_pipeline(docs, visualize=True)
+# Generates: data/output/visualizations/{timestamp}.html
+```
+
+### Python API (Direct Extraction)
 
 ```python
 from stindex import STIndexExtractor
@@ -48,13 +66,29 @@ if result.extraction_config:
 
 ## Features
 
-### Core Capabilities
-- **Single LLM Call**: Unified extraction of both temporal and spatial information
+### Core Capabilities (v0.4.0)
+- **End-to-End Pipeline**: Preprocessing → Extraction → Visualization in single workflow
+- **Generic Preprocessing**: Web scraping, document parsing (HTML/PDF/DOCX/TXT), intelligent chunking
+- **Multi-Dimensional Extraction**: Temporal, spatial, and custom domain-specific dimensions
+- **Comprehensive Visualization**: Interactive maps, statistical plots, HTML reports
+- **Multiple Input Modes**: URLs, file paths, or raw text with metadata
+- **4 Execution Modes**: Full pipeline, preprocessing only, extraction only, visualization only
+
+### Extraction Capabilities
+- **Single LLM Call**: Unified extraction of multiple dimensions
 - **Multiple Providers**: OpenAI (GPT-4), Anthropic (Claude), and HuggingFace (Qwen, Llama, etc.)
 - **Multi-GPU Support**: Automatic load balancing across multiple GPU servers for high throughput
 - **Batch Processing**: Efficient batch API for evaluations and bulk processing
 - **Structured Outputs**: Pydantic models with automatic validation
 - **ISO 8601 Normalization**: Standardized temporal representations
+
+### Visualization Features (NEW in v0.4.0)
+- **Interactive Maps**: Animated timeline maps with Folium and TimestampedGeoJson
+- **Statistical Plots**: Bar charts, pie charts, temporal distributions (matplotlib, seaborn, plotly)
+- **HTML Reports**: Professional reports with embedded visualizations
+- **Summary Statistics**: Temporal coverage, spatial coverage, extraction metrics
+- **Multi-Dimensional Analysis**: Cross-dimensional plots and correlations
+- **Output Structure**: `{timestamp}.html` + `{timestamp}_source/` directory
 
 ### Advanced Features
 - **Thinking Model Support**: Handles reasoning models (Qwen3-4B-Thinking) with `<think>` tags
@@ -135,23 +169,43 @@ extractor = STIndexExtractor(config_path="openai")
 ```
 stindex/
 ├── core/                   # Core extraction logic
-│   ├── extraction.py       # STIndexExtractor (main API)
+│   ├── extraction.py       # STIndexExtractor (legacy API)
+│   ├── dimensional_extraction.py  # DimensionalExtractor (multi-dimensional)
 │   └── utils.py           # JSON extraction utilities
+├── preprocessing/          # Preprocessing module (NEW v0.4.0)
+│   ├── input_models.py    # InputDocument, DocumentChunk models
+│   ├── scraping.py        # WebScraper (rate-limited web scraping)
+│   ├── parsing.py         # DocumentParser (HTML/PDF/DOCX/TXT)
+│   ├── chunking.py        # DocumentChunker (sliding window, paragraph, semantic)
+│   └── processor.py       # Preprocessor (main orchestrator)
+├── pipeline/               # Pipeline orchestration (NEW v0.4.0)
+│   └── pipeline.py        # STIndexPipeline (end-to-end orchestrator)
+├── visualization/          # Visualization module (NEW v0.4.0)
+│   ├── visualizer.py      # STIndexVisualizer (main orchestrator)
+│   ├── map_generator.py   # MapGenerator (interactive Folium maps)
+│   ├── plot_generator.py  # PlotGenerator (statistical plots)
+│   ├── statistical_summary.py  # StatisticalSummary
+│   └── html_report.py     # HTMLReportGenerator
 ├── llm/                    # LLM provider implementations
 │   ├── manager.py          # LLM factory
 │   ├── openai.py          # OpenAI provider
 │   ├── anthropic.py       # Anthropic provider
-│   ├── hf.py              # HuggingFace client
+│   ├── hf.py              # HuggingFace client (multi-GPU load balancing)
 │   ├── prompts/           # Prompt templates
 │   └── response/          # Pydantic models
 ├── server/                 # Server implementations
 │   ├── hf_server.py       # HuggingFace FastAPI server
 │   └── mcp_server.py      # MCP server for Claude Desktop
-├── spatio/                 # Spatial processing & geocoding
+├── spatial/                # Spatial processing & geocoding
 ├── temporal/               # Temporal processing
 ├── exe/                    # CLI execution logic
 │   └── evaluate.py        # Evaluation system
 └── cli.py                  # Typer CLI interface
+
+case_studies/               # Example applications
+└── public_health/         # Health surveillance case study
+    └── scripts/
+        └── run_case_study.py  # Uses generic pipeline
 
 eval/                       # Evaluation scripts
 ├── evaluate.py            # Main evaluation (sequential/distributed)
@@ -165,7 +219,20 @@ scripts/                    # Helper scripts
 
 ## Recent Updates
 
-### Latest Improvements (v0.1.0)
+### v0.4.0 (November 2025): Complete Pipeline & Visualization
+- **Generic Preprocessing Module**: Web scraping, document parsing, intelligent chunking
+- **End-to-End Pipeline**: Full workflow from URLs/files/text to visualizations
+- **Comprehensive Visualization**: Interactive maps, statistical plots, HTML reports
+- **4 Execution Modes**: Full pipeline, preprocessing only, extraction only, visualization only
+- **Unified Input Model**: Support for URLs, files, and text with single API
+- **Case Study Simplification**: Generic modules replace case-specific code
+
+### v0.3.0 (October 2024): Multi-Dimensional Extraction
+- **Dimensional Framework**: Extract custom domain-specific dimensions
+- **YAML Configuration**: Define dimensions via configuration files
+- **Flexible Schema**: Support for temporal, spatial, categorical, and custom dimensions
+
+### v0.2.0 (October 2024): Architecture Refactor
 - **Smart JSON Extraction**: Handles thinking models that generate reasoning before/after JSON
 - **Raw Output Recording**: Always captures LLM output for debugging failed extractions
 - **Evaluation Fixes**: Proper temporal/spatial matching with configurable modes

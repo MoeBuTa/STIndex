@@ -75,55 +75,84 @@ Handles relative temporal expressions grounded in document metadata:
 ```
 case_studies/public_health/
 ├── README.md                         # This file
-├── data/
-│   ├── raw/                          # Raw HTML/JSON from sources
-│   ├── processed/                    # Parsed and chunked documents
-│   └── results/                      # Extraction results
-├── preprocessing/
-│   ├── scrapers.py                   # Web scrapers for health alerts
-│   ├── parsers.py                    # Document parsing with unstructured
-│   └── chunkers.py                   # Document chunking for long texts
+├── data/                             # Data directory (gitignored)
+│   ├── chunks/                       # Preprocessed document chunks
+│   ├── results/                      # Extraction results
+│   └── visualizations/               # Generated visualizations
 ├── extraction/
-│   ├── config/
-│   │   └── health_dimensions.yml    # Health-specific dimension config
-│   └── extract_health_events.py     # Main extraction script
-├── evaluation/
-│   ├── ground_truth.json             # Manually annotated ground truth
-│   ├── evaluate_events.py            # Event-level evaluation metrics
-│   └── baselines.py                  # TopoBERT + pyTLEX baseline
-├── visualization/
-│   ├── map_generator.py              # Folium map generation
-│   └── timeline_animator.py          # Animated timeline
-├── notebooks/
-│   ├── 01_data_collection.ipynb      # Data scraping demo
-│   ├── 02_extraction_demo.ipynb      # Extraction walkthrough
-│   └── 03_visualization.ipynb        # Interactive visualization
+│   └── config/
+│       └── health_dimensions.yml    # Health-specific dimension config
 └── scripts/
-    ├── run_measles_demo.py           # End-to-end measles demo
-    └── run_evaluation.py             # Full evaluation pipeline
+    ├── run_case_study.py             # Main case study script
+    └── run_complete_pipeline.sh      # Shell script wrapper
 ```
+
+**Note**: Preprocessing and visualization are handled by STIndex core modules (`stindex.preprocessing` and `stindex.visualization`). No case-specific code needed.
 
 ## Installation
 
 ```bash
-# Install STIndex
+# Install STIndex with dependencies
 pip install -e .
 
-# Install case study dependencies
-pip install -e ".[case_studies]"
+# Install optional dependencies for advanced parsing
+pip install 'unstructured[local-inference]'
 ```
 
 ## Quick Start
 
+### Run Full Pipeline
+
 ```bash
-# 1. Scrape health alerts
-python case_studies/public_health/scripts/run_data_collection.py
+# From STIndex root directory
+python case_studies/public_health/scripts/run_case_study.py
+```
 
-# 2. Run extraction
-python case_studies/public_health/scripts/run_measles_demo.py
+This will:
+1. **Preprocess**: Scrape health surveillance pages, parse HTML, chunk documents
+2. **Extract**: Extract temporal, spatial, and health-specific dimensions
+3. **Visualize**: Generate interactive maps, plots, and HTML report
 
-# 3. Generate visualization
-python case_studies/public_health/visualization/map_generator.py
+### Output Structure
+
+```
+case_studies/public_health/data/
+├── chunks/
+│   └── preprocessed_chunks.json          # Document chunks
+├── results/
+│   └── extraction_results.json           # Extraction results
+└── visualizations/
+    ├── stindex_report_{timestamp}.html   # Main HTML report
+    └── stindex_report_{timestamp}_source/
+        ├── summary.json                   # Statistical summary
+        ├── map.html                       # Interactive map
+        └── *.png                          # Statistical plots
+```
+
+### Python API Example
+
+```python
+from stindex import InputDocument, STIndexPipeline
+
+# Define input documents
+docs = [
+    InputDocument.from_url(
+        url="https://www.health.wa.gov.au/news/2025/measles-alert",
+        metadata={"source": "WA Health", "year": 2025}
+    ),
+    InputDocument.from_url(
+        url="https://doh.wa.gov/you-and-your-family/illness-and-disease-z/measles/measles-cases-washington-state-2025",
+        metadata={"source": "WA State DOH", "year": 2025}
+    ),
+]
+
+# Run pipeline
+pipeline = STIndexPipeline(
+    dimension_config="case_studies/public_health/extraction/config/health_dimensions",
+    output_dir="case_studies/public_health/data"
+)
+
+results = pipeline.run_pipeline(docs, save_results=True, visualize=True)
 ```
 
 ## Evaluation Metrics

@@ -4,10 +4,10 @@ STIndex: Spatiotemporal Index Extraction from Unstructured Text
 A simple Python library for extracting and normalizing spatiotemporal information from text.
 Uses native LLM providers for clean, type-safe interactions.
 
-v0.3.0: Added multi-dimensional extraction framework for domain-specific extraction.
+v0.4.0: Added generic preprocessing module and end-to-end pipeline.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "STIndex Team"
 __license__ = "MIT"
 
@@ -16,6 +16,15 @@ from stindex.core.extraction import STIndexExtractor
 
 # New multi-dimensional API
 from stindex.core.dimensional_extraction import DimensionalExtractor
+
+# Preprocessing API
+from stindex.preprocessing import DocumentChunk, InputDocument, Preprocessor
+
+# Pipeline API
+from stindex.pipeline import STIndexPipeline
+
+# Visualization API
+from stindex.visualization import STIndexVisualizer
 
 # Response models (legacy)
 from stindex.llm.response.models import (
@@ -45,6 +54,14 @@ __all__ = [
     # Main API
     "STIndexExtractor",  # Legacy extractor (temporal + spatial only)
     "DimensionalExtractor",  # New multi-dimensional extractor
+    # Preprocessing API
+    "Preprocessor",  # Generic preprocessing orchestrator
+    "InputDocument",  # Input document model
+    "DocumentChunk",  # Document chunk model
+    # Pipeline API
+    "STIndexPipeline",  # End-to-end pipeline orchestrator
+    # Visualization API
+    "STIndexVisualizer",  # Visualization orchestrator
     # Legacy Models
     "ExtractionResult",
     "SpatioTemporalResult",

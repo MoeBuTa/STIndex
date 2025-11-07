@@ -1,47 +1,32 @@
 """
-Document chunking utilities for long health alerts.
+Document chunking module.
 
 Splits long documents into manageable chunks while preserving context
-for accurate spatiotemporal extraction.
+for accurate extraction.
 """
 
-import json
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from loguru import logger
 
-
-@dataclass
-class DocumentChunk:
-    """Container for a document chunk."""
-
-    chunk_id: str  # e.g., "doc1_chunk_0"
-    chunk_index: int
-    total_chunks: int
-    text: str
-    word_count: int
-    char_count: int
-
-    # Context preservation
-    document_title: str
-    document_metadata: Dict[str, Any]
-    previous_chunk_summary: Optional[str] = None  # Summary of previous chunk
-
-    # Character positions in original document
-    start_char: int = 0
-    end_char: int = 0
+from stindex.preprocessing.input_models import DocumentChunk, ParsedDocument
 
 
 class DocumentChunker:
-    """Chunks long documents for extraction."""
+    """
+    Chunks long documents for extraction.
+
+    Supports multiple chunking strategies:
+    - sliding_window: Fixed-size chunks with overlap
+    - paragraph: Chunk by paragraphs, respecting max size
+    - semantic: Semantic chunking using embeddings (future)
+    """
 
     def __init__(
         self,
         max_chunk_size: int = 2000,  # characters
         overlap: int = 200,  # character overlap between chunks
-        strategy: str = "sliding_window"  # or "semantic", "paragraph"
+        strategy: str = "sliding_window"  # or "paragraph", "semantic"
     ):
         """
         Initialize chunker.
@@ -49,21 +34,21 @@ class DocumentChunker:
         Args:
             max_chunk_size: Maximum chunk size in characters
             overlap: Overlap between chunks (to preserve context)
-            strategy: Chunking strategy
+            strategy: Chunking strategy ("sliding_window", "paragraph", "semantic")
         """
         self.max_chunk_size = max_chunk_size
         self.overlap = overlap
         self.strategy = strategy
 
-    def chunk_document(
+    def chunk_text(
         self,
         text: str,
         document_id: str,
         title: str = "",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[dict] = None
     ) -> List[DocumentChunk]:
         """
-        Chunk a document into smaller pieces.
+        Chunk text into smaller pieces.
 
         Args:
             text: Full document text
@@ -85,6 +70,7 @@ class DocumentChunker:
                 text=text,
                 word_count=len(text.split()),
                 char_count=len(text),
+                document_id=document_id,
                 document_title=title,
                 document_metadata=metadata,
                 start_char=0,
@@ -101,12 +87,29 @@ class DocumentChunker:
         else:
             raise ValueError(f"Unknown chunking strategy: {self.strategy}")
 
+    def chunk_parsed_document(self, parsed_doc: ParsedDocument) -> List[DocumentChunk]:
+        """
+        Chunk a ParsedDocument.
+
+        Args:
+            parsed_doc: ParsedDocument object
+
+        Returns:
+            List of DocumentChunk objects
+        """
+        return self.chunk_text(
+            text=parsed_doc.content,
+            document_id=parsed_doc.document_id,
+            title=parsed_doc.title,
+            metadata=parsed_doc.metadata
+        )
+
     def _chunk_sliding_window(
         self,
         text: str,
         document_id: str,
         title: str,
-        metadata: Dict[str, Any]
+        metadata: dict
     ) -> List[DocumentChunk]:
         """Chunk using sliding window with overlap."""
         chunks = []
@@ -138,6 +141,7 @@ class DocumentChunker:
                     text=chunk_text,
                     word_count=len(chunk_text.split()),
                     char_count=len(chunk_text),
+                    document_id=document_id,
                     document_title=title,
                     document_metadata=metadata,
                     start_char=start,
@@ -162,7 +166,7 @@ class DocumentChunker:
         text: str,
         document_id: str,
         title: str,
-        metadata: Dict[str, Any]
+        metadata: dict
     ) -> List[DocumentChunk]:
         """Chunk by paragraphs, respecting max_chunk_size."""
         paragraphs = text.split('\n\n')
@@ -191,6 +195,7 @@ class DocumentChunker:
                         text=chunk_text,
                         word_count=len(chunk_text.split()),
                         char_count=len(chunk_text),
+                        document_id=document_id,
                         document_title=title,
                         document_metadata=metadata,
                         start_char=char_position - current_size,
@@ -205,6 +210,7 @@ class DocumentChunker:
                 for pc in para_chunks:
                     pc.chunk_id = f"{document_id}_chunk_{chunk_index}"
                     pc.chunk_index = chunk_index
+                    pc.document_id = document_id
                     chunks.append(pc)
                     chunk_index += 1
 
@@ -224,6 +230,7 @@ class DocumentChunker:
                         text=chunk_text,
                         word_count=len(chunk_text.split()),
                         char_count=len(chunk_text),
+                        document_id=document_id,
                         document_title=title,
                         document_metadata=metadata,
                         start_char=char_position - current_size,
@@ -246,6 +253,7 @@ class DocumentChunker:
                 text=chunk_text,
                 word_count=len(chunk_text.split()),
                 char_count=len(chunk_text),
+                document_id=document_id,
                 document_title=title,
                 document_metadata=metadata,
                 start_char=char_position - current_size,
@@ -264,7 +272,7 @@ class DocumentChunker:
         text: str,
         document_id: str,
         title: str,
-        metadata: Dict[str, Any]
+        metadata: dict
     ) -> List[DocumentChunk]:
         """
         Semantic chunking using sentence embeddings.
@@ -274,79 +282,3 @@ class DocumentChunker:
         """
         logger.warning("Semantic chunking not implemented yet, falling back to paragraph chunking")
         return self._chunk_by_paragraph(text, document_id, title, metadata)
-
-    def chunk_parsed_documents(
-        self,
-        parsed_docs_file: str,
-        output_dir: str = "case_studies/public_health/data/processed"
-    ):
-        """
-        Chunk parsed documents from JSON file.
-
-        Args:
-            parsed_docs_file: Path to parsed documents JSON
-            output_dir: Directory to save chunked documents
-        """
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        with open(parsed_docs_file, 'r', encoding='utf-8') as f:
-            parsed_docs = json.load(f)
-
-        all_chunks = []
-
-        for i, doc in enumerate(parsed_docs):
-            document_id = f"doc_{i}"
-            title = doc.get("title", "Untitled")
-            content = doc.get("content", "")
-            metadata = doc.get("metadata", {})
-
-            chunks = self.chunk_document(content, document_id, title, metadata)
-            all_chunks.extend(chunks)
-
-            logger.info(f"Document '{title}': {len(chunks)} chunks")
-
-        # Save chunks
-        chunks_data = [asdict(chunk) for chunk in all_chunks]
-        output_file = output_path / f"chunked_{Path(parsed_docs_file).name}"
-
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(chunks_data, f, indent=2, ensure_ascii=False)
-
-        logger.info(f"✓ Saved {len(all_chunks)} chunks to {output_file}")
-
-
-def chunk_all_parsed_documents(
-    processed_dir: str = "case_studies/public_health/data/processed",
-    max_chunk_size: int = 2000,
-    strategy: str = "paragraph"
-):
-    """
-    Chunk all parsed documents in the processed directory.
-
-    Args:
-        processed_dir: Directory with parsed documents
-        max_chunk_size: Maximum chunk size in characters
-        strategy: Chunking strategy
-    """
-    logger.info("Chunking parsed documents...")
-
-    chunker = DocumentChunker(
-        max_chunk_size=max_chunk_size,
-        overlap=200,
-        strategy=strategy
-    )
-
-    processed_path = Path(processed_dir)
-    parsed_files = list(processed_path.glob("parsed_*.json"))
-
-    for parsed_file in parsed_files:
-        logger.info(f"Chunking {parsed_file.name}...")
-        chunker.chunk_parsed_documents(str(parsed_file), processed_dir)
-
-    logger.info("✓ Chunking complete!")
-
-
-if __name__ == "__main__":
-    # Chunk all parsed documents
-    chunk_all_parsed_documents()

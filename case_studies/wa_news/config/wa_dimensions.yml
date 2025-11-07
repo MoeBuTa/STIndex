@@ -1,0 +1,136 @@
+# Western Australia News Case Study - Dimension Configuration
+# Extracts temporal, spatial, and entity information from WA news articles and documents
+
+# Base extraction settings
+extraction:
+  use_few_shot: true
+  enable_thinking: true
+
+# Document metadata
+document_metadata:
+  source_location: "Western Australia"
+  language: "en"
+
+# Dimension definitions
+dimensions:
+  # Core spatiotemporal dimensions
+  temporal:
+    enabled: true
+    description: "Extract temporal expressions (dates, times, events)"
+    extraction_type: "normalized"
+    schema_type: "TemporalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original temporal expression from text"
+      - name: normalized
+        type: string
+        description: "ISO 8601 normalized format"
+      - name: temporal_type
+        type: enum
+        values: ["date", "time", "datetime", "duration", "interval"]
+    normalization:
+      handle_relative: true
+      timezone: "Australia/Perth"
+    examples:
+      - text: "September 22, 2025"
+        normalized: "2025-09-22"
+        temporal_type: "date"
+      - text: "February 26, 2025"
+        normalized: "2025-02-26"
+        temporal_type: "date"
+      - text: "September 24, 2025 at 9:30 AM"
+        normalized: "2025-09-24T09:30:00"
+        temporal_type: "datetime"
+
+  spatial:
+    enabled: true
+    description: "Extract spatial/location mentions"
+    extraction_type: "geocoded"
+    schema_type: "SpatialMention"
+    fields:
+      - name: text
+        type: string
+        description: "Original location name from text"
+      - name: location_type
+        type: enum
+        values: ["country", "city", "region", "landmark", "feature", "venue", "address"]
+      - name: parent_region
+        type: string
+        description: "Parent region for disambiguation"
+        optional: true
+    disambiguation:
+      use_parent_region: true
+      use_document_context: true
+      use_source_location: true
+    examples:
+      - text: "University of Western Australia"
+        location_type: "landmark"
+        parent_region: "Perth, Western Australia"
+      - text: "Perth"
+        location_type: "city"
+        parent_region: "Western Australia"
+      - text: "Winthrop Hall"
+        location_type: "venue"
+        parent_region: "Perth, Western Australia"
+
+  # Entity dimensions
+  person:
+    enabled: true
+    description: "People mentioned in news articles"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Person's name"
+      - name: category
+        type: enum
+        values: ["researcher", "administrator", "government_official", "student", "astronaut", "other"]
+    examples:
+      - text: "Associate Professor David Coward"
+        category: "researcher"
+      - text: "Diane Smith-Gander"
+        category: "administrator"
+      - text: "Governor Chris Dawson"
+        category: "government_official"
+
+  organization:
+    enabled: true
+    description: "Organizations and institutions mentioned"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Organization name"
+      - name: category
+        type: enum
+        values: ["university", "government_agency", "research_organization", "private_company", "international_agency", "other"]
+    examples:
+      - text: "University of Western Australia"
+        category: "university"
+      - text: "Polish Space Agency"
+        category: "international_agency"
+      - text: "Australian Research Council"
+        category: "research_organization"
+
+  event_type:
+    enabled: true
+    description: "Type of news event or topic"
+    extraction_type: "categorical"
+    schema_type: "CategoricalMention"
+    fields:
+      - name: text
+        type: string
+        description: "Description of the event"
+      - name: category
+        type: enum
+        values: ["research", "governance", "finance", "education", "infrastructure", "international_partnership", "other"]
+    examples:
+      - text: "Poland-Australia partnership to track space debris"
+        category: "international_partnership"
+      - text: "Installation of first female Chancellor"
+        category: "governance"
+      - text: "Workshop on space surveillance"
+        category: "research"
