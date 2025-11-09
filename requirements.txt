@@ -42,6 +42,9 @@ opencv-python-headless>=4.11.0  # Required by vllm
 fastapi>=0.100.0
 uvicorn>=0.20.0
 
+# MS-SWIFT framework (training with DeepSpeed + inference with vLLM)
+ms-swift
+
 # MCP (Model Context Protocol)
 mcp>=1.2.0
 
