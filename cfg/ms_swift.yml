@@ -6,7 +6,7 @@ llm:
   llm_provider: ms_swift
 
   # Model configuration
-  model_name: Qwen/Qwen3-8B  # HuggingFace model ID
+  model_name: Qwen3-8B  # Model name as reported by MS-SWIFT server (not HuggingFace ID)
 
   # Generation parameters
   temperature: 0.0  # Deterministic output
@@ -19,7 +19,7 @@ llm:
   stream: false  # Enable streaming responses
 
   # Server configuration
-  base_url: "http://localhost:8000"  # MS-SWIFT deployment endpoint
+  base_url: "http://localhost:8001"  # MS-SWIFT deployment endpoint (updated to actual port)
 
   # Client type selection
   # Options: 'auto' (prefer MS-SWIFT native), 'swift' (force native), 'openai' (force OpenAI SDK)
@@ -32,6 +32,9 @@ deployment:
 
   # Inference backend (vLLM for efficient serving)
   infer_backend: vllm
+
+  # Use HuggingFace downloaded models
+  use_hf: true
 
   # Server settings
   host: "0.0.0.0"
@@ -55,8 +58,8 @@ deployment:
   # vLLM backend settings
   vllm:
     tensor_parallel_size: 1  # Number of GPUs for tensor parallelism
-    gpu_memory_utilization: 0.9  # GPU memory utilization (0.0-1.0)
-    max_model_len: null  # Maximum context length (null = auto)
+    gpu_memory_utilization: 0.2  # GPU memory utilization (reduced to fit available memory)
+    max_model_len: 8192  # Maximum context length (reduced from 40960 to fit in available KV cache)
     trust_remote_code: true  # Trust remote code for model loading
     dtype: auto  # Model dtype (auto, float16, bfloat16, float32)
     enable_lora: false  # Enable LoRA support in vLLM

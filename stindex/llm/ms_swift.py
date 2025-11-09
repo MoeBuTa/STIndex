@@ -3,8 +3,8 @@ MS-SWIFT LLM Provider - Direct Integration.
 
 Directly uses MS-SWIFT functions without wrapper classes:
 - swift.llm.run_deploy() for server deployment
-- swift.llm.inference_client() for inference
-- swift.llm.XRequestConfig for configuration
+- swift.llm.InferClient for inference
+- swift.llm.RequestConfig for configuration
 
 Simple, minimal adapter that extends STIndex's base patterns.
 """
@@ -16,9 +16,9 @@ try:
     from swift.llm import (
         run_deploy,
         DeployArguments,
-        inference_client,
-        XRequestConfig,
-        get_model_list_client,
+        InferClient,
+        InferRequest,
+        RequestConfig,
     )
     SWIFT_AVAILABLE = True
 except ImportError:
@@ -39,8 +39,8 @@ class MSSwiftLLM:
     MS-SWIFT LLM provider using native swift.llm functions.
 
     Directly calls:
-    - swift.llm.inference_client() for generation
-    - swift.llm.XRequestConfig for parameters
+    - swift.llm.InferClient for generation
+    - swift.llm.RequestConfig for parameters
     - OpenAI SDK as fallback
     """
 
@@ -65,7 +65,15 @@ class MSSwiftLLM:
         if self.use_swift:
             if not SWIFT_AVAILABLE:
                 raise ImportError("MS-SWIFT requested but not installed")
-            logger.info(f"MS-SWIFT LLM using native swift.llm.inference_client")
+            # Parse host and port from base_url
+            import re
+            match = re.match(r'https?://([^:]+):(\d+)', self.base_url)
+            if match:
+                host, port = match.groups()
+            else:
+                host, port = "localhost", "8000"
+            self.client = InferClient(host=host, port=int(port), api_key='EMPTY')
+            logger.info(f"MS-SWIFT LLM using native InferClient")
         else:
             if not OPENAI_AVAILABLE:
                 raise ImportError("OpenAI SDK not installed")
@@ -75,8 +83,8 @@ class MSSwiftLLM:
         logger.info(f"  Model: {self.model_name}")
         logger.info(f"  Base URL: {self.base_url}")
 
-    def _create_request_config(self) -> Optional['XRequestConfig']:
-        """Create XRequestConfig for MS-SWIFT."""
+    def _create_request_config(self) -> Optional['RequestConfig']:
+        """Create RequestConfig for MS-SWIFT."""
         if not SWIFT_AVAILABLE:
             return None
 
@@ -90,7 +98,7 @@ class MSSwiftLLM:
         if self.top_k > 0:
             kwargs["top_k"] = self.top_k
 
-        return XRequestConfig(**kwargs)
+        return RequestConfig(**kwargs)
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:
         """Generate completion using MS-SWIFT or OpenAI SDK."""
@@ -100,23 +108,25 @@ class MSSwiftLLM:
             return self._generate_openai(messages)
 
     def _generate_swift(self, messages: List[Dict[str, str]]) -> LLMResponse:
-        """Generate using swift.llm.inference_client()."""
+        """Generate using InferClient."""
         try:
-            # Convert to query format
-            query = messages[-1]['content'] if len(messages) == 1 else messages
-
             # Create request config
             request_config = self._create_request_config()
 
-            # Call MS-SWIFT inference_client function
-            response = inference_client(
-                model_type=self.model_name,
-                query=query,
+            # Create InferRequest
+            request = InferRequest(messages=messages)
+
+            # Call MS-SWIFT InferClient
+            responses = self.client.infer(
+                [request],
                 request_config=request_config,
-                base_url=self.base_url,
+                model=self.model_name,
             )
 
-            # Extract response
+            # Extract response (first item in list)
+            response = responses[0]
+
+            # Extract content and usage
             content = response.choices[0].message.content
             usage = response.usage if hasattr(response, 'usage') else None
 
@@ -133,7 +143,7 @@ class MSSwiftLLM:
                 success=True,
             )
         except Exception as e:
-            logger.error(f"MS-SWIFT inference_client failed: {e}")
+            logger.error(f"MS-SWIFT InferClient failed: {e}")
             return LLMResponse(
                 model=self.model_name,
                 input=messages,
@@ -227,7 +237,7 @@ def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
     deployment = config.get("deployment", {})
     vllm_config = deployment.get("vllm", {})
 
-    # Build DeployArguments
+    # Build DeployArguments with only supported parameters
     deploy_args = DeployArguments(
         model=deployment.get("model", "Qwen/Qwen3-8B"),
         infer_backend=deployment.get("infer_backend", "vllm"),
@@ -235,19 +245,20 @@ def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
         port=deployment.get("port", 8000),
         verbose=deployment.get("verbose", True),
         log_interval=deployment.get("log_interval", 20),
+        use_hf=deployment.get("use_hf", True),  # Use HuggingFace downloaded models
         vllm_tensor_parallel_size=vllm_config.get("tensor_parallel_size", 1),
         vllm_gpu_memory_utilization=vllm_config.get("gpu_memory_utilization", 0.9),
-        vllm_trust_remote_code=vllm_config.get("trust_remote_code", True),
-        vllm_dtype=vllm_config.get("dtype", "auto"),
     )
 
-    # Add optional parameters
+    # Add optional parameters if present
     if vllm_config.get("max_model_len"):
-        deploy_args.vllm_max_model_len = vllm_config["max_model_len"]
-    if vllm_config.get("enable_lora"):
-        deploy_args.vllm_enable_lora = True
+        deploy_args.max_model_len = vllm_config["max_model_len"]
     if deployment.get("ckpt_dir"):
         deploy_args.ckpt_dir = deployment["ckpt_dir"]
+    if deployment.get("merge_lora"):
+        deploy_args.merge_lora = True
+    if deployment.get("lora_modules"):
+        deploy_args.lora_modules = deployment["lora_modules"]
 
     logger.info(f"Deploying MS-SWIFT server: {deploy_args.model}")
     return run_deploy(deploy_args)

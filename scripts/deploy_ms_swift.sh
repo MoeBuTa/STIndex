@@ -18,13 +18,13 @@ echo "============================================================"
 echo ""
 
 # Load configuration using Python
-read -r MODEL PORT TENSOR_PARALLEL GPU_MEM TRUST_CODE DTYPE <<< $(python3 << 'EOF'
+read -r MODEL PORT TENSOR_PARALLEL GPU_MEM TRUST_CODE DTYPE MAX_LEN <<< $(python3 << 'EOF'
 import yaml
 with open("cfg/ms_swift.yml") as f:
     cfg = yaml.safe_load(f)
 dep = cfg["deployment"]
 vllm = dep.get("vllm", {})
-print(f"{dep['model']} {dep['port']} {vllm.get('tensor_parallel_size', 1)} {vllm.get('gpu_memory_utilization', 0.9)} {str(vllm.get('trust_remote_code', True)).lower()} {vllm.get('dtype', 'auto')}")
+print(f"{dep['model']} {dep['port']} {vllm.get('tensor_parallel_size', 1)} {vllm.get('gpu_memory_utilization', 0.9)} {str(vllm.get('trust_remote_code', True)).lower()} {vllm.get('dtype', 'auto')} {vllm.get('max_model_len', '')}")
 EOF
 )
 
@@ -35,6 +35,7 @@ echo "  Tensor Parallel Size: $TENSOR_PARALLEL"
 echo "  GPU Memory Utilization: $GPU_MEM"
 echo "  Trust Remote Code: $TRUST_CODE"
 echo "  Dtype: $DTYPE"
+echo "  Max Model Len: $MAX_LEN"
 echo ""
 
 # Build command
@@ -42,13 +43,13 @@ CMD="swift deploy \
     --model $MODEL \
     --port $PORT \
     --infer_backend vllm \
+    --use_hf \
     --vllm_tensor_parallel_size $TENSOR_PARALLEL \
-    --vllm_gpu_memory_utilization $GPU_MEM \
-    --vllm_dtype $DTYPE"
+    --vllm_gpu_memory_utilization $GPU_MEM"
 
-# Add optional flags
-if [ "$TRUST_CODE" = "true" ]; then
-    CMD="$CMD --vllm_trust_remote_code"
+# Add max_model_len if set
+if [ -n "$MAX_LEN" ]; then
+    CMD="$CMD --max_model_len $MAX_LEN"
 fi
 
 echo "Command:"
