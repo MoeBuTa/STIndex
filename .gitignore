@@ -56,6 +56,10 @@ logs/
 data
 data/*
 
+# Database - PostgreSQL installation and data
+db/
+db/*
+
 # Model files
 models/*.pt
 models/*.pth

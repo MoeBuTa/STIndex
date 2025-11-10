@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 15 with pgvector and PostGIS
+  stindex-warehouse:
+    image: pgvector/pgvector:pg15
+    container_name: stindex-warehouse
+    restart: unless-stopped
+
+    environment:
+      # Database configuration
+      POSTGRES_DB: stindex_warehouse
+      POSTGRES_USER: stindex
+      POSTGRES_PASSWORD: stindex
+
+      # PostgreSQL settings
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+
+      # Performance tuning
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_WORK_MEM: 16MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+      POSTGRES_MAX_CONNECTIONS: 100
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      # Persistent data storage
+      - stindex-warehouse-data:/var/lib/postgresql/data
+
+      # Initialization script (installs extensions on first startup)
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-extensions.sh
+
+      # Schema files (for manual schema creation)
+      - ./stindex/warehouse/schema:/schema
+
+      # Configuration file (optional)
+      # - ./docker/postgresql.conf:/etc/postgresql/postgresql.conf
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stindex -d stindex_warehouse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - stindex-network
+
+    # Optional: resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2.0'
+    #       memory: 4G
+    #     reservations:
+    #       cpus: '1.0'
+    #       memory: 2G
+
+  # pgAdmin (optional - for GUI database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: stindex-pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stindex.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 80
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - stindex-pgadmin-data:/var/lib/pgadmin
+
+    depends_on:
+      stindex-warehouse:
+        condition: service_healthy
+
+    networks:
+      - stindex-network
+
+volumes:
+  stindex-warehouse-data:
+    driver: local
+  stindex-pgadmin-data:
+    driver: local
+
+networks:
+  stindex-network:
+    driver: bridge

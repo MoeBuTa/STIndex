@@ -20,7 +20,7 @@ stindex extract "On March 15, 2022, a cyclone hit Broome, Western Australia."
 stindex extract "Text here..." --config openai  # or anthropic, hf
 ```
 
-### End-to-End Pipeline (NEW in v0.4.0)
+### End-to-End Pipeline
 
 ```python
 from stindex import InputDocument, STIndexPipeline
@@ -32,12 +32,14 @@ docs = [
     InputDocument.from_text("Your text here")
 ]
 
-# Run full pipeline: preprocessing → extraction → visualization (default)
+# Run full pipeline: preprocessing → extraction → warehouse → visualization
 pipeline = STIndexPipeline(
     dimension_config="dimensions",
-    output_dir="data/output"
+    output_dir="data/output",
+    enable_warehouse=True,  # NEW in v0.6.0: Load data into warehouse
+    warehouse_config="warehouse"
 )
-results = pipeline.run_pipeline(docs)
+results = pipeline.run_pipeline(docs, load_to_warehouse=True)
 # Automatically generates zip archive: data/visualizations/stindex_report_{timestamp}.zip
 # Contains: HTML report + all plots, maps, and source files
 ```
@@ -107,6 +109,7 @@ Configuration files in `cfg/`:
 - `extract.yml`: Main configuration (sets LLM provider)
 - `evaluate.yml`: Evaluation settings
 - `dimensions.yml`: Multi-dimensional extraction configuration
+- `warehouse.yml`: Data warehouse configuration (connection, ETL, embeddings)
 - `openai.yml`: OpenAI API settings (GPT-4)
 - `anthropic.yml`: Anthropic API settings (Claude)
 - `hf.yml`: HuggingFace/MS-SWIFT server settings
@@ -132,35 +135,42 @@ extractor = DimensionalExtractor(config_path="openai")
 
 ```
 stindex/
-├── core/                   # Core extraction logic
+├── extraction/             # Core extraction logic
 │   ├── dimensional_extraction.py  # DimensionalExtractor (multi-dimensional)
+│   ├── context_manager.py # ExtractionContext (context-aware extraction)
 │   └── utils.py           # JSON extraction utilities
-├── preprocessing/          # Preprocessing module (NEW v0.4.0)
+├── preprocessing/          # Preprocessing module
 │   ├── input_models.py    # InputDocument, DocumentChunk models
 │   ├── scraping.py        # WebScraper (rate-limited web scraping)
 │   ├── parsing.py         # DocumentParser (HTML/PDF/DOCX/TXT)
 │   ├── chunking.py        # DocumentChunker (sliding window, paragraph, semantic)
 │   └── processor.py       # Preprocessor (main orchestrator)
-├── pipeline/               # Pipeline orchestration (NEW v0.4.0)
+├── pipeline/               # Pipeline orchestration
 │   └── pipeline.py        # STIndexPipeline (end-to-end orchestrator)
-├── visualization/          # Visualization module (NEW v0.4.0)
+├── visualization/          # Visualization module
 │   ├── visualizer.py      # STIndexVisualizer (main orchestrator)
 │   ├── map_generator.py   # MapGenerator (interactive Folium maps)
 │   ├── plot_generator.py  # PlotGenerator (statistical plots)
 │   ├── statistical_summary.py  # StatisticalSummary
 │   └── html_report.py     # HTMLReportGenerator
+├── warehouse/              # Data warehouse module (NEW v0.6.0)
+│   ├── etl.py             # DimensionalWarehouseETL (ETL pipeline)
+│   ├── chunk_labeler.py   # DimensionalChunkLabeler (hierarchical labels)
+│   └── schema/            # SQL schemas (PostgreSQL/pgvector/PostGIS)
+├── postprocess/            # Post-processing tools
+│   ├── reflection.py      # ExtractionReflector (two-pass quality scoring)
+│   ├── spatial/           # Geocoding and spatial validation
+│   └── temporal/          # Temporal normalization (ISO 8601)
 ├── llm/                    # LLM provider implementations
-│   ├── manager.py          # LLM factory
+│   ├── manager.py         # LLM factory
 │   ├── openai.py          # OpenAI provider
 │   ├── anthropic.py       # Anthropic provider
-│   ├── hf.py              # HuggingFace client (multi-GPU load balancing)
+│   ├── ms_swift.py        # MS-SWIFT provider (native InferClient)
 │   ├── prompts/           # Prompt templates
 │   └── response/          # Pydantic models
 ├── server/                 # Server implementations
 │   ├── hf_server.py       # HuggingFace FastAPI server
 │   └── mcp_server.py      # MCP server for Claude Desktop
-├── spatial/                # Spatial processing & geocoding
-├── temporal/               # Temporal processing
 ├── exe/                    # CLI execution logic
 │   └── evaluate.py        # Evaluation system
 └── cli.py                  # Typer CLI interface
@@ -182,7 +192,22 @@ scripts/                    # Helper scripts
 
 ## Recent Updates
 
-### v0.4.0 (November 2025): Complete Pipeline & Visualization
+### v0.6.0 (January 2025): Data Warehouse
+- **Dimensional Data Warehouse**: Hybrid snowflake/star schema with PostgreSQL
+- **Vector Embeddings**: pgvector integration for semantic search
+- **Spatial Queries**: PostGIS support for geographic analysis
+- **ETL Pipeline**: Automated loading with caching and batch processing
+- **Hierarchical Labels**: Multi-level temporal and spatial labels for fast filtering
+- **Pipeline Integration**: Optional warehouse loading in `STIndexPipeline`
+
+### v0.5.0 (December 2024): Context-Aware Extraction
+- **Extraction Context**: Maintains context across document chunks for consistency
+- **Two-Pass Reflection**: LLM-based quality scoring to reduce false positives
+- **Context Engineering**: Implements cinstr, ctools, cmem, cstate patterns
+- **Ambiguity Resolution**: Handles relative temporal expressions and spatial disambiguation
+- **Configuration Refactor**: Reorganized configs by module (preprocessing, extraction, visualization)
+
+### v0.4.0 (November 2024): Complete Pipeline & Visualization
 - **Generic Preprocessing Module**: Web scraping, document parsing, intelligent chunking
 - **End-to-End Pipeline**: Full workflow from URLs/files/text to visualizations
 - **Comprehensive Visualization**: Interactive maps, statistical plots, HTML reports
@@ -201,6 +226,69 @@ scripts/                    # Helper scripts
 - **Evaluation Fixes**: Proper temporal/spatial matching with configurable modes
 - **Model Name Display**: Fixed health endpoint to show correct model names
 - **Batch Processing**: Preserved true batch mode (no sequential retries)
+
+## Data Warehouse
+
+STIndex includes a powerful dimensional data warehouse that enables advanced analytics over extracted information. The warehouse combines traditional dimensional modeling with modern vector and spatial capabilities.
+
+### Features
+
+- **Hybrid Architecture**: Snowflake/star schema with dimensional hierarchies
+- **Vector Search**: Semantic search using pgvector embeddings
+- **Spatial Queries**: PostGIS-powered geographic analysis (radius search, distance calculations)
+- **Hierarchical Dimensions**: Multi-level temporal (Year→Quarter→Month→Day) and spatial (Continent→Country→State→City) hierarchies
+- **Fast Filtering**: GIN indexes on label arrays for sub-millisecond lookups
+- **ETL Pipeline**: Automated loading with caching and batch processing
+
+### Quick Setup
+
+```bash
+# Option 1: Use existing PostgreSQL server
+# Update cfg/warehouse.yml with your connection string
+
+# Option 2: Install PostgreSQL locally (HPC/no root)
+bash scripts/install_postgres.sh
+db/start_postgres.sh
+db/create_warehouse.sh
+
+# Option 3: Use Docker (requires Docker access)
+docker compose up -d stindex-warehouse
+```
+
+See [WAREHOUSE_SETUP.md](docs/WAREHOUSE_SETUP.md) for detailed setup instructions.
+
+### Usage
+
+```python
+from stindex import InputDocument, STIndexPipeline
+
+# Enable warehouse in pipeline
+pipeline = STIndexPipeline(
+    enable_warehouse=True,
+    warehouse_config="warehouse"
+)
+
+docs = [InputDocument.from_url("https://example.com/article")]
+results = pipeline.run_pipeline(docs, load_to_warehouse=True)
+# Data automatically loaded into dimensional warehouse
+```
+
+### Querying
+
+```sql
+-- Find events within 100km of a location in 2022-Q1
+SELECT chunk_text, distance_km, temporal_labels
+FROM fact_document_chunks f
+JOIN dim_temporal t ON f.temporal_dim_id = t.temporal_id
+WHERE ST_DWithin(
+    location_geom,
+    ST_MakePoint(122.2, -18.0)::geography,
+    100000  -- 100km
+)
+AND '2022-Q1' = ANY(temporal_labels);
+```
+
+See [stindex/warehouse/README.md](stindex/warehouse/README.md) for detailed documentation.
 
 ## Evaluation
 

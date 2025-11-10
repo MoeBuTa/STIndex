@@ -1,0 +1,199 @@
+# ==============================================================================
+# STIndex Data Warehouse Configuration
+# ==============================================================================
+# Configuration for dimensional data warehouse integration
+# ==============================================================================
+
+# Database connection settings
+database:
+  # PostgreSQL connection string
+  # Format: postgresql://user:password@host:port/database
+  connection_string: "postgresql://stindex:stindex@localhost:5432/stindex_warehouse"
+
+  # Alternative: individual connection parameters
+  # host: "localhost"
+  # port: 5432
+  # database: "stindex_warehouse"
+  # user: "stindex"
+  # password: "stindex"
+
+  # Connection pool settings
+  pool:
+    min_size: 1
+    max_size: 10
+    timeout: 30  # seconds
+
+# ETL pipeline settings
+etl:
+  # Batch size for fact table insertions
+  batch_size: 100
+
+  # Enable dimension caching (reduces database queries)
+  enable_caching: true
+
+  # Cache sizes
+  cache:
+    temporal_cache_size: 10000
+    spatial_cache_size: 10000
+    event_cache_size: 5000
+    entity_cache_size: 5000
+    document_cache_size: 1000
+
+  # Transaction settings
+  transaction:
+    # Auto-commit mode (false = use transactions, true = auto-commit each statement)
+    auto_commit: false
+
+    # Retry failed transactions
+    max_retries: 3
+    retry_delay: 1  # seconds
+
+# Chunk labeling settings
+labeling:
+  # Enable hierarchical label generation
+  enable_hierarchies: true
+
+  # Spatial hierarchy settings
+  spatial:
+    # Enable reverse geocoding for full hierarchy
+    enable_reverse_geocoding: false
+
+    # Reverse geocoding provider (nominatim, google, bing)
+    geocoding_provider: "nominatim"
+
+    # Cache reverse geocoding results
+    enable_geocoding_cache: true
+
+  # Temporal hierarchy settings
+  temporal:
+    # Date range validation
+    min_year: 1900
+    max_year: 2100
+
+# Vector embedding settings
+embeddings:
+  # Enable vector embeddings in fact table
+  enabled: true
+
+  # Embedding model
+  model: "text-embedding-3-small"
+
+  # Embedding dimension (must match model output)
+  dimension: 1536
+
+  # Batch size for embedding generation
+  batch_size: 50
+
+  # Embedding provider (openai, sentence_transformers, cohere)
+  provider: "openai"
+
+# Warehouse features
+features:
+  # Enable warehouse loading in pipeline
+  enabled: false
+
+  # Load to warehouse after extraction
+  auto_load: false
+
+  # Generate embeddings during ETL
+  generate_embeddings: false
+
+  # Refresh materialized views after load
+  refresh_materialized_views: false
+
+# Performance settings
+performance:
+  # Use parallel processing for large batches
+  parallel_processing: false
+
+  # Number of parallel workers
+  num_workers: 4
+
+  # Buffer size for bulk inserts
+  buffer_size: 1000
+
+  # Index maintenance
+  maintenance:
+    # Vacuum analyze after load
+    vacuum_analyze: false
+
+    # Reindex after bulk load
+    reindex: false
+
+    # Refresh statistics
+    analyze: true
+
+# Logging settings
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+
+  # Log SQL queries
+  log_queries: false
+
+  # Log slow queries (queries taking longer than threshold)
+  log_slow_queries: true
+  slow_query_threshold: 1.0  # seconds
+
+  # Log transaction details
+  log_transactions: false
+
+# Schema settings
+schema:
+  # Schema name (default: public)
+  schema_name: "public"
+
+  # Table name prefix (optional)
+  table_prefix: ""
+
+  # Enable schema validation
+  validate_schema: true
+
+# Data quality settings
+quality:
+  # Minimum confidence threshold for loading
+  min_confidence: 0.0
+
+  # Skip chunks with no dimensional entities
+  skip_empty_chunks: false
+
+  # Validation rules
+  validation:
+    # Validate coordinates are within valid ranges
+    validate_coordinates: true
+
+    # Validate ISO 8601 temporal values
+    validate_temporal: true
+
+    # Validate hierarchy paths
+    validate_hierarchies: false
+
+# Export settings (for Phase 4 - Query API)
+export:
+  # Default export format (json, csv, parquet)
+  default_format: "json"
+
+  # Output directory for exports
+  output_dir: "data/warehouse_exports"
+
+  # Include metadata in exports
+  include_metadata: true
+
+# Monitoring and alerting
+monitoring:
+  # Enable monitoring
+  enabled: false
+
+  # Metrics collection interval (seconds)
+  metrics_interval: 60
+
+  # Alert thresholds
+  alerts:
+    # Alert if ETL takes longer than threshold
+    etl_duration_threshold: 300  # seconds
+
+    # Alert if load fails
+    alert_on_failure: true
+
+    # Alert if confidence scores are low
+    low_confidence_threshold: 0.5

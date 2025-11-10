@@ -87,6 +87,10 @@ class STIndexPipeline:
         accuracy_threshold: Optional[float] = None,
         consistency_threshold: Optional[float] = None,
 
+        # Data warehouse integration
+        enable_warehouse: bool = False,
+        warehouse_config: Optional[str] = None,
+
         # Output config
         output_dir: Optional[str] = None,
         save_intermediate: bool = True
@@ -108,6 +112,8 @@ class STIndexPipeline:
             relevance_threshold: Override relevance threshold from config (default: None, use config)
             accuracy_threshold: Override accuracy threshold from config (default: None, use config)
             consistency_threshold: Override consistency threshold from config (default: None, use config)
+            enable_warehouse: Enable data warehouse integration (default: False)
+            warehouse_config: Warehouse config path (default: "warehouse")
             output_dir: Output directory for results
             save_intermediate: Save intermediate results (chunks, etc.)
         """
@@ -162,6 +168,43 @@ class STIndexPipeline:
         # Initialize preprocessor (loads from cfg/preprocess/*.yml)
         self.preprocessor = Preprocessor()
 
+        # Initialize warehouse (optional)
+        self.enable_warehouse = enable_warehouse
+        self.warehouse_etl = None
+        if enable_warehouse:
+            try:
+                from stindex.warehouse.etl import DimensionalWarehouseETL
+                from stindex.warehouse.chunk_labeler import DimensionalChunkLabeler
+                from stindex.utils.config import load_config_from_file
+
+                # Load warehouse config
+                warehouse_config_path = warehouse_config or "warehouse"
+                wh_config = load_config_from_file(warehouse_config_path)
+
+                # Get database connection string
+                db_connection = wh_config.get("database", {}).get("connection_string")
+                if not db_connection:
+                    logger.warning("Warehouse enabled but no connection_string in config. Warehouse disabled.")
+                    self.enable_warehouse = False
+                else:
+                    # Initialize chunk labeler
+                    chunk_labeler = DimensionalChunkLabeler(dimension_config=None)
+
+                    # Initialize ETL
+                    batch_size = wh_config.get("etl", {}).get("batch_size", 100)
+                    self.warehouse_etl = DimensionalWarehouseETL(
+                        db_connection_string=db_connection,
+                        chunk_labeler=chunk_labeler,
+                        batch_size=batch_size
+                    )
+                    logger.info(f"✓ Warehouse integration enabled")
+                    logger.info(f"  Database: {db_connection.split('@')[-1] if '@' in db_connection else db_connection}")
+            except Exception as e:
+                logger.error(f"Failed to initialize warehouse: {e}")
+                logger.warning("Continuing without warehouse integration")
+                self.enable_warehouse = False
+                self.warehouse_etl = None
+
         # Output configuration
         self.output_dir = Path(output_dir) if output_dir else Path("data/output")
         self.save_intermediate = save_intermediate
@@ -192,17 +235,20 @@ class STIndexPipeline:
         self,
         input_docs: List[InputDocument],
         save_results: bool = True,
-        visualize: bool = True
+        visualize: bool = True,
+        load_to_warehouse: bool = True
     ) -> List[Dict[str, Any]]:
         """
-        Run full pipeline: preprocessing → extraction → visualization.
+        Run full pipeline: preprocessing → extraction → warehouse → visualization.
 
         Visualization is enabled by default and creates a zip archive with HTML report and all assets.
+        Warehouse loading is enabled if warehouse is initialized and load_to_warehouse=True.
 
         Args:
             input_docs: List of InputDocument objects
             save_results: Save extraction results to file
             visualize: Generate visualizations (default: True, creates zip archive)
+            load_to_warehouse: Load results to data warehouse if enabled (default: True)
 
         Returns:
             List of extraction results (one per chunk)
@@ -212,20 +258,29 @@ class STIndexPipeline:
         logger.info("=" * 80)
 
         # Step 1: Preprocessing
-        logger.info("\n[1/3] Preprocessing...")
+        logger.info("\n[1/4] Preprocessing...")
         all_chunks = self.run_preprocessing(input_docs, save_chunks=save_results)
 
         # Flatten chunks
         flat_chunks = [chunk for doc_chunks in all_chunks for chunk in doc_chunks]
 
         # Step 2: Extraction
-        logger.info(f"\n[2/3] Extraction ({len(flat_chunks)} chunks)...")
+        logger.info(f"\n[2/4] Extraction ({len(flat_chunks)} chunks)...")
         results = self.run_extraction(flat_chunks, save_results=save_results)
 
-        # Step 3: Visualization (optional)
+        # Step 3: Warehouse loading (optional)
+        if self.enable_warehouse and load_to_warehouse and self.warehouse_etl:
+            logger.info("\n[3/4] Loading to data warehouse...")
+            self.run_warehouse_loading(results, all_chunks)
+        else:
+            logger.info("\n[3/4] Warehouse loading: SKIPPED")
+
+        # Step 4: Visualization (optional)
         if visualize:
-            logger.info("\n[3/3] Visualization...")
+            logger.info("\n[4/4] Visualization...")
             self.run_visualization(results)
+        else:
+            logger.info("\n[4/4] Visualization: SKIPPED")
 
         logger.info("\n" + "=" * 80)
         logger.info("Pipeline Complete")
@@ -608,6 +663,101 @@ class STIndexPipeline:
 
         logger.info(f"✓ Loaded {len(chunks)} chunks")
         return chunks
+
+    def run_warehouse_loading(
+        self,
+        results: List[Dict[str, Any]],
+        all_chunks: List[List[DocumentChunk]]
+    ) -> None:
+        """
+        Load extraction results into data warehouse.
+
+        Groups results by document and loads each document's chunks together.
+
+        Args:
+            results: List of extraction results (one per chunk)
+            all_chunks: List of lists of DocumentChunk objects (one list per document)
+        """
+        if not self.warehouse_etl:
+            logger.warning("Warehouse ETL not initialized, skipping warehouse loading")
+            return
+
+        try:
+            from stindex.llm.response.dimension_models import MultiDimensionalResult
+            from collections import defaultdict
+
+            # Group results by document_id
+            doc_results = defaultdict(list)
+            for result in results:
+                doc_id = result.get("document_id", "unknown")
+                doc_results[doc_id].append(result)
+
+            # Group chunks by document_id
+            doc_chunks_dict = {}
+            for doc_chunk_list in all_chunks:
+                if doc_chunk_list:
+                    doc_id = doc_chunk_list[0].document_id
+                    doc_chunks_dict[doc_id] = doc_chunk_list
+
+            total_loaded = 0
+
+            # Load each document
+            for doc_id, doc_result_list in doc_results.items():
+                logger.info(f"Loading document {doc_id} to warehouse ({len(doc_result_list)} chunks)...")
+
+                # Get chunks for this document
+                doc_chunk_list = doc_chunks_dict.get(doc_id, [])
+                if not doc_chunk_list:
+                    logger.warning(f"No chunks found for document {doc_id}, skipping warehouse load")
+                    continue
+
+                # Build document metadata from first chunk
+                first_chunk = doc_chunk_list[0]
+                document_metadata = {
+                    "document_id": doc_id,
+                    "title": first_chunk.document_title,
+                    "url": first_chunk.document_metadata.get("url"),
+                    "file_path": first_chunk.document_metadata.get("file_path"),
+                    "source": first_chunk.document_metadata.get("source", ""),
+                    "publication_date": first_chunk.document_metadata.get("publication_date"),
+                    "total_chunks": len(doc_chunk_list),
+                }
+
+                # Reconstruct document text from chunks
+                document_text = "\n\n".join([chunk.text for chunk in doc_chunk_list])
+
+                # Convert results to MultiDimensionalResult objects
+                extraction_results = []
+                for result_data in doc_result_list:
+                    extraction_dict = result_data.get("extraction", {})
+
+                    # Create MultiDimensionalResult from dict
+                    extraction_result = MultiDimensionalResult(**extraction_dict)
+                    extraction_results.append(extraction_result)
+
+                # Load to warehouse
+                try:
+                    chunks_loaded = self.warehouse_etl.load_extraction_results(
+                        extraction_results=extraction_results,
+                        document_metadata=document_metadata,
+                        document_text=document_text,
+                        embedding_model=None,  # TODO: Add embedding support
+                        embeddings=None,
+                    )
+
+                    total_loaded += chunks_loaded
+                    logger.info(f"✓ Loaded {chunks_loaded} chunks for document {doc_id}")
+
+                except Exception as e:
+                    logger.error(f"Failed to load document {doc_id} to warehouse: {e}")
+                    logger.exception(e)
+                    continue
+
+            logger.info(f"✓ Warehouse loading complete: {total_loaded} total chunks loaded")
+
+        except Exception as e:
+            logger.error(f"Warehouse loading failed: {e}")
+            logger.exception(e)
 
     def _save_chunks(self, all_chunks: List[List[DocumentChunk]]):
         """Save chunks to file."""
