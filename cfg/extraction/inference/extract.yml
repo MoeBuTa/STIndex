@@ -5,7 +5,7 @@
 llm:
   # LLM Provider Selection
   # Options: hf, openai, anthropic
-  llm_provider: hf
+  llm_provider: openai
 
 # Extraction Configuration
 extraction:
@@ -20,6 +20,35 @@ extraction:
 
   # Optional: Reference date for temporal resolution (ISO 8601 format)
   reference_date: ""
+
+# Context-Aware Extraction Configuration
+context_aware:
+  # Enable context-aware extraction (maintains memory across chunks)
+  enabled: true
+
+  # Maximum number of prior references to keep in memory (sliding window)
+  max_memory_refs: 10
+
+  # Enable OpenStreetMap nearby locations for spatial disambiguation
+  # Requires internet connection and may be rate-limited
+  enable_nearby_locations: true
+
+  # Nearby locations radius in kilometers
+  nearby_radius_km: 100
+
+  # Context types to track
+  track_temporal_refs: true     # Track prior temporal extractions
+  track_spatial_refs: true      # Track prior spatial extractions
+  track_event_refs: true        # Track prior event extractions
+
+# Two-Pass Reflection Configuration
+# Note: For detailed reflection settings, see cfg/extraction/inference/reflection.yml
+reflection:
+  # Enable two-pass reflection (LLM-based quality filtering)
+  enabled: false
+
+  # Load detailed reflection settings from reflection.yml
+  config_file: "cfg/extraction/inference/reflection.yml"
 
 # Geocoding Configuration
 geocoding:

@@ -118,10 +118,10 @@ class ExtractionContext:
 
         Args:
             extraction_result: Dictionary with extraction results
-                Expected keys: temporal_entities, spatial_entities, etc.
+                Expected keys: temporal, spatial, event, etc. (dimension names)
         """
         # Update temporal memory
-        temporal_entities = extraction_result.get('temporal_entities', [])
+        temporal_entities = extraction_result.get('temporal', [])
         for entity in temporal_entities:
             self.prior_temporal_refs.append({
                 'text': entity.get('text', ''),
@@ -130,7 +130,7 @@ class ExtractionContext:
             })
 
         # Update spatial memory
-        spatial_entities = extraction_result.get('spatial_entities', [])
+        spatial_entities = extraction_result.get('spatial', [])
         for entity in spatial_entities:
             self.prior_spatial_refs.append({
                 'text': entity.get('text', ''),

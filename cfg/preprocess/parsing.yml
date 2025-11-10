@@ -1,0 +1,45 @@
+# Document Parsing Configuration
+# Settings for parsing different document formats
+
+# Parsing method
+# Options: "unstructured" (recommended), "simple" (basic HTML/text only)
+parsing_method: "unstructured"
+
+# Unstructured library settings
+unstructured:
+  strategy: "auto"             # auto, fast, hi_res, ocr_only
+  languages: ["en"]            # Languages for text extraction
+  extract_tables: true         # Extract tables as structured data
+  extract_images: false        # Extract image descriptions (requires vision model)
+  infer_table_structure: true  # Infer table structure
+
+  # PDF-specific settings
+  pdf:
+    extract_images_in_pdf: false
+    include_page_breaks: true
+
+  # HTML-specific settings
+  html:
+    include_links: true         # Extract links
+    include_metadata: true      # Extract HTML metadata
+    clean_html: true            # Remove scripts, styles, etc.
+
+  # DOCX-specific settings
+  docx:
+    include_header_footer: false
+    preserve_formatting: false
+
+# Simple parsing (basic fallback)
+simple:
+  html_parser: "html.parser"   # html.parser, lxml, html5lib
+  remove_scripts: true         # Remove script tags
+  remove_styles: true          # Remove style tags
+  clean_whitespace: true       # Clean excessive whitespace
+
+# General parsing settings
+general:
+  encoding: "utf-8"            # Default encoding
+  detect_encoding: true        # Auto-detect encoding
+  fallback_encoding: "latin-1" # Fallback if detection fails
+  max_file_size_mb: 50         # Maximum file size to parse
+  timeout_seconds: 30          # Parsing timeout

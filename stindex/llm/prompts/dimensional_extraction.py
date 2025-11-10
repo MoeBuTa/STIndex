@@ -8,7 +8,7 @@ supporting any combination of dimensions defined in YAML.
 import json
 from typing import Dict, List, Optional
 
-from stindex.utils.dimension_loader import DimensionConfig
+from stindex.extraction.dimension_loader import DimensionConfig
 
 
 class DimensionalExtractionPrompt:
@@ -39,136 +39,186 @@ class DimensionalExtractionPrompt:
     def system_prompt(self) -> str:
         """Generate system prompt with multi-dimensional extraction instructions."""
 
-        # Base instructions
-        prompt = """You are a precise JSON extraction bot. Your ONLY output must be valid JSON.
+        # Build context sections
+        extraction_context = self._build_extraction_context()
+        document_context = self._build_document_context()
+        dimension_tasks = self._build_dimension_tasks()
+
+        # Template with placeholders
+        template = """You are a precise JSON extraction bot. Your ONLY output must be valid JSON.
 
 CRITICAL RULES:
 - Output ONLY the JSON object, nothing else
 - NO explanations, NO reasoning, NO extra text
-- Start your response with { and end with }
+- Start your response with {{ and end with }}
 - Do not write "Here is the JSON" or similar phrases
 
-"""
+{extraction_context}{document_context}EXTRACTION TASKS:
 
-        # Add extraction context if available (cmem - memory context)
+{dimension_tasks}
+REMINDER: Return ONLY valid JSON, nothing else."""
+
+        return template.format(
+            extraction_context=extraction_context,
+            document_context=document_context,
+            dimension_tasks=dimension_tasks
+        )
+
+    def _build_extraction_context(self) -> str:
+        """Build extraction context section (cmem - memory context)."""
         if self.extraction_context:
             context_str = self.extraction_context.to_prompt_context()
             if context_str.strip():
-                prompt += context_str + "\n"
+                return f"{context_str}\n"
+        return ""
 
-        # Add document metadata context if available (but not if already in extraction_context)
-        if self.document_metadata and not self.extraction_context:
-            prompt += "DOCUMENT CONTEXT:\n"
-            if self.document_metadata.get("publication_date"):
-                prompt += f"- Publication Date: {self.document_metadata['publication_date']}\n"
-            if self.document_metadata.get("source_location"):
-                prompt += f"- Source Location: {self.document_metadata['source_location']}\n"
-            if self.document_metadata.get("source_url"):
-                prompt += f"- Source: {self.document_metadata['source_url']}\n"
-            prompt += "\n"
+    def _build_document_context(self) -> str:
+        """Build document metadata context section."""
+        # Skip if extraction_context already provides this
+        if not self.document_metadata or self.extraction_context:
+            return ""
 
-        # Add extraction tasks for each dimension
-        prompt += "EXTRACTION TASKS:\n\n"
+        context_parts = []
+        if self.document_metadata.get("publication_date"):
+            context_parts.append("- Publication Date: {publication_date}")
+        if self.document_metadata.get("source_location"):
+            context_parts.append("- Source Location: {source_location}")
+        if self.document_metadata.get("source_url"):
+            context_parts.append("- Source: {source_url}")
+
+        if context_parts:
+            context_template = "DOCUMENT CONTEXT:\n{context}\n\n"
+            context_content = "\n".join(context_parts).format(**self.document_metadata)
+            return context_template.format(context=context_content)
+
+        return ""
+
+    def _build_dimension_tasks(self) -> str:
+        """Build extraction tasks for all dimensions."""
+        task_parts = []
 
         for i, (dim_name, dim_config) in enumerate(self.dimensions.items(), 1):
-            prompt += f"{i}. Extract {dim_name.upper()} ({dim_config.extraction_type}):\n"
-            prompt += f"   {dim_config.description}\n"
-
-            # Add dimension-specific instructions
+            # Get dimension-specific instructions
+            specific_instructions = ""
             if dim_config.extraction_type == "normalized":
-                prompt += self._get_normalized_instructions(dim_config)
+                specific_instructions = self._get_normalized_instructions(dim_config)
             elif dim_config.extraction_type == "geocoded":
-                prompt += self._get_geocoded_instructions(dim_config)
+                specific_instructions = self._get_geocoded_instructions(dim_config)
             elif dim_config.extraction_type == "categorical":
-                prompt += self._get_categorical_instructions(dim_config)
+                specific_instructions = self._get_categorical_instructions(dim_config)
             elif dim_config.extraction_type == "structured":
-                prompt += self._get_structured_instructions(dim_config)
+                specific_instructions = self._get_structured_instructions(dim_config)
 
-            prompt += "\n"
+            task_template = "{index}. Extract {dimension_name} ({extraction_type}):\n   {description}\n{specific_instructions}"
+            task_parts.append(task_template.format(
+                index=i,
+                dimension_name=dim_name.upper(),
+                extraction_type=dim_config.extraction_type,
+                description=dim_config.description,
+                specific_instructions=specific_instructions
+            ))
 
-        prompt += "REMINDER: Return ONLY valid JSON, nothing else."
-
-        return prompt
+        return "\n\n".join(task_parts)
 
     def _get_normalized_instructions(self, dim_config: DimensionConfig) -> str:
         """Get instructions for normalized dimensions."""
-        instructions = ""
+        if not dim_config.normalization:
+            return ""
 
-        if dim_config.normalization:
-            norm_config = dim_config.normalization
+        norm_config = dim_config.normalization
+        instruction_parts = []
 
-            if dim_config.name == "temporal":
-                instructions += "   - Normalize to ISO 8601 format:\n"
-                instructions += "     * Dates: YYYY-MM-DD\n"
-                instructions += "     * Datetimes: YYYY-MM-DDTHH:MM:SS\n"
-                instructions += "     * Durations: P1D, P2M, P3Y\n"
-                instructions += "     * Intervals: start/end (e.g., 2025-10-27T11:00:00/2025-10-27T19:00:00)\n"
+        if dim_config.name == "temporal":
+            temporal_template = """   - Normalize to ISO 8601 format:
+     * Dates: YYYY-MM-DD
+     * Datetimes: YYYY-MM-DDTHH:MM:SS
+     * Durations: P1D, P2M, P3Y
+     * Intervals: start/end (e.g., 2025-10-27T11:00:00/2025-10-27T19:00:00)"""
+            instruction_parts.append(temporal_template)
 
-                if norm_config.get("handle_relative"):
-                    if self.document_metadata.get("publication_date"):
-                        instructions += f"   - For relative dates (e.g., 'Monday'), use document date {self.document_metadata['publication_date']} as anchor\n"
-                    else:
-                        instructions += "   - For relative dates, use most recent occurrence\n"
+            if norm_config.get("handle_relative"):
+                if self.document_metadata.get("publication_date"):
+                    instruction_parts.append(
+                        "   - For relative dates (e.g., 'Monday'), use document date {pub_date} as anchor".format(
+                            pub_date=self.document_metadata['publication_date']
+                        )
+                    )
+                else:
+                    instruction_parts.append("   - For relative dates, use most recent occurrence")
 
-                if norm_config.get("default_year") == "document":
-                    instructions += "   - For dates without years: use most recent year in document context\n"
-            else:
-                instructions += "   - Normalize to standard format\n"
+            if norm_config.get("default_year") == "document":
+                instruction_parts.append("   - For dates without years: use most recent year in document context")
+        else:
+            instruction_parts.append("   - Normalize to standard format")
 
-        return instructions
+        return "\n".join(instruction_parts) + "\n" if instruction_parts else ""
 
     def _get_geocoded_instructions(self, dim_config: DimensionConfig) -> str:
         """Get instructions for geocoded dimensions."""
-        instructions = ""
+        if not dim_config.disambiguation:
+            return ""
 
-        if dim_config.disambiguation:
-            disamb_config = dim_config.disambiguation
+        disamb_config = dim_config.disambiguation
+        instruction_parts = []
 
-            if disamb_config.get("use_parent_region"):
-                instructions += "   - Include parent region for disambiguation (state, country)\n"
+        if disamb_config.get("use_parent_region"):
+            instruction_parts.append("   - Include parent region for disambiguation (state, country)")
 
-            if disamb_config.get("use_source_location") and self.document_metadata.get("source_location"):
-                instructions += f"   - Consider source location: {self.document_metadata['source_location']}\n"
+        if disamb_config.get("use_source_location") and self.document_metadata.get("source_location"):
+            instruction_parts.append(
+                "   - Consider source location: {source_location}".format(
+                    source_location=self.document_metadata['source_location']
+                )
+            )
 
-            # Add nearby locations context if available via extraction_context
-            if self.extraction_context and self.extraction_context.enable_nearby_locations:
-                nearby_context = self.extraction_context.get_nearby_locations_context()
-                if nearby_context:
-                    instructions += "   - " + nearby_context.replace("\n", "\n   - ") + "\n"
+        # Add nearby locations context if available via extraction_context
+        if self.extraction_context and self.extraction_context.enable_nearby_locations:
+            nearby_context = self.extraction_context.get_nearby_locations_context()
+            if nearby_context:
+                instruction_parts.append("   - " + nearby_context.replace("\n", "\n   - "))
 
-            # Add location type examples
-            location_types = self._get_field_enum_values(dim_config, "location_type")
-            if location_types:
-                instructions += f"   - Location types: {', '.join(location_types[:5])}, etc.\n"
+        # Add location type examples
+        location_types = self._get_field_enum_values(dim_config, "location_type")
+        if location_types:
+            instruction_parts.append(
+                "   - Location types: {types}, etc.".format(
+                    types=", ".join(location_types[:5])
+                )
+            )
 
-        return instructions
+        return "\n".join(instruction_parts) + "\n" if instruction_parts else ""
 
     def _get_categorical_instructions(self, dim_config: DimensionConfig) -> str:
         """Get instructions for categorical dimensions."""
-        instructions = ""
-
         # Get category values
         category_values = self._get_field_enum_values(dim_config, "category")
-        if category_values:
-            instructions += "   - Allowed categories:\n"
-            for cat in category_values[:10]:  # Show up to 10
-                instructions += f"     * {cat}\n"
-            if len(category_values) > 10:
-                instructions += f"     * ... ({len(category_values) - 10} more)\n"
+        if not category_values:
+            return ""
 
-        return instructions
+        instruction_parts = ["   - Allowed categories:"]
+        for cat in category_values[:10]:  # Show up to 10
+            instruction_parts.append("     * {cat}".format(cat=cat))
+
+        if len(category_values) > 10:
+            instruction_parts.append("     * ... ({remaining} more)".format(
+                remaining=len(category_values) - 10
+            ))
+
+        return "\n".join(instruction_parts) + "\n"
 
     def _get_structured_instructions(self, dim_config: DimensionConfig) -> str:
         """Get instructions for structured dimensions."""
-        instructions = "   - Extract structured fields:\n"
+        instruction_parts = ["   - Extract structured fields:"]
 
         for field in dim_config.fields:
-            field_name = field.get("name")
-            field_type = field.get("type")
-            field_desc = field.get("description", "")
-            instructions += f"     * {field_name} ({field_type}): {field_desc}\n"
+            field_template = "     * {name} ({type}): {description}"
+            instruction_parts.append(field_template.format(
+                name=field.get("name"),
+                type=field.get("type"),
+                description=field.get("description", "")
+            ))
 
-        return instructions
+        return "\n".join(instruction_parts) + "\n"
 
     def _get_field_enum_values(self, dim_config: DimensionConfig, field_name: str) -> List[str]:
         """Get enum values for a specific field."""
@@ -267,10 +317,11 @@ CRITICAL RULES:
     def get_json_schema(self, schema: Dict) -> str:
         """Get JSON schema instruction string."""
         schema_str = json.dumps(schema, indent=2)
-        return f"""
+        template = """
 
 Respond only in raw JSON. Schema:
-{schema_str}"""
+{schema}"""
+        return template.format(schema=schema_str)
 
     def build_messages_with_schema(
         self,

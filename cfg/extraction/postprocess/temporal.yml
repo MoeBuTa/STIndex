@@ -1,0 +1,84 @@
+# Temporal Postprocessing Configuration
+# Settings for temporal normalization and validation
+
+# Normalization format
+# ISO 8601 format for all normalized dates
+format: "iso8601"
+
+# Timezone handling
+timezone:
+  default: "UTC"               # Default timezone for ambiguous times
+  detect_from_location: true   # Detect timezone from spatial context
+  preserve_original: true      # Keep original timezone in output
+
+# Relative temporal resolution
+relative:
+  handle_relative: true        # Resolve relative dates ("Monday", "next week")
+  anchor_to_document_date: true # Use document publication_date as anchor
+  default_year: "document"     # Use document year if not specified
+
+  # Relative date patterns
+  patterns:
+    weekday: true              # "Monday" → actual date
+    relative_day: true         # "yesterday", "tomorrow"
+    relative_week: true        # "next week", "last week"
+    relative_month: true       # "next month", "last month"
+
+# Date range handling
+ranges:
+  expand_intervals: true       # Expand "Jan-Mar 2025" to start/end
+  format: "interval"           # "interval" or "duration"
+  separator: "/"               # ISO 8601 interval separator
+
+# Time handling
+time:
+  include_time: true           # Extract time of day
+  include_seconds: false       # Include seconds precision
+  24_hour_format: true         # Use 24-hour format
+  handle_am_pm: true           # Parse AM/PM indicators
+
+# Ambiguous date handling
+ambiguous:
+  date_format_preference: "dmy" # Prefer DD/MM/YYYY over MM/DD/YYYY ("dmy", "mdy", "ymd")
+  resolve_strategy: "context"  # "context", "strict", "permissive"
+
+# Validation
+validation:
+  enabled: true                # Enable validation
+  min_year: 1900               # Minimum valid year
+  max_year: 2100               # Maximum valid year
+  check_future_dates: true     # Warn about future dates
+  check_reasonable_ranges: true # Check for unreasonable intervals
+
+# Granularity
+granularity:
+  preserve_granularity: true   # Keep original granularity (day, month, year)
+  default_day: 1               # Default day for month-only dates
+  default_month: 1             # Default month for year-only dates
+
+  # Granularity levels
+  levels:
+    second: "YYYY-MM-DDTHH:MM:SS"
+    minute: "YYYY-MM-DDTHH:MM"
+    hour: "YYYY-MM-DDTHH"
+    day: "YYYY-MM-DD"
+    month: "YYYY-MM"
+    year: "YYYY"
+
+# Duration handling
+duration:
+  normalize_units: true        # Normalize to ISO 8601 duration (PT1H)
+  allow_approximate: true      # Allow "about 2 hours", "~3 days"
+
+# Error handling
+error_handling:
+  skip_on_error: true          # Skip unparseable dates
+  log_failures: true           # Log parsing failures
+  return_original_on_failure: true # Return original text if parsing fails
+
+# Output settings
+output:
+  include_original: true       # Include original text
+  include_type: true           # Include temporal type (date/time/datetime/duration/interval)
+  include_granularity: true    # Include granularity level
+  include_confidence: false    # Include confidence score

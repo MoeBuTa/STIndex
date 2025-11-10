@@ -20,9 +20,8 @@ from stindex.llm.response.dimension_models import (
     GeocodedDimensionEntity,
     CategoricalDimensionEntity,
 )
-from stindex.llm.response.models import ExtractionConfig
 from stindex.postprocess.spatial.geocoder import GeocoderService
-from stindex.utils.dimension_loader import DimensionConfigLoader
+from stindex.extraction.dimension_loader import DimensionConfigLoader
 from stindex.utils.config import load_config_from_file
 
 
@@ -69,12 +68,8 @@ class DimensionalExtractor:
 
         self.llm_manager = LLMManager(llm_config)
 
-        # Initialize geocoder
-        geocoding_config = config.get("geocoding", {})
-        self.geocoder = GeocoderService(
-            user_agent=geocoding_config.get("user_agent", "stindex-extraction/1.0"),
-            enable_cache=True,
-        )
+        # Initialize geocoder (loads from cfg/extraction/postprocess/spatial.yml)
+        self.geocoder = GeocoderService()
 
         # Load dimension configuration
         dimension_config_path = dimension_config_path or "dimensions"

@@ -17,6 +17,7 @@ from stindex.preprocess.input_models import (
 )
 from stindex.preprocess.parsing import DocumentParser
 from stindex.preprocess.scraping import WebScraper
+from stindex.utils.config import load_preprocess_config
 
 
 class Preprocessor:
@@ -47,40 +48,49 @@ class Preprocessor:
         chunks = preprocessor.process(doc)
     """
 
-    def __init__(
-        self,
-        max_chunk_size: int = 2000,
-        chunk_overlap: int = 200,
-        chunking_strategy: str = "sliding_window",
-        parsing_method: str = "unstructured",
-        user_agent: str = "STIndex-Research/1.0",
-        rate_limit: float = 2.0
-    ):
+    def __init__(self):
         """
         Initialize preprocessor.
 
-        Args:
-            max_chunk_size: Maximum chunk size in characters
-            chunk_overlap: Overlap between chunks
-            chunking_strategy: Chunking strategy ("sliding_window", "paragraph", "semantic")
-            parsing_method: Parsing method ("unstructured" or "simple")
-            user_agent: User agent for web scraping
-            rate_limit: Rate limit for web scraping (seconds between requests)
+        Loads all settings from cfg/preprocess/*.yml files.
         """
+        # Load configurations from YAML files
+        logger.debug("Loading preprocessing configs from cfg/preprocess/")
+        chunking_config = load_preprocess_config('chunking')
+        parsing_config = load_preprocess_config('parsing')
+        scraping_config = load_preprocess_config('scraping')
+
+        # Chunking settings from config
+        chunk_strategy = chunking_config.get('strategy', 'sliding_window')
+        strategy_config = chunking_config.get(chunk_strategy, {})
+        chunk_size = strategy_config.get('max_chunk_size', 2000)
+        overlap = strategy_config.get('overlap', 200)
+
+        # Parsing settings from config
+        parse_method = parsing_config.get('parsing_method', 'unstructured')
+
+        # Scraping settings from config
+        agent = scraping_config.get('user_agent', 'STIndex-Research/1.0')
+        rate = scraping_config.get('rate_limit', 2.0)
+
+        # Initialize components
         self.scraper = WebScraper(
-            user_agent=user_agent,
-            rate_limit=rate_limit
+            user_agent=agent,
+            rate_limit=rate
         )
 
         self.parser = DocumentParser(
-            parsing_method=parsing_method
+            parsing_method=parse_method
         )
 
         self.chunker = DocumentChunker(
-            max_chunk_size=max_chunk_size,
-            overlap=chunk_overlap,
-            strategy=chunking_strategy
+            max_chunk_size=chunk_size,
+            overlap=overlap,
+            strategy=chunk_strategy
         )
+
+        logger.debug(f"Preprocessor initialized from config: chunking={chunk_strategy}, "
+                    f"parsing={parse_method}, chunk_size={chunk_size}")
 
     def process(
         self,

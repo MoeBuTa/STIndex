@@ -89,13 +89,12 @@ def run_full_pipeline():
     logger.info(f"\nConfiguration:")
     logger.info(f"  - Dimension config: {config_path}")
     logger.info(f"  - Output directory: {output_dir}")
+    logger.info(f"  - Preprocessing: Loaded from cfg/preprocess/*.yml")
+    logger.info(f"  - Visualization: Loaded from cfg/visualization.yml")
 
     pipeline = STIndexPipeline(
         dimension_config=str(config_path),
         output_dir=str(output_dir),
-        max_chunk_size=2000,
-        chunk_overlap=200,
-        chunking_strategy="sliding_window",
         save_intermediate=True
     )
 

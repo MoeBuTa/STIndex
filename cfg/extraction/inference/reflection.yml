@@ -1,0 +1,145 @@
+# Two-Pass Extraction Reflection Configuration
+# Settings for LLM-based quality scoring and filtering of extraction results
+
+# General reflection settings
+enabled: false                  # Enable two-pass reflection (default: false due to extra LLM call cost)
+strict_mode: false             # Strict mode (only keep highest quality extractions)
+log_reasoning: true            # Log reflection reasoning for debugging
+
+# LLM-based reflection thresholds
+thresholds:
+  # Relevance: Is the entity actually mentioned in the text?
+  relevance: 0.7               # Minimum relevance score (0-1)
+
+  # Accuracy: Does the extraction accurately match the text?
+  accuracy: 0.7                # Minimum accuracy score (0-1)
+
+  # Completeness: Is the extraction complete?
+  completeness: 0.6            # Minimum completeness score (0-1)
+
+  # Consistency: Does it align with context and prior extractions?
+  # (Only applies when context-aware extraction is enabled)
+  consistency: 0.6             # Minimum consistency score (0-1)
+
+# Context-aware reflection
+# When combined with context-aware extraction, reflection can use:
+# - Prior temporal/spatial references for consistency checks
+# - Document metadata (publication date, source location)
+# - Chunk position and section hierarchy
+context_aware_reasoning:
+  enabled: true                # Use context for reflection (requires context-aware extraction)
+
+  # Temporal consistency checks
+  temporal:
+    check_relative_expressions: true   # Verify "next day" resolves correctly
+    check_chronological_order: true    # Warn if dates are out of order
+    check_publication_date: true       # Check against document publication date
+
+  # Spatial consistency checks
+  spatial:
+    check_disambiguation: true         # Verify locations are correctly disambiguated
+    check_parent_regions: true         # Verify parent region relationships
+    check_proximity: true              # Check if nearby locations make sense
+
+  # Cross-dimensional checks
+  cross_dimensional:
+    check_temporal_spatial: true       # Check temporal-spatial consistency
+    check_event_consistency: true      # Check event-entity consistency
+
+# Reflection strategies
+strategies:
+  # Batch reflection: Reflect on multiple entities at once (faster but less accurate)
+  batch_reflection: false      # If true, reflect on all entities in one LLM call
+
+  # Progressive thresholds: Start strict, relax if too few results
+  progressive_thresholds: false
+
+  # Entity-specific thresholds
+  entity_specific:
+    enabled: false
+    temporal:
+      relevance: 0.8
+      accuracy: 0.8
+    spatial:
+      relevance: 0.7
+      accuracy: 0.7
+
+# Filtering rules
+filtering:
+  # Filter out specific patterns
+  patterns:
+    # Temporal patterns to filter
+    temporal:
+      - "future dates beyond 1 year"        # Likely hallucinations
+      - "dates before 1900"                 # Unlikely in most contexts
+      - "vague expressions without anchor"  # "someday", "eventually"
+
+    # Spatial patterns to filter
+    spatial:
+      - "fictional locations"               # Middle Earth, Narnia
+      - "ambiguous references"              # "the city", "downtown" without context
+      - "coordinate errors"                 # Out of bounds coordinates
+
+  # Minimum text evidence
+  require_text_evidence: true  # Entity text must appear in source
+
+  # Hallucination detection
+  check_hallucinations: true   # Flag entities not in text
+
+# Quality scoring
+quality_scoring:
+  enabled: true                # Compute quality score for all entities
+
+  # Score components (weights, must sum to 1.0)
+  weights:
+    relevance: 0.4
+    accuracy: 0.3
+    completeness: 0.2
+    consistency: 0.1
+
+  # Minimum quality score to keep
+  min_quality_score: 0.6       # 0-1 scale
+
+# Performance settings
+performance:
+  # LLM settings for reflection
+  llm:
+    temperature: 0.0           # Use deterministic reflection
+    max_tokens: 2000           # Maximum tokens for reflection response
+
+  # Timeout
+  timeout_seconds: 30          # Timeout for reflection LLM call
+
+  # Caching
+  cache_reflection_results: true  # Cache reflection results
+
+# Error handling
+error_handling:
+  on_reflection_error: "keep"  # "keep" (keep original), "discard" (discard entity), "error" (raise error)
+  fallback_to_defaults: true   # Use default scores if reflection fails
+  log_errors: true             # Log reflection errors
+
+# Output settings
+output:
+  # What to include in output
+  include_reflection_scores: true    # Include detailed scores
+  include_reasoning: true            # Include LLM reasoning
+  include_filtered_entities: false   # Include entities that were filtered out
+  mark_reflected: true               # Mark entities as 'reflected'
+
+  # Statistics
+  collect_statistics: true           # Collect reflection statistics
+  statistics:
+    - total_entities
+    - filtered_entities
+    - avg_relevance_score
+    - avg_accuracy_score
+    - avg_consistency_score
+    - reflection_time_ms
+
+# Backward compatibility with validation.yml
+# Entity validation is now separate from reflection
+# For entity validation, use the validate_entities() function directly
+validation:
+  deprecated: true
+  message: "Entity validation has been separated from reflection. Use validate_entities() for validation."

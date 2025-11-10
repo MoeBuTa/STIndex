@@ -17,6 +17,7 @@ from stindex.visualization.html_report import HTMLReportGenerator
 from stindex.visualization.map_generator import MapGenerator
 from stindex.visualization.plot_generator import PlotGenerator
 from stindex.visualization.statistical_summary import StatisticalSummary
+from stindex.utils.config import load_visualization_config
 
 
 class STIndexVisualizer:
@@ -37,23 +38,24 @@ class STIndexVisualizer:
         )
     """
 
-    def __init__(
-        self,
-        temporal_dim: str = "temporal",
-        spatial_dim: str = "spatial",
-        category_dim: Optional[str] = None
-    ):
+    def __init__(self):
         """
         Initialize visualizer.
 
-        Args:
-            temporal_dim: Name of temporal dimension for timeline
-            spatial_dim: Name of spatial dimension for mapping
-            category_dim: Name of categorical dimension for color coding
+        Loads all settings from cfg/visualization.yml.
         """
-        self.temporal_dim = temporal_dim
-        self.spatial_dim = spatial_dim
-        self.category_dim = category_dim
+        # Load visualization config
+        logger.debug("Loading visualization config from cfg/visualization.yml")
+        viz_config = load_visualization_config()
+
+        # Dimension mapping from config
+        dimensions_config = viz_config.get('dimensions', {})
+        self.temporal_dim = dimensions_config.get('temporal', 'temporal')
+        self.spatial_dim = dimensions_config.get('spatial', 'spatial')
+        self.category_dim = dimensions_config.get('category')
+
+        # Store config for passing to generators
+        self.config = viz_config
 
         # Initialize components
         try:
@@ -70,6 +72,9 @@ class STIndexVisualizer:
 
         self.summary_generator = StatisticalSummary()
         self.report_generator = HTMLReportGenerator()
+
+        logger.debug(f"Visualizer initialized from config: temporal={self.temporal_dim}, "
+                    f"spatial={self.spatial_dim}, category={self.category_dim}")
 
     def visualize(
         self,

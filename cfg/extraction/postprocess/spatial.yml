@@ -1,0 +1,74 @@
+# Spatial Postprocessing Configuration
+# Settings for geocoding and spatial entity validation
+
+# Geocoding service
+# Options: "nominatim" (free, OSM), "google" (requires API key), "hybrid" (try Nominatim first, fallback to Google)
+geocoder: "nominatim"
+
+# Nominatim settings (OpenStreetMap)
+nominatim:
+  user_agent: "stindex-extraction/1.0"
+  rate_limit: 1.0              # Seconds between requests (Nominatim requires ≥1s)
+  timeout: 10.0                # Request timeout in seconds
+  base_url: "https://nominatim.openstreetmap.org"
+
+  # Geocoding parameters
+  exactly_one: true            # Return only the best result
+  language: "en"               # Preferred language for results
+  addressdetails: true         # Include detailed address breakdown
+
+# Google Maps API settings (optional, requires API key)
+google:
+  api_key: null                # Set via environment variable: GOOGLE_MAPS_API_KEY
+  rate_limit: 0.1              # Google allows higher rates
+  timeout: 5.0
+  region: null                 # Bias results to a region (e.g., "us", "au")
+
+# Geocoding cache
+cache:
+  enabled: true                # Enable caching of geocoding results
+  cache_dir: "~/.stindex/geocode_cache"
+  cache_file: "geocode_cache.json"
+
+# Context-aware disambiguation
+disambiguation:
+  use_parent_region: true      # Use parent_region from extraction
+  use_document_context: true   # Extract context from full document
+  use_source_location: true    # Use document metadata source_location
+
+  # Parent region strategies
+  parent_region:
+    priority: 1                # Higher priority (1=highest)
+    append_to_query: true      # Append to geocoding query
+
+  # Document context strategies
+  document_context:
+    priority: 2
+    extract_regions: true      # Extract all regions from document
+    use_most_frequent: true    # Use most frequently mentioned region
+
+  # Source location strategies
+  source_location:
+    priority: 3
+    fallback_only: true        # Only use as fallback
+
+# Validation
+validation:
+  enabled: true                # Enable validation of geocoded results
+  min_confidence: 0.5          # Minimum confidence score (0-1)
+  max_distance_km: 100         # Maximum distance from expected location
+  check_country: true          # Verify country matches expected
+
+# Error handling
+error_handling:
+  retry_on_timeout: true       # Retry on timeout errors
+  max_retries: 3               # Maximum retry attempts
+  skip_on_error: true          # Skip failed geocoding instead of crashing
+  log_failures: true           # Log failed geocoding attempts
+
+# Output settings
+output:
+  include_raw_response: false  # Include raw geocoder response
+  include_bounding_box: true   # Include bounding box coordinates
+  include_confidence: true     # Include confidence score
+  precision_meters: 2          # Decimal places for coordinates

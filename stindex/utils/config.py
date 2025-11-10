@@ -13,6 +13,9 @@ import yaml
 
 from stindex.utils.constants import (
     CFG_EXTRACTION_INFERENCE_DIR,
+    CFG_EXTRACTION_POSTPROCESS_DIR,
+    CFG_PREPROCESS_DIR,
+    CFG_DIR,
     DEFAULT_LLM_PROVIDER,
 )
 
@@ -77,3 +80,80 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
         raise FileNotFoundError(f"Config file not found: {config_file}")
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing config file {config_file}: {e}")
+
+
+def load_preprocess_config(config_name: str) -> Dict[str, Any]:
+    """
+    Load preprocessing configuration file.
+
+    Args:
+        config_name: Config name (e.g., 'chunking', 'parsing', 'scraping')
+                    without .yml extension
+
+    Returns:
+        Dictionary containing configuration
+
+    Examples:
+        >>> load_preprocess_config('chunking')
+        >>> load_preprocess_config('parsing')
+    """
+    config_file = Path(CFG_PREPROCESS_DIR) / f"{config_name}.yml"
+
+    try:
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f) or {}
+        return config
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Preprocess config not found: {config_file}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing config file {config_file}: {e}")
+
+
+def load_postprocess_config(config_name: str) -> Dict[str, Any]:
+    """
+    Load postprocessing configuration file.
+
+    Args:
+        config_name: Config name (e.g., 'spatial', 'temporal', 'validation')
+                    without .yml extension
+
+    Returns:
+        Dictionary containing configuration
+
+    Examples:
+        >>> load_postprocess_config('spatial')
+        >>> load_postprocess_config('temporal')
+    """
+    config_file = Path(CFG_EXTRACTION_POSTPROCESS_DIR) / f"{config_name}.yml"
+
+    try:
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f) or {}
+        return config
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Postprocess config not found: {config_file}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing config file {config_file}: {e}")
+
+
+def load_visualization_config() -> Dict[str, Any]:
+    """
+    Load visualization configuration file.
+
+    Returns:
+        Dictionary containing visualization configuration
+
+    Examples:
+        >>> config = load_visualization_config()
+    """
+    config_file = Path(CFG_DIR) / "visualization.yml"
+
+    try:
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f) or {}
+        return config
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Visualization config not found: {config_file}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing config file {config_file}: {e}")
+

@@ -27,6 +27,7 @@ from stindex.utils.constants import (
     GEOCODER_REQUEST_TIMEOUT,
     DEFAULT_USER_AGENT,
 )
+from stindex.utils.config import load_postprocess_config
 
 # Google Maps API (optional)
 try:
@@ -131,27 +132,27 @@ class GeocoderService:
     5. Batch processing support
     """
 
-    def __init__(
-        self,
-        user_agent: Optional[str] = None,
-        enable_cache: bool = True,
-        cache_dir: Optional[str] = None,
-        rate_limit: Optional[float] = None,
-        google_api_key: Optional[str] = None,
-    ):
+    def __init__(self):
         """
         Initialize GeocoderService.
 
-        Args:
-            user_agent: User agent for Nominatim (uses default from constants if None)
-            enable_cache: Enable caching
-            cache_dir: Directory for cache files
-            rate_limit: Minimum seconds between requests (uses default from constants if None)
-            google_api_key: Google Maps API key (optional, for fallback geocoding)
+        Loads all settings from cfg/extraction/postprocess/spatial.yml.
         """
-        user_agent = user_agent or DEFAULT_USER_AGENT
-        rate_limit = rate_limit or NOMINATIM_RATE_LIMIT
+        # Load spatial config
+        logger.debug("Loading spatial config from cfg/extraction/postprocess/spatial.yml")
+        spatial_config = load_postprocess_config('spatial')
 
+        # Nominatim settings from config
+        nominatim_config = spatial_config.get('nominatim', {})
+        user_agent = nominatim_config.get('user_agent', DEFAULT_USER_AGENT)
+        rate_limit = nominatim_config.get('rate_limit', NOMINATIM_RATE_LIMIT)
+
+        # Cache settings from config
+        cache_config = spatial_config.get('cache', {})
+        enable_cache = cache_config.get('enabled', True)
+        cache_dir = cache_config.get('cache_dir')
+
+        # Initialize Nominatim geocoder
         self.geolocator = Nominatim(user_agent=user_agent, timeout=GEOCODER_REQUEST_TIMEOUT)
         self.rate_limit = rate_limit
         self.last_request_time = 0
@@ -172,7 +173,8 @@ class GeocoderService:
         # Initialize Google Maps API (optional fallback)
         self.gmaps_client = None
         if GOOGLE_MAPS_AVAILABLE:
-            api_key = google_api_key or os.getenv('GOOGLE_MAPS_API_KEY')
+            google_config = spatial_config.get('google', {})
+            api_key = google_config.get('api_key') or os.getenv('GOOGLE_MAPS_API_KEY')
             if api_key:
                 try:
                     self.gmaps_client = googlemaps.Client(key=api_key)
@@ -181,6 +183,9 @@ class GeocoderService:
                     logger.warning(f"Failed to initialize Google Maps API: {e}")
             else:
                 logger.debug("Google Maps API key not provided (optional). Set GOOGLE_MAPS_API_KEY env var for better geocoding.")
+
+        logger.debug(f"GeocoderService initialized from config: user_agent={user_agent}, "
+                    f"rate_limit={rate_limit}s, cache_enabled={enable_cache}")
 
     def _rate_limit_wait(self):
         """Enforce rate limiting."""

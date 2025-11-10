@@ -1,0 +1,38 @@
+# Chunking Configuration
+# Settings for document chunking strategies
+
+# Chunking strategy
+# Options: "sliding_window", "paragraph", "element_based", "semantic"
+strategy: "sliding_window"
+
+# Sliding window settings
+sliding_window:
+  max_chunk_size: 2000        # Maximum chunk size in characters
+  overlap: 200                 # Character overlap between chunks
+  preserve_sentences: true     # Try to break at sentence boundaries
+
+# Paragraph-based chunking
+paragraph:
+  max_chunk_size: 2000        # Maximum chunk size
+  min_chunk_size: 500         # Minimum chunk size (merge smaller paragraphs)
+  overlap: 100                # Overlap between paragraph chunks
+
+# Element-based chunking (preserves document structure)
+element_based:
+  max_chunk_size: 2000
+  preserve_titles: true        # Keep titles with their content
+  preserve_tables: true        # Keep tables intact
+  preserve_lists: true         # Keep lists intact
+  metadata_enrichment: true    # Add element type metadata
+
+# Semantic chunking (future)
+semantic:
+  max_chunk_size: 2000
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  similarity_threshold: 0.7    # Similarity threshold for grouping
+
+# General settings
+general:
+  remove_empty_chunks: true    # Remove chunks with no content
+  min_word_count: 10           # Minimum words per chunk
+  normalize_whitespace: true   # Normalize whitespace in chunks
