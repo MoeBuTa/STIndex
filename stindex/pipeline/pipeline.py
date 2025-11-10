@@ -457,12 +457,23 @@ class STIndexPipeline:
                                     'consistency': self.consistency_threshold
                                 }
 
-                        # Store result
+                        # Store result with chunk parameters (excluding start_char/end_char)
                         result_data = {
                             "chunk_id": chunk.chunk_id,
                             "chunk_index": chunk.chunk_index,
                             "document_id": chunk.document_id,
                             "document_title": chunk.document_title,
+                            "chunk_params": {
+                                "total_chunks": chunk.total_chunks,
+                                "word_count": chunk.word_count,
+                                "char_count": chunk.char_count,
+                                "previous_chunk_summary": chunk.previous_chunk_summary,
+                                "section_hierarchy": chunk.section_hierarchy,
+                                "element_types": chunk.element_types,
+                                "keywords": chunk.keywords,
+                                "summary": chunk.summary,
+                                "preview": chunk.preview,
+                            },
                             "extraction": result.model_dump(),
                         }
 
@@ -549,12 +560,23 @@ class STIndexPipeline:
                                 'consistency': self.consistency_threshold
                             }
 
-                    # Store result
+                    # Store result with chunk parameters (excluding start_char/end_char)
                     result_data = {
                         "chunk_id": chunk.chunk_id,
                         "chunk_index": chunk.chunk_index,
                         "document_id": chunk.document_id,
                         "document_title": chunk.document_title,
+                        "chunk_params": {
+                            "total_chunks": chunk.total_chunks,
+                            "word_count": chunk.word_count,
+                            "char_count": chunk.char_count,
+                            "previous_chunk_summary": chunk.previous_chunk_summary,
+                            "section_hierarchy": chunk.section_hierarchy,
+                            "element_types": chunk.element_types,
+                            "keywords": chunk.keywords,
+                            "summary": chunk.summary,
+                            "preview": chunk.preview,
+                        },
                         "extraction": result.model_dump(),
                     }
 
@@ -775,13 +797,40 @@ class STIndexPipeline:
         logger.info(f"💾 Saved {len(flat_chunks)} chunks to: {output_file}")
 
     def _save_results(self, results: List[Dict[str, Any]]):
-        """Save extraction results to file."""
-        output_file = self.results_dir / "extraction_results.json"
+        """
+        Save extraction results to file, organized by model type.
+
+        Creates a folder structure: results/<model_name>/extraction_results.json
+        """
+        # Extract model name from first successful result
+        model_name = "unknown_model"
+        for result in results:
+            extraction = result.get('extraction', {})
+            if extraction.get('success'):
+                extraction_config = extraction.get('extraction_config', {})
+                if isinstance(extraction_config, dict):
+                    # Try model_name first (current format), then model (legacy)
+                    model_name = extraction_config.get('model_name') or extraction_config.get('model', 'unknown_model')
+                else:
+                    # Handle ExtractionConfig object
+                    model_name = getattr(extraction_config, 'model_name', None) or getattr(extraction_config, 'model', 'unknown_model')
+                break
+
+        # Clean model name for filesystem (replace / with _)
+        clean_model_name = model_name.replace('/', '_')
+
+        # Create model-specific directory
+        model_dir = self.results_dir / clean_model_name
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save results
+        output_file = model_dir / "extraction_results.json"
 
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
 
         logger.info(f"💾 Saved {len(results)} results to: {output_file}")
+        logger.info(f"   Model: {model_name}")
 
     def _generate_summary(self, results: List[Dict[str, Any]], output_dir: Path):
         """Generate basic summary visualization."""
