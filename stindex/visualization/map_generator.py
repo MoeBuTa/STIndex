@@ -121,12 +121,28 @@ class MapGenerator:
                     temporal_text = temporal.get('text', '')
                     temporal_normalized = temporal.get('normalized', '')
 
-                    # Parse datetime
+                    # Parse datetime with better error handling
                     try:
                         time_str = temporal_normalized.split('/')[0] if '/' in temporal_normalized else temporal_normalized
-                        event_datetime = datetime.fromisoformat(time_str)
-                    except:
-                        pass
+
+                        # Handle different ISO 8601 formats
+                        # Extract just the date if it's a datetime string
+                        if 'T' in time_str:
+                            # Full datetime - keep it for better precision
+                            event_datetime = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                        else:
+                            # Date only - parse as date and set to noon for better timeline display
+                            event_datetime = datetime.fromisoformat(f"{time_str}T12:00:00")
+
+                    except (ValueError, AttributeError) as e:
+                        logger.debug(f"Failed to parse datetime '{temporal_normalized}': {e}")
+                        # Try fallback parsing
+                        try:
+                            from dateutil import parser
+                            event_datetime = parser.parse(time_str)
+                        except:
+                            logger.warning(f"Could not parse temporal value: {temporal_normalized}")
+                            pass
 
                 # Get category if available
                 category_text = ""
@@ -216,7 +232,7 @@ class MapGenerator:
     ) -> folium.Map:
         """Create animated map with timeline."""
         # Filter events with datetime
-        valid_events = [e for e in events if e['datetime']]
+        valid_events = [e for e in events if e.get('datetime')]
         logger.info(f"Creating animated map with {len(valid_events)} timestamped events")
 
         if not valid_events:
@@ -241,56 +257,103 @@ class MapGenerator:
         else:
             color_map = {}
 
-        # Prepare GeoJSON features
+        # Prepare GeoJSON features with validation
         features = []
+        skipped_features = 0
 
         for event in sorted(valid_events, key=lambda e: e['datetime']):
-            popup_html = self._create_popup_html(event)
-            color = color_map.get(event['category'], 'gray') if category_dim else 'blue'
+            try:
+                # Validate coordinates
+                lat = float(event['latitude'])
+                lon = float(event['longitude'])
 
-            feature = {
-                'type': 'Feature',
-                'geometry': {
-                    'type': 'Point',
-                    'coordinates': [event['longitude'], event['latitude']]
-                },
-                'properties': {
-                    'time': event['datetime'].isoformat(),
-                    'popup': popup_html,
-                    'style': {
-                        'color': color,
-                        'fillColor': color,
-                        'fillOpacity': 0.6,
-                        'weight': 2
+                if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                    logger.warning(f"Invalid coordinates: lat={lat}, lon={lon}")
+                    skipped_features += 1
+                    continue
+
+                # Get color
+                color = color_map.get(event['category'], 'gray') if category_dim else 'blue'
+
+                # Map folium colors to hex for TimestampedGeoJson
+                color_hex_map = {
+                    'red': '#d73027', 'blue': '#4575b4', 'green': '#91cf60',
+                    'purple': '#9970ab', 'orange': '#fc8d59', 'darkred': '#a50026',
+                    'lightred': '#f46d43', 'beige': '#fee090', 'darkblue': '#313695',
+                    'darkgreen': '#1a9850', 'cadetblue': '#abd9e9', 'darkpurple': '#762a83',
+                    'pink': '#fbb4b9', 'lightblue': '#c6dbef', 'lightgreen': '#d9f0a3',
+                    'gray': '#969696', 'black': '#252525', 'lightgray': '#cccccc'
+                }
+                color_code = color_hex_map.get(color, '#4575b4')
+
+                popup_html = self._create_popup_html(event)
+
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [lon, lat]  # GeoJSON uses [lon, lat]
                     },
-                    'icon': 'circle',
-                    'iconstyle': {
-                        'fillColor': color,
-                        'fillOpacity': 0.8,
-                        'stroke': 'true',
-                        'radius': 6
+                    'properties': {
+                        'time': event['datetime'].isoformat(),
+                        'popup': popup_html,
+                        'tooltip': event['location'],
+                        'style': {
+                            'color': color_code,
+                            'fillColor': color_code,
+                            'fillOpacity': 0.6,
+                            'weight': 2
+                        },
+                        'icon': 'circle',
+                        'iconstyle': {
+                            'fillColor': color_code,
+                            'fillOpacity': 0.8,
+                            'stroke': 'true',
+                            'radius': 8
+                        }
                     }
                 }
-            }
-            features.append(feature)
+                features.append(feature)
+
+            except (ValueError, KeyError, TypeError) as e:
+                logger.warning(f"Skipping invalid event: {e}")
+                skipped_features += 1
+                continue
+
+        if skipped_features > 0:
+            logger.warning(f"Skipped {skipped_features} invalid features")
+
+        if not features:
+            logger.warning("No valid features for animated map, falling back to static")
+            return self._create_static_map(events, category_dim)
+
+        logger.info(f"Created {len(features)} valid features for animated map")
 
         # Create TimestampedGeoJson layer
-        timestamped_geojson = TimestampedGeoJson(
-            {
-                'type': 'FeatureCollection',
-                'features': features
-            },
-            period='P1D',  # 1 day period
-            add_last_point=True,
-            auto_play=False,
-            loop=False,
-            max_speed=2,
-            loop_button=True,
-            date_options='YYYY-MM-DD HH:mm:ss',
-            time_slider_drag_update=True
-        )
+        try:
+            timestamped_geojson = TimestampedGeoJson(
+                {
+                    'type': 'FeatureCollection',
+                    'features': features
+                },
+                period='P1D',  # 1 day period
+                add_last_point=True,
+                auto_play=False,
+                loop=False,
+                max_speed=2,
+                loop_button=True,
+                date_options='YYYY-MM-DD',
+                time_slider_drag_update=True,
+                duration='P1D'  # Add explicit duration
+            )
 
-        timestamped_geojson.add_to(m)
+            timestamped_geojson.add_to(m)
+            logger.info("✓ TimestampedGeoJson layer added successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to create TimestampedGeoJson: {e}")
+            logger.warning("Falling back to static map")
+            return self._create_static_map(events, category_dim)
 
         # Add legend
         if category_dim and color_map:

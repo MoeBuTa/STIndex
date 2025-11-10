@@ -182,38 +182,67 @@ class PlotGenerator:
         temporal_col = f'{dim_name}_normalized' if f'{dim_name}_normalized' in df.columns else dim_name
 
         if temporal_col not in df.columns:
+            logger.warning(f"Temporal column {temporal_col} not found in dataframe")
             return generated
 
         temporal_df = df[df[temporal_col].notna()].copy()
 
         if temporal_df.empty:
+            logger.warning(f"No valid temporal data for {dim_name}")
             return generated
 
-        # Parse dates
+        # Parse dates with better error handling
         dates = []
+        failed_parses = 0
+
         for norm in temporal_df[temporal_col]:
             try:
-                date_str = norm.split('/')[0] if '/' in str(norm) else str(norm)
+                # Handle different ISO 8601 formats
+                date_str = str(norm)
+
+                # Extract date portion (handle intervals like "2024-01-01/2024-01-02")
+                if '/' in date_str:
+                    date_str = date_str.split('/')[0]
+
+                # Extract date only (handle datetime like "2024-01-01T12:00:00")
                 if 'T' in date_str:
                     date_str = date_str.split('T')[0]
-                dates.append(pd.to_datetime(date_str))
-            except:
-                pass
+
+                # Parse the date
+                parsed_date = pd.to_datetime(date_str, errors='coerce')
+
+                if pd.notna(parsed_date):
+                    dates.append(parsed_date)
+                else:
+                    failed_parses += 1
+
+            except Exception as e:
+                failed_parses += 1
+                logger.debug(f"Failed to parse date '{norm}': {e}")
+
+        if failed_parses > 0:
+            logger.warning(f"Failed to parse {failed_parses} dates out of {len(temporal_df)}")
 
         if not dates:
+            logger.warning(f"No valid dates parsed for {dim_name}")
             return generated
+
+        logger.info(f"Successfully parsed {len(dates)} dates for {dim_name}")
 
         # Create temporal distribution plot
         date_df = pd.DataFrame({'date': dates})
         date_df['year_month'] = date_df['date'].dt.to_period('M')
         monthly_counts = date_df['year_month'].value_counts().sort_index()
 
+        # Convert period index to string for better x-axis labels
+        monthly_counts.index = monthly_counts.index.astype(str)
+
         fig, ax = plt.subplots(figsize=(14, 6))
-        monthly_counts.plot(kind='bar', ax=ax, color='#667eea')
+        monthly_counts.plot(kind='line', ax=ax, color='#667eea', marker='o', linewidth=2, markersize=6)
         ax.set_title(f'{dim_name.title()} Distribution Over Time', fontsize=16, fontweight='bold')
         ax.set_xlabel('Month', fontsize=12)
         ax.set_ylabel('Count', fontsize=12)
-        ax.grid(axis='y', alpha=0.3)
+        ax.grid(True, alpha=0.3, linestyle='--')
         plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
 
@@ -410,42 +439,84 @@ class PlotGenerator:
         temporal_cols = [col for col in df.columns if '_normalized' in col or col == 'temporal']
 
         if not temporal_cols:
+            logger.warning("No temporal columns found for interactive plots")
             return generated
 
         temporal_col = temporal_cols[0]
         temporal_df = df[df[temporal_col].notna()].copy()
 
         if temporal_df.empty:
+            logger.warning("No temporal data available for interactive plots")
             return generated
 
-        # Parse dates
-        dates = []
+        # Parse dates with better error handling
+        parsed_data = []
+        failed_parses = 0
+
         for norm in temporal_df[temporal_col]:
             try:
                 date_str = str(norm).split('/')[0] if '/' in str(norm) else str(norm)
-                dates.append(pd.to_datetime(date_str))
-            except:
-                pass
 
-        if not dates:
+                # Extract date portion if datetime
+                if 'T' in date_str:
+                    date_str = date_str.split('T')[0]
+
+                parsed_date = pd.to_datetime(date_str, errors='coerce')
+
+                if pd.notna(parsed_date):
+                    parsed_data.append(parsed_date)
+                else:
+                    failed_parses += 1
+
+            except Exception as e:
+                failed_parses += 1
+                logger.debug(f"Failed to parse date '{norm}': {e}")
+
+        if failed_parses > 0:
+            logger.warning(f"Failed to parse {failed_parses} dates for interactive plot")
+
+        if not parsed_data:
+            logger.warning("No valid dates parsed for interactive plots")
             return generated
 
+        logger.info(f"Creating interactive timeline with {len(parsed_data)} events")
+
         # Create interactive timeline
-        plot_df = pd.DataFrame({'date': dates})
+        plot_df = pd.DataFrame({'date': sorted(parsed_data)})
         plot_df['count'] = 1
         plot_df['cumulative'] = plot_df['count'].cumsum()
 
-        fig = px.line(plot_df, x='date', y='cumulative',
-                     title='Cumulative Events Over Time',
-                     labels={'cumulative': 'Cumulative Count', 'date': 'Date'},
-                     markers=True)
+        fig = px.line(
+            plot_df,
+            x='date',
+            y='cumulative',
+            title='Cumulative Events Over Time',
+            labels={'cumulative': 'Cumulative Count', 'date': 'Date'},
+            markers=True
+        )
 
         fig.update_layout(
             hovermode='x unified',
             template='plotly_white',
             font=dict(size=12),
-            title_font=dict(size=18),
-            height=500
+            title_font=dict(size=18, family='Arial'),
+            height=500,
+            xaxis=dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='LightGray'
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='LightGray'
+            )
+        )
+
+        # Update trace style
+        fig.update_traces(
+            line=dict(color='#667eea', width=3),
+            marker=dict(size=8, color='#667eea')
         )
 
         output_file = output_dir / 'interactive_timeline.html'

@@ -1,0 +1,74 @@
+# HuggingFace (MS-SWIFT) Configuration
+# Configuration for HuggingFace models served via MS-SWIFT with vLLM backend
+#
+# Structure:
+#   - llm: Client configuration (for making inference requests)
+#   - deployment: Server configuration (for deploying the model server)
+
+# ============================================================
+# Client Configuration (for inference requests)
+# ============================================================
+llm:
+  # Provider type
+  llm_provider: hf
+
+  # Model name as reported by MS-SWIFT server (not HuggingFace ID)
+  # Must match the deployed model's name from the server
+  model_name: Qwen3-8B
+
+  # Server endpoint (must match deployment.port below)
+  base_url: "http://localhost:8001"
+
+  # Generation parameters
+  temperature: 0.0  # Deterministic output (0.0 = greedy, higher = more random)
+  max_tokens: 4096  # Maximum tokens to generate per request
+
+  # Advanced sampling parameters
+  seed: null  # Random seed for reproducibility (null = random)
+  top_p: 1.0  # Top-p (nucleus) sampling (1.0 = disabled)
+  top_k: -1   # Top-k sampling (-1 = disabled)
+
+# ============================================================
+# Server Deployment Configuration
+# ============================================================
+deployment:
+  # Model to deploy (HuggingFace model ID or local path)
+  model: Qwen/Qwen3-8B
+
+  # Inference backend (vllm recommended for efficiency)
+  infer_backend: vllm
+
+  # Use HuggingFace Hub downloaded models (true = use cached models from ~/.cache/huggingface)
+  use_hf: true
+
+  # Server network settings
+  host: "0.0.0.0"  # Listen on all interfaces
+  port: 8001        # Server port (MS-SWIFT uses 8001 by default, must match llm.base_url above)
+
+  # Logging settings
+  verbose: true      # Enable detailed logging
+  log_interval: 20   # Log every N batches
+
+  # Optional: Fine-tuned model checkpoint
+  ckpt_dir: null     # Path to checkpoint directory (null = use base model)
+  merge_lora: false  # Merge LoRA weights before deployment
+
+  # Optional: Multi-LoRA deployment (serve multiple adapters)
+  lora_modules: null
+  # Example:
+  # lora_modules:
+  #   medical: /path/to/medical_adapter
+  #   legal: /path/to/legal_adapter
+
+  # vLLM backend settings
+  vllm:
+    # GPU configuration
+    tensor_parallel_size: 1      # Number of GPUs for tensor parallelism
+    gpu_memory_utilization: 0.2  # Fraction of GPU memory to use (0.0-1.0)
+
+    # Model settings
+    max_model_len: 8192  # Maximum sequence length (tokens)
+    dtype: auto          # Data type: auto, float16, bfloat16, float32
+
+    # Security
+    trust_remote_code: true  # Allow custom model code execution

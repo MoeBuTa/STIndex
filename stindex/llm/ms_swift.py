@@ -1,7 +1,7 @@
 """
-MS-SWIFT LLM Provider - Direct Integration.
+HuggingFace LLM Provider via MS-SWIFT - Native InferClient Integration.
 
-Directly uses MS-SWIFT functions without wrapper classes:
+Directly uses MS-SWIFT native functions:
 - swift.llm.run_deploy() for server deployment
 - swift.llm.InferClient for inference
 - swift.llm.RequestConfig for configuration
@@ -9,7 +9,7 @@ Directly uses MS-SWIFT functions without wrapper classes:
 Simple, minimal adapter that extends STIndex's base patterns.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from loguru import logger
 
 try:
@@ -25,27 +25,23 @@ except ImportError:
     SWIFT_AVAILABLE = False
     logger.warning("MS-SWIFT not installed. Install with: pip install ms-swift")
 
-try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-
 from stindex.llm.response.models import LLMResponse, TokenUsage
 
 
 class MSSwiftLLM:
     """
-    MS-SWIFT LLM provider using native swift.llm functions.
+    HuggingFace LLM provider using MS-SWIFT's native swift.llm.InferClient.
 
-    Directly calls:
+    Uses MS-SWIFT's native Python client for inference:
     - swift.llm.InferClient for generation
     - swift.llm.RequestConfig for parameters
-    - OpenAI SDK as fallback
     """
 
     def __init__(self, config: Dict[str, Any]):
-        """Initialize MS-SWIFT LLM provider."""
+        """Initialize HuggingFace LLM provider with MS-SWIFT InferClient."""
+        if not SWIFT_AVAILABLE:
+            raise ImportError("MS-SWIFT not installed. Install with: pip install ms-swift")
+
         self.config = config
         self.model_name = config.get("model_name", "Qwen/Qwen3-8B")
         self.base_url = config.get("base_url", "http://localhost:8000")
@@ -57,37 +53,23 @@ class MSSwiftLLM:
         self.top_p = config.get("top_p", 1.0)
         self.top_k = config.get("top_k", -1)
 
-        # Determine client mode
-        self.use_swift = config.get("client_type", "auto") == "swift" or (
-            config.get("client_type", "auto") == "auto" and SWIFT_AVAILABLE
-        )
-
-        if self.use_swift:
-            if not SWIFT_AVAILABLE:
-                raise ImportError("MS-SWIFT requested but not installed")
-            # Parse host and port from base_url
-            import re
-            match = re.match(r'https?://([^:]+):(\d+)', self.base_url)
-            if match:
-                host, port = match.groups()
-            else:
-                host, port = "localhost", "8000"
-            self.client = InferClient(host=host, port=int(port), api_key='EMPTY')
-            logger.info(f"MS-SWIFT LLM using native InferClient")
+        # Parse host and port from base_url
+        import re
+        match = re.match(r'https?://([^:]+):(\d+)', self.base_url)
+        if match:
+            host, port = match.groups()
         else:
-            if not OPENAI_AVAILABLE:
-                raise ImportError("OpenAI SDK not installed")
-            self.client = OpenAI(api_key='EMPTY', base_url=f"{self.base_url}/v1")
-            logger.info(f"MS-SWIFT LLM using OpenAI SDK")
+            host, port = "localhost", "8000"
 
+        # Create native MS-SWIFT InferClient
+        self.client = InferClient(host=host, port=int(port), api_key='EMPTY')
+
+        logger.info(f"HuggingFace LLM initialized with MS-SWIFT InferClient")
         logger.info(f"  Model: {self.model_name}")
         logger.info(f"  Base URL: {self.base_url}")
 
-    def _create_request_config(self) -> Optional['RequestConfig']:
+    def _create_request_config(self) -> 'RequestConfig':
         """Create RequestConfig for MS-SWIFT."""
-        if not SWIFT_AVAILABLE:
-            return None
-
         kwargs = {
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
@@ -101,14 +83,7 @@ class MSSwiftLLM:
         return RequestConfig(**kwargs)
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:
-        """Generate completion using MS-SWIFT or OpenAI SDK."""
-        if self.use_swift:
-            return self._generate_swift(messages)
-        else:
-            return self._generate_openai(messages)
-
-    def _generate_swift(self, messages: List[Dict[str, str]]) -> LLMResponse:
-        """Generate using InferClient."""
+        """Generate completion using MS-SWIFT InferClient."""
         try:
             # Create request config
             request_config = self._create_request_config()
@@ -143,41 +118,7 @@ class MSSwiftLLM:
                 success=True,
             )
         except Exception as e:
-            logger.error(f"MS-SWIFT InferClient failed: {e}")
-            return LLMResponse(
-                model=self.model_name,
-                input=messages,
-                status="error",
-                error_msg=str(e),
-                success=False,
-            )
-
-    def _generate_openai(self, messages: List[Dict[str, str]]) -> LLMResponse:
-        """Generate using OpenAI SDK."""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                top_p=self.top_p,
-                seed=self.seed,
-            )
-
-            return LLMResponse(
-                model=response.model,
-                input=messages,
-                status="processed",
-                content=response.choices[0].message.content,
-                usage=TokenUsage(
-                    prompt_tokens=response.usage.prompt_tokens,
-                    completion_tokens=response.usage.completion_tokens,
-                    total_tokens=response.usage.total_tokens,
-                ),
-                success=True,
-            )
-        except Exception as e:
-            logger.error(f"OpenAI SDK failed: {e}")
+            logger.error(f"MS-SWIFT generation failed: {e}")
             return LLMResponse(
                 model=self.model_name,
                 input=messages,
@@ -217,17 +158,17 @@ class MSSwiftLLM:
 
 def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
     """
-    Deploy MS-SWIFT server using swift.llm.run_deploy().
+    Deploy HuggingFace model server using MS-SWIFT's swift.llm.run_deploy().
 
     Args:
-        config: Configuration dict from ms_swift.yml
+        config: Configuration dict from hf.yml
 
     Returns:
         Context manager yielding port number
 
     Example:
         >>> from stindex.utils.config import load_config_from_file
-        >>> config = load_config_from_file("ms_swift")
+        >>> config = load_config_from_file("hf")
         >>> with deploy_server(config) as port:
         ...     print(f"Server on port {port}")
     """
@@ -260,5 +201,8 @@ def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
     if deployment.get("lora_modules"):
         deploy_args.lora_modules = deployment["lora_modules"]
 
-    logger.info(f"Deploying MS-SWIFT server: {deploy_args.model}")
+    # Note: dtype and trust_remote_code are handled automatically by vLLM
+    # when using use_hf=True with HuggingFace models
+
+    logger.info(f"Deploying HuggingFace model server: {deploy_args.model}")
     return run_deploy(deploy_args)

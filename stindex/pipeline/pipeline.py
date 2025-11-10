@@ -103,8 +103,8 @@ class STIndexPipeline:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.chunks_dir = self.output_dir / "chunks"
         self.results_dir = self.output_dir / "results"
-        # Use data/visualizations for viz output (separate from other data)
-        self.viz_dir = Path("data/visualizations")
+        # Use case-specific visualizations directory
+        self.viz_dir = self.output_dir / "visualizations"
 
         if save_intermediate:
             self.chunks_dir.mkdir(parents=True, exist_ok=True)

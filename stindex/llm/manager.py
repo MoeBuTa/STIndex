@@ -20,11 +20,11 @@ class LLMManager:
 
         Args:
             config: Configuration dictionary with:
-                - llm_provider: "openai", "anthropic", or "ms_swift"
+                - llm_provider: "openai", "anthropic", or "hf"
                 - model_name: Model identifier
                 - temperature: Sampling temperature
                 - max_tokens: Maximum tokens to generate
-                - (MS-SWIFT-specific) base_url: URL of MS-SWIFT deployment server
+                - (HF-specific) base_url: URL of HuggingFace/MS-SWIFT deployment server
         """
         self.config = config
         self.provider_name = config.get("llm_provider", "openai")
@@ -48,7 +48,7 @@ class LLMManager:
         }
 
         # Provider-specific kwargs
-        if self.provider_name == "ms_swift":
+        if self.provider_name == "hf":
             provider_config["base_url"] = self.config.get("base_url", "http://localhost:8000")
 
         # Create provider instance
@@ -62,15 +62,15 @@ class LLMManager:
             logger.info(f"Creating Anthropic provider with model: {provider_config['model_name']}")
             return AnthropicLLM(provider_config)
 
-        elif self.provider_name == "ms_swift":
+        elif self.provider_name == "hf":
             from stindex.llm.ms_swift import MSSwiftLLM
-            logger.info(f"Creating MS-SWIFT provider with model: {provider_config['model_name']}")
+            logger.info(f"Creating HuggingFace (MS-SWIFT) provider with model: {provider_config['model_name']}")
             return MSSwiftLLM(provider_config)
 
         else:
             raise ValueError(
                 f"Unsupported provider: {self.provider_name}. "
-                f"Supported providers: openai, anthropic, ms_swift"
+                f"Supported providers: openai, anthropic, hf"
             )
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:
