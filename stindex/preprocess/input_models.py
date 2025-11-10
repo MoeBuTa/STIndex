@@ -210,6 +210,13 @@ class DocumentChunk:
     # Optional previous chunk summary for context
     previous_chunk_summary: Optional[str] = None
 
+    # Hierarchical metadata (for element-based chunking)
+    section_hierarchy: Optional[str] = None  # e.g., "Introduction > Background"
+    element_types: Optional[List[str]] = None  # e.g., ["title", "text", "text"]
+    keywords: Optional[List[str]] = None  # Representative keywords for the chunk
+    summary: Optional[str] = None  # Brief summary of chunk content
+    preview: Optional[str] = None  # First 1-2 sentences
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -225,6 +232,11 @@ class DocumentChunk:
             "start_char": self.start_char,
             "end_char": self.end_char,
             "previous_chunk_summary": self.previous_chunk_summary,
+            "section_hierarchy": self.section_hierarchy,
+            "element_types": self.element_types,
+            "keywords": self.keywords,
+            "summary": self.summary,
+            "preview": self.preview,
         }
 
     @classmethod

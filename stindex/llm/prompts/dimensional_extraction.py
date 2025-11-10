@@ -21,7 +21,8 @@ class DimensionalExtractionPrompt:
     def __init__(
         self,
         dimensions: Dict[str, DimensionConfig],
-        document_metadata: Optional[Dict] = None
+        document_metadata: Optional[Dict] = None,
+        extraction_context: Optional[object] = None  # ExtractionContext (avoid circular import)
     ):
         """
         Initialize prompt builder.
@@ -29,9 +30,11 @@ class DimensionalExtractionPrompt:
         Args:
             dimensions: Dict of dimension name → DimensionConfig
             document_metadata: Optional document metadata (publication_date, source_location, etc.)
+            extraction_context: Optional ExtractionContext for context-aware prompts
         """
         self.dimensions = dimensions
         self.document_metadata = document_metadata or {}
+        self.extraction_context = extraction_context
 
     def system_prompt(self) -> str:
         """Generate system prompt with multi-dimensional extraction instructions."""
@@ -47,8 +50,14 @@ CRITICAL RULES:
 
 """
 
-        # Add document metadata context if available
-        if self.document_metadata:
+        # Add extraction context if available (cmem - memory context)
+        if self.extraction_context:
+            context_str = self.extraction_context.to_prompt_context()
+            if context_str.strip():
+                prompt += context_str + "\n"
+
+        # Add document metadata context if available (but not if already in extraction_context)
+        if self.document_metadata and not self.extraction_context:
             prompt += "DOCUMENT CONTEXT:\n"
             if self.document_metadata.get("publication_date"):
                 prompt += f"- Publication Date: {self.document_metadata['publication_date']}\n"
@@ -120,6 +129,12 @@ CRITICAL RULES:
 
             if disamb_config.get("use_source_location") and self.document_metadata.get("source_location"):
                 instructions += f"   - Consider source location: {self.document_metadata['source_location']}\n"
+
+            # Add nearby locations context if available via extraction_context
+            if self.extraction_context and self.extraction_context.enable_nearby_locations:
+                nearby_context = self.extraction_context.get_nearby_locations_context()
+                if nearby_context:
+                    instructions += "   - " + nearby_context.replace("\n", "\n   - ") + "\n"
 
             # Add location type examples
             location_types = self._get_field_enum_values(dim_config, "location_type")

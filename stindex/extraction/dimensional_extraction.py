@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.utils import extract_json_from_text
 from stindex.llm.manager import LLMManager
 from stindex.llm.prompts.dimensional_extraction import DimensionalExtractionPrompt
@@ -41,6 +42,7 @@ class DimensionalExtractor:
         dimension_config_path: Optional[str] = None,
         model_name: Optional[str] = None,
         auto_start: bool = True,
+        extraction_context: Optional[ExtractionContext] = None,
     ):
         """
         Initialize dimensional extractor.
@@ -51,6 +53,7 @@ class DimensionalExtractor:
                                   Can be domain-specific: "case_studies/public_health/extraction/config/health_dimensions"
             model_name: Override model name from config
             auto_start: Auto-start servers if not running (vLLM only)
+            extraction_context: Optional ExtractionContext for context-aware extraction
         """
         # Load main configuration
         config = load_config_from_file(config_path)
@@ -79,8 +82,13 @@ class DimensionalExtractor:
         self.dimension_config = self.dimension_loader.load_dimension_config(dimension_config_path)
         self.dimensions = self.dimension_loader.get_enabled_dimensions(self.dimension_config)
 
+        # Context manager for context-aware extraction
+        self.extraction_context = extraction_context
+
         logger.info(f"✓ DimensionalExtractor initialized with {len(self.dimensions)} dimensions")
         logger.info(f"  Dimensions: {list(self.dimensions.keys())}")
+        if self.extraction_context:
+            logger.info("  Context-aware extraction: ENABLED")
 
     def extract(
         self,
@@ -105,12 +113,22 @@ class DimensionalExtractor:
         raw_output = None
         document_metadata = document_metadata or {}
 
+        # Update extraction context if available
+        if self.extraction_context:
+            # Merge document metadata
+            self.extraction_context.document_metadata.update(document_metadata)
+            logger.debug(
+                f"Using extraction context with {len(self.extraction_context.prior_temporal_refs)} "
+                f"temporal refs, {len(self.extraction_context.prior_spatial_refs)} spatial refs"
+            )
+
         try:
             # Step 1: Build prompt with dimension config and metadata
             logger.info("Building dimensional extraction prompt...")
             prompt_builder = DimensionalExtractionPrompt(
                 dimensions=self.dimensions,
-                document_metadata=document_metadata
+                document_metadata=document_metadata,
+                extraction_context=self.extraction_context  # Pass context
             )
 
             # Build JSON schema for all dimensions
@@ -167,6 +185,11 @@ class DimensionalExtractor:
                 if entities:
                     processed_entities[dim_name] = [e.model_dump() for e in entities]
 
+            # Step 5: Update extraction context memory if available
+            if self.extraction_context:
+                self.extraction_context.update_memory(processed_entities)
+                logger.debug("✓ Updated extraction context memory")
+
             processing_time = time.time() - start_time
 
             # Build extraction config
@@ -177,7 +200,8 @@ class DimensionalExtractor:
                 "max_tokens": self.config.get("llm", {}).get("max_tokens"),
                 "raw_llm_output": raw_output,
                 "dimension_config_path": self.dimension_config.get("config_path", "dimensions"),
-                "enabled_dimensions": list(self.dimensions.keys())
+                "enabled_dimensions": list(self.dimensions.keys()),
+                "context_aware": self.extraction_context is not None
             }
 
             # Build dimension metadata
