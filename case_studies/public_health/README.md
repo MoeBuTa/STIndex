@@ -79,15 +79,14 @@ case_studies/public_health/
 │   ├── chunks/                       # Preprocessed document chunks
 │   ├── results/                      # Extraction results
 │   └── visualizations/               # Generated visualizations
-├── extraction/
-│   └── config/
-│       └── health_dimensions.yml    # Health-specific dimension config
+├── config/
+│   └── health_dimensions.yml        # Health-specific dimension config
 └── scripts/
     ├── run_case_study.py             # Main case study script
     └── run_complete_pipeline.sh      # Shell script wrapper
 ```
 
-**Note**: Preprocessing and visualization are handled by STIndex core modules (`stindex.preprocessing` and `stindex.visualization`). No case-specific code needed.
+**Note**: Preprocessing and visualization are handled by STIndex core modules (`stindex.preprocess` and `stindex.visualization`). No case-specific code needed.
 
 ## Installation
 
@@ -148,7 +147,7 @@ docs = [
 
 # Run pipeline
 pipeline = STIndexPipeline(
-    dimension_config="case_studies/public_health/extraction/config/health_dimensions",
+    dimension_config="case_studies/public_health/config/health_dimensions",
     output_dir="case_studies/public_health/data"
 )
 

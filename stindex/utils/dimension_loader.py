@@ -52,16 +52,16 @@ class DimensionConfig(BaseModel):
 class DimensionConfigLoader:
     """Loads and manages dimension configurations."""
 
-    def __init__(self, config_dir: str = "cfg"):
+    def __init__(self, config_dir: str = "cfg/extraction/inference"):
         """
         Initialize loader.
 
         Args:
-            config_dir: Directory containing config files
+            config_dir: Directory containing config files (default: cfg/extraction/inference)
         """
         self.config_dir = Path(config_dir)
 
-    def load_dimension_config(self, config_path: str) -> Dict[str, Any]:
+    def load_dimension_config(self, config_path: str, auto_merge_base: bool = True) -> Dict[str, Any]:
         """
         Load dimension configuration from YAML file.
 
@@ -69,8 +69,10 @@ class DimensionConfigLoader:
             config_path: Path to config file (relative to config_dir or absolute)
                         Can be:
                         - "dimensions" → cfg/dimensions.yml
-                        - "case_studies/public_health/extraction/config/health_dimensions" → full path
+                        - "case_studies/public_health/config/health_dimensions" → full path
                         - "/absolute/path/to/config.yml"
+            auto_merge_base: If True and loading a non-base config, automatically merge
+                           with base cfg/dimensions.yml (default: True)
 
         Returns:
             Parsed configuration dict
@@ -97,6 +99,23 @@ class DimensionConfigLoader:
 
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
+
+        # Auto-merge with base config if this is not the base config itself
+        if auto_merge_base and not config_path.startswith("dimensions"):
+            try:
+                # Try cfg/extraction/inference/dimensions.yml first, then cfg/dimensions.yml
+                base_config_file = Path("cfg/extraction/inference") / "dimensions.yml"
+                if not base_config_file.exists():
+                    base_config_file = Path("cfg") / "dimensions.yml"
+
+                if base_config_file.exists():
+                    logger.info(f"  Merging with base config: {base_config_file}")
+                    with open(base_config_file, 'r') as f:
+                        base_config = yaml.safe_load(f)
+                    config = merge_dimension_configs(base_config, config)
+                    logger.info("  ✓ Config merged with base dimensions")
+            except Exception as e:
+                logger.warning(f"Failed to merge with base config: {e}")
 
         return config
 
@@ -327,24 +346,50 @@ def merge_dimension_configs(
     """
     Merge two dimension configs (override takes precedence).
 
+    Deep merge strategy:
+    - Top-level keys: override replaces base
+    - dimensions: deep merge each dimension individually
+      - If dimension exists in both: merge fields, override takes precedence
+      - If dimension only in override: use as-is
+      - If dimension only in base: use base
+
     Args:
-        base_config: Base configuration
-        override_config: Override configuration
+        base_config: Base configuration (e.g., cfg/dimensions.yml)
+        override_config: Override configuration (e.g., case study config)
 
     Returns:
         Merged configuration
     """
-    merged = base_config.copy()
+    import copy
+    merged = copy.deepcopy(base_config)
 
-    # Merge top-level keys
+    # Merge top-level keys (extraction, geocoding, document_metadata, etc.)
     for key, value in override_config.items():
         if key == "dimensions" and key in merged:
-            # Merge dimensions dict
-            merged["dimensions"] = {
-                **merged.get("dimensions", {}),
-                **value
-            }
+            # Deep merge dimensions
+            base_dims = merged.get("dimensions", {})
+            override_dims = value
+
+            for dim_name, dim_config in override_dims.items():
+                if dim_name in base_dims:
+                    # Merge this dimension's config
+                    merged_dim = copy.deepcopy(base_dims[dim_name])
+                    for dim_key, dim_value in dim_config.items():
+                        if isinstance(dim_value, dict) and dim_key in merged_dim:
+                            # Deep merge nested dicts (e.g., normalization, disambiguation)
+                            merged_dim[dim_key] = {**merged_dim.get(dim_key, {}), **dim_value}
+                        else:
+                            # Override scalar values
+                            merged_dim[dim_key] = dim_value
+                    merged["dimensions"][dim_name] = merged_dim
+                else:
+                    # New dimension in override, add it
+                    merged["dimensions"][dim_name] = dim_config
+        elif isinstance(value, dict) and key in merged and isinstance(merged[key], dict):
+            # Deep merge nested dicts
+            merged[key] = {**merged.get(key, {}), **value}
         else:
+            # Override scalar values and lists
             merged[key] = value
 
     return merged

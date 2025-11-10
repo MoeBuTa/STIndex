@@ -8,7 +8,7 @@ from typing import Optional
 
 from rich.console import Console
 
-from stindex import STIndexExtractor
+from stindex import DimensionalExtractor
 from .utils import get_output_dir, get_output_filename, save_result, display_json
 
 
@@ -25,7 +25,7 @@ def execute_extract(
     """Execute extraction from text string."""
     try:
         # Create extractor with config file
-        extractor = STIndexExtractor(config_path=config, model_name=model, auto_start=auto_start)
+        extractor = DimensionalExtractor(config_path=config, model_name=model, auto_start=auto_start)
 
         # Extract
         with console.status("[bold green]Extracting spatiotemporal indices..."):

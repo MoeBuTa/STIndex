@@ -178,6 +178,22 @@ def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
     deployment = config.get("deployment", {})
     vllm_config = deployment.get("vllm", {})
 
+    # Auto-detect GPUs if tensor_parallel_size is "auto"
+    tensor_parallel_size = vllm_config.get("tensor_parallel_size", 1)
+    if tensor_parallel_size == "auto":
+        import subprocess
+        try:
+            # Get number of available GPUs
+            gpu_count = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                text=True
+            ).strip().split('\n')
+            tensor_parallel_size = len(gpu_count) if gpu_count and gpu_count[0] else 1
+            logger.info(f"Auto-detected {tensor_parallel_size} GPU(s) for tensor parallelism")
+        except Exception as e:
+            logger.warning(f"Failed to auto-detect GPUs: {e}. Using 1 GPU.")
+            tensor_parallel_size = 1
+
     # Build DeployArguments with only supported parameters
     deploy_args = DeployArguments(
         model=deployment.get("model", "Qwen/Qwen3-8B"),
@@ -187,8 +203,9 @@ def deploy_server(config: Dict[str, Any]) -> 'ContextManager[int]':
         verbose=deployment.get("verbose", True),
         log_interval=deployment.get("log_interval", 20),
         use_hf=deployment.get("use_hf", True),  # Use HuggingFace downloaded models
-        vllm_tensor_parallel_size=vllm_config.get("tensor_parallel_size", 1),
+        vllm_tensor_parallel_size=tensor_parallel_size,
         vllm_gpu_memory_utilization=vllm_config.get("gpu_memory_utilization", 0.9),
+        result_path=deployment.get("result_path", "data/output/result"),  # MS-SWIFT inference logs
     )
 
     # Add optional parameters if present

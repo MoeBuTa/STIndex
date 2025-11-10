@@ -45,13 +45,13 @@ results = pipeline.run_pipeline(docs)
 ### Python API (Direct Extraction)
 
 ```python
-from stindex import STIndexExtractor
+from stindex import DimensionalExtractor
 
 # Initialize with default config (cfg/extract.yml)
-extractor = STIndexExtractor()
+extractor = DimensionalExtractor()
 
 # Or specify a config
-extractor = STIndexExtractor(config_path="openai")
+extractor = DimensionalExtractor(config_path="openai")
 
 # Extract entities
 result = extractor.extract("March 15, 2022 in Broome, Australia")
@@ -62,95 +62,58 @@ print(f"Spatial: {len(result.spatial_entities)} entities")
 
 # Raw LLM output available for debugging
 if result.extraction_config:
-    print(f"Raw output: {result.extraction_config.raw_llm_output}")
+    raw_output = result.extraction_config.get("raw_llm_output") if isinstance(result.extraction_config, dict) else result.extraction_config.raw_llm_output
+    print(f"Raw output: {raw_output}")
 ```
-
-## Features
-
-### Core Capabilities (v0.4.0)
-- **End-to-End Pipeline**: Preprocessing → Extraction → Visualization in single workflow
-- **Generic Preprocessing**: Web scraping, document parsing (HTML/PDF/DOCX/TXT), intelligent chunking
-- **Multi-Dimensional Extraction**: Temporal, spatial, and custom domain-specific dimensions
-- **Comprehensive Visualization**: Interactive maps, statistical plots, HTML reports
-- **Multiple Input Modes**: URLs, file paths, or raw text with metadata
-- **4 Execution Modes**: Full pipeline, preprocessing only, extraction only, visualization only
-
-### Extraction Capabilities
-- **Single LLM Call**: Unified extraction of multiple dimensions
-- **Multiple Providers**: OpenAI (GPT-4), Anthropic (Claude), and HuggingFace (Qwen, Llama, etc.)
-- **Multi-GPU Support**: Automatic load balancing across multiple GPU servers for high throughput
-- **Batch Processing**: Efficient batch API for evaluations and bulk processing
-- **Structured Outputs**: Pydantic models with automatic validation
-- **ISO 8601 Normalization**: Standardized temporal representations
-
-### Visualization Features (NEW in v0.4.0)
-- **Interactive Maps**: Animated timeline maps with Folium and TimestampedGeoJson
-- **Statistical Plots**: Bar charts, pie charts, temporal distributions (matplotlib, seaborn, plotly)
-- **HTML Reports**: Professional reports with embedded visualizations
-- **Summary Statistics**: Temporal coverage, spatial coverage, extraction metrics
-- **Multi-Dimensional Analysis**: Cross-dimensional plots and correlations
-- **Output Structure**: `{timestamp}.html` + `{timestamp}_source/` directory
-
-### Advanced Features
-- **Thinking Model Support**: Handles reasoning models (Qwen3-4B-Thinking) with `<think>` tags
-- **Smart JSON Extraction**: Finds and parses the last valid JSON object from LLM output
-- **Context-Aware Geocoding**: Intelligent location disambiguation using parent regions
-- **Raw Output Recording**: Always captures LLM raw output for debugging, even on failures
-- **Checkpoint & Resume**: Evaluation supports resuming from interruptions
-
-### Evaluation System
-- **Comprehensive Metrics**: Following CoNLL-2003 NER and TempEval-3 standards
-- **Temporal Metrics**: Precision, Recall, F1, normalization accuracy, type matching
-- **Spatial Metrics**: Precision, Recall, F1, geocoding success, distance error, accuracy@25km
-- **Distributed Evaluation**: Multi-GPU evaluation with Accelerate/DeepSpeed support
-
-## Documentation
-
-- **[CLAUDE.md](CLAUDE.md)**: Comprehensive developer guide and architecture documentation
-- **[docs/HF_SERVER_CLIENT.md](docs/HF_SERVER_CLIENT.md)**: Multi-GPU server deployment guide
-- **[docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md)**: Claude Desktop MCP server integration
 
 ## Server Deployment
 
-### Single Server (Uses all available GPUs via model sharding)
+### MS-SWIFT Server (Model Sharding with Tensor Parallelism)
+
+Deploy a single MS-SWIFT server that uses all available GPUs via tensor parallelism:
 
 ```bash
-./scripts/start_server.sh
+# Deploy server (auto-detects GPUs by default)
+./scripts/deploy_ms_swift.sh
+
+# Stop server
+./scripts/stop_ms_swift.sh
+
+# Check logs
+tail -f logs/hf_server.log
 ```
 
-### Multi-GPU (One server per GPU for parallel processing)
+**Configuration** (`cfg/hf.yml`):
+- `deployment.port`: Server port (default: 8001)
+- `deployment.model`: HuggingFace model ID or local path
+- `deployment.result_path`: Directory for inference logs (default: `data/output/result`)
+- `deployment.vllm.tensor_parallel_size`:
+  - `auto` (default): Auto-detect all available GPUs
+  - Or set manually: `1`, `2`, `4`, etc.
+- `deployment.vllm.gpu_memory_utilization`: GPU memory fraction (default: 0.7)
 
-```bash
-# Auto-detect GPUs
-./scripts/start_servers.sh
+**Output Logs**:
+- Server logs: `logs/hf_server.log`
+- Inference logs: `data/output/result/{model_name}/deploy_result/{timestamp}.jsonl`
 
-# Or specify number
-STINDEX_NUM_GPUS=4 ./scripts/start_servers.sh
-```
-
-### Server Management
-
-```bash
-# Check server status (health, GPU usage, processes)
-./scripts/check_servers.sh
-
-# Stop servers
-./scripts/stop_servers.sh
-
-# Restart servers
-./scripts/restart_servers.sh
-```
-
-See [docs/HF_SERVER_CLIENT.md](docs/HF_SERVER_CLIENT.md) for detailed deployment instructions.
+Each inference log contains:
+- `response`: Complete LLM output (including `<think>` tags and JSON)
+- `infer_request`: Input messages and generation config
+- `generation_config`: Sampling parameters used
 
 ## Configuration
 
 Configuration files in `cfg/`:
 - `extract.yml`: Main configuration (sets LLM provider)
 - `evaluate.yml`: Evaluation settings
+- `dimensions.yml`: Multi-dimensional extraction configuration
 - `openai.yml`: OpenAI API settings (GPT-4)
 - `anthropic.yml`: Anthropic API settings (Claude)
-- `hf.yml`: HuggingFace server settings (multi-GPU auto-detection)
+- `hf.yml`: HuggingFace/MS-SWIFT server settings
+  - **Client config** (`llm`): API endpoint and generation parameters
+  - **Server config** (`deployment`): Model deployment settings
+    - `result_path`: Inference log directory (default: `data/output/result`)
+    - `vllm.tensor_parallel_size`: GPU configuration (`auto` or number)
 
 ### Switching Providers
 
@@ -162,7 +125,7 @@ llm:
 
 Or specify at runtime:
 ```python
-extractor = STIndexExtractor(config_path="openai")
+extractor = DimensionalExtractor(config_path="openai")
 ```
 
 ## Project Structure
@@ -170,7 +133,6 @@ extractor = STIndexExtractor(config_path="openai")
 ```
 stindex/
 ├── core/                   # Core extraction logic
-│   ├── extraction.py       # STIndexExtractor (legacy API)
 │   ├── dimensional_extraction.py  # DimensionalExtractor (multi-dimensional)
 │   └── utils.py           # JSON extraction utilities
 ├── preprocessing/          # Preprocessing module (NEW v0.4.0)

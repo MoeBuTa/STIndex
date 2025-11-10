@@ -8,15 +8,15 @@ from typing import List, Optional
 
 from loguru import logger
 
-from stindex.preprocessing.chunking import DocumentChunker
-from stindex.preprocessing.input_models import (
+from stindex.preprocess.chunking import DocumentChunker
+from stindex.preprocess.input_models import (
     DocumentChunk,
     InputDocument,
     InputType,
     ParsedDocument,
 )
-from stindex.preprocessing.parsing import DocumentParser
-from stindex.preprocessing.scraping import WebScraper
+from stindex.preprocess.parsing import DocumentParser
+from stindex.preprocess.scraping import WebScraper
 
 
 class Preprocessor:

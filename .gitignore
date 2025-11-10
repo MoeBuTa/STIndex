@@ -66,5 +66,6 @@ models/*.bin
 *.ipynb
 
 # Documentation
-docs/
+docs/*
+docs
 CLAUDE.md

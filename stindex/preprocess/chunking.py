@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from loguru import logger
 
-from stindex.preprocessing.input_models import DocumentChunk, ParsedDocument
+from stindex.preprocess.input_models import DocumentChunk, ParsedDocument
 
 
 class DocumentChunker:

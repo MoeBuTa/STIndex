@@ -1,75 +1,42 @@
 # Health Surveillance Dimension Configuration
 # Defines extractable dimensions for public health monitoring
+#
+# This config EXTENDS cfg/dimensions.yml by adding domain-specific dimensions:
+#   - event_type: Health event classification
+#   - venue_type: Healthcare facility types
+#   - disease: Disease/condition mentions
+#
+# Base dimensions (temporal, spatial) are inherited from cfg/dimensions.yml
 
-# Base extraction settings
+# Override base settings for health surveillance
 extraction:
-  use_few_shot: true
-  enable_thinking: true  # For Qwen3 models with <think> tags
+  use_few_shot: true           # Use examples for health-specific dimensions
+  enable_thinking: true         # For Qwen3 models with <think> tags
+  max_retries: 3
 
-# Document metadata (will be passed at runtime)
+# Override geocoding for Australian context
+geocoding:
+  user_agent: "stindex-health-surveillance/1.0"
+  enable_cache: true
+  rate_limit: 1.0
+
+# Domain-specific metadata defaults
 document_metadata:
-  publication_date: null  # ISO 8601 date (e.g., "2025-10-27")
-  source_location: null   # e.g., "Western Australia"
-  source_url: null        # Original URL
+  source_location: "Western Australia"  # Default context for disambiguation
   language: "en"
 
 # Dimension definitions
 dimensions:
-  # Standard spatiotemporal dimensions
+  # Inherit temporal and spatial from cfg/dimensions.yml by enabling them
   temporal:
     enabled: true
-    description: "Extract temporal expressions (dates, times, durations, intervals)"
-    extraction_type: "normalized"  # Will normalize to ISO 8601
-    schema_type: "TemporalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original temporal expression from text"
-      - name: normalized
-        type: string
-        description: "ISO 8601 normalized format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS or interval)"
-      - name: temporal_type
-        type: enum
-        values: ["date", "time", "datetime", "duration", "interval"]
+    # Override timezone for Australian context
     normalization:
-      handle_relative: true  # Resolve "Monday" using document_metadata.publication_date
-      default_year: "document"  # Use document year if not specified
-      timezone: "Australia/Perth"  # Default timezone for this case study
-    examples:
-      - text: "Monday 27/10/2025 from 11:00 am to 7:00 pm"
-        normalized: "2025-10-27T11:00:00/2025-10-27T19:00:00"
-        temporal_type: "interval"
-      - text: "March 15, 2022"
-        normalized: "2022-03-15"
-        temporal_type: "date"
+      timezone: "Australia/Perth"
 
   spatial:
     enabled: true
-    description: "Extract spatial/location mentions with parent regions for disambiguation"
-    extraction_type: "geocoded"  # Will geocode to coordinates
-    schema_type: "SpatialMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original location name from text"
-      - name: location_type
-        type: enum
-        values: ["country", "city", "region", "landmark", "feature", "venue", "address"]
-      - name: parent_region
-        type: string
-        description: "Parent region for disambiguation (e.g., 'Western Australia', 'Washington State')"
-        optional: true
-    disambiguation:
-      use_parent_region: true
-      use_document_context: true  # Extract parent region from full document
-      use_source_location: true   # Prefer document_metadata.source_location
-    examples:
-      - text: "Margaret River Emergency Department"
-        location_type: "venue"
-        parent_region: "Western Australia"
-      - text: "Broome"
-        location_type: "city"
-        parent_region: "Western Australia"
+    # All other settings inherited from cfg/dimensions.yml
 
   # Health-specific dimensions
   event_type:

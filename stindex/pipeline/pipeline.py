@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
 
-from stindex.core.dimensional_extraction import DimensionalExtractor
-from stindex.preprocessing import DocumentChunk, InputDocument, Preprocessor
+from stindex.extraction.dimensional_extraction import DimensionalExtractor
+from stindex.preprocess import DocumentChunk, InputDocument, Preprocessor
 from stindex.visualization import STIndexVisualizer
 
 

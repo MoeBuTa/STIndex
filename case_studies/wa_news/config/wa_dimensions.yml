@@ -1,78 +1,42 @@
 # Western Australia News Case Study - Dimension Configuration
 # Extracts temporal, spatial, and entity information from WA news articles and documents
+#
+# This config EXTENDS cfg/dimensions.yml by adding news-specific dimensions:
+#   - person: People mentioned in news
+#   - organization: Organizations and institutions
+#   - event_type: News event classification
+#
+# Base dimensions (temporal, spatial) are inherited from cfg/dimensions.yml
 
-# Base extraction settings
+# Override base settings for news extraction
 extraction:
   use_few_shot: true
   enable_thinking: true
+  max_retries: 3
 
-# Document metadata
+# Override geocoding for Western Australia context
+geocoding:
+  user_agent: "stindex-wa-news/1.0"
+  enable_cache: true
+  rate_limit: 1.0
+
+# Domain-specific metadata defaults
 document_metadata:
   source_location: "Western Australia"
   language: "en"
 
 # Dimension definitions
 dimensions:
-  # Core spatiotemporal dimensions
+  # Inherit temporal and spatial from cfg/dimensions.yml by enabling them
   temporal:
     enabled: true
-    description: "Extract temporal expressions (dates, times, events)"
-    extraction_type: "normalized"
-    schema_type: "TemporalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original temporal expression from text"
-      - name: normalized
-        type: string
-        description: "ISO 8601 normalized format"
-      - name: temporal_type
-        type: enum
-        values: ["date", "time", "datetime", "duration", "interval"]
+    # Override timezone for Australian context
     normalization:
-      handle_relative: true
       timezone: "Australia/Perth"
-    examples:
-      - text: "September 22, 2025"
-        normalized: "2025-09-22"
-        temporal_type: "date"
-      - text: "February 26, 2025"
-        normalized: "2025-02-26"
-        temporal_type: "date"
-      - text: "September 24, 2025 at 9:30 AM"
-        normalized: "2025-09-24T09:30:00"
-        temporal_type: "datetime"
 
   spatial:
     enabled: true
-    description: "Extract spatial/location mentions"
-    extraction_type: "geocoded"
-    schema_type: "SpatialMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original location name from text"
-      - name: location_type
-        type: enum
-        values: ["country", "city", "region", "landmark", "feature", "venue", "address"]
-      - name: parent_region
-        type: string
-        description: "Parent region for disambiguation"
-        optional: true
-    disambiguation:
-      use_parent_region: true
-      use_document_context: true
-      use_source_location: true
-    examples:
-      - text: "University of Western Australia"
-        location_type: "landmark"
-        parent_region: "Perth, Western Australia"
-      - text: "Perth"
-        location_type: "city"
-        parent_region: "Western Australia"
-      - text: "Winthrop Hall"
-        location_type: "venue"
-        parent_region: "Perth, Western Australia"
+    # All other settings inherited from cfg/dimensions.yml
 
   # Entity dimensions
   person:

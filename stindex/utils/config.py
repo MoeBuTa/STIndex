@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import yaml
 
 from stindex.utils.constants import (
-    CFG_DIR,
+    CFG_EXTRACTION_INFERENCE_DIR,
     DEFAULT_LLM_PROVIDER,
 )
 
@@ -25,18 +25,18 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
     Load complete configuration from a config file with LLM provider switching.
 
     This function loads the main config (extract.yml by default) and merges it with
-    the provider-specific config (huggingface.yml, openai.yml, or claude.yml).
+    the provider-specific config (hf.yml, openai.yml, or anthropic.yml).
 
     Args:
-        config_path: Path to config file (e.g., 'extract', 'cfg/extract.yml')
-                    Defaults to 'extract' (cfg/extract.yml)
+        config_path: Path to config file (e.g., 'extract', 'cfg/extraction/inference/extract.yml')
+                    Defaults to 'extract' (cfg/extraction/inference/extract.yml)
 
     Returns:
         Dictionary containing merged configuration
     """
-    # If config_path doesn't end with .yml, add it and look in CFG_DIR
+    # If config_path doesn't end with .yml, add it and look in CFG_EXTRACTION_INFERENCE_DIR
     if not config_path.endswith(('.yml', '.yaml')):
-        config_file = Path(CFG_DIR) / f"{config_path}.yml"
+        config_file = Path(CFG_EXTRACTION_INFERENCE_DIR) / f"{config_path}.yml"
     else:
         config_file = Path(config_path)
 
@@ -51,7 +51,7 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
             llm_provider = DEFAULT_LLM_PROVIDER
 
         # Load provider-specific config
-        provider_config_file = Path(CFG_DIR) / f"{llm_provider}.yml"
+        provider_config_file = Path(CFG_EXTRACTION_INFERENCE_DIR) / f"{llm_provider}.yml"
 
         if provider_config_file.exists():
             with open(provider_config_file, "r") as f:

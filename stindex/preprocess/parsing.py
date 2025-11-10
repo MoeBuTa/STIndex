@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from stindex.preprocessing.input_models import ParsedDocument
+from stindex.preprocess.input_models import ParsedDocument
 
 
 # Ensure NLTK data is available (required by unstructured)

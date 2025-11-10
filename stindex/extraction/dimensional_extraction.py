@@ -1,7 +1,7 @@
 """
 Enhanced extraction with multi-dimensional support.
 
-Adds dimensional extraction capabilities to the STIndexExtractor.
+Provides flexible dimensional extraction capabilities beyond temporal and spatial.
 """
 
 import time
@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from stindex.core.utils import extract_json_from_text
+from stindex.extraction.utils import extract_json_from_text
 from stindex.llm.manager import LLMManager
 from stindex.llm.prompts.dimensional_extraction import DimensionalExtractionPrompt
 from stindex.llm.response.dimension_models import (
@@ -20,7 +20,7 @@ from stindex.llm.response.dimension_models import (
     CategoricalDimensionEntity,
 )
 from stindex.llm.response.models import ExtractionConfig
-from stindex.spatial.geocoder import GeocoderService
+from stindex.postprocess.spatial.geocoder import GeocoderService
 from stindex.utils.dimension_loader import DimensionConfigLoader
 from stindex.utils.config import load_config_from_file
 

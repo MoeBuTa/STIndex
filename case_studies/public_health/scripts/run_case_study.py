@@ -83,7 +83,7 @@ def run_full_pipeline():
 
     # Initialize pipeline
     case_study_dir = Path(__file__).parent.parent
-    config_path = case_study_dir / "extraction" / "config" / "health_dimensions.yml"
+    config_path = case_study_dir / "config" / "health_dimensions.yml"
     output_dir = case_study_dir / "data"
 
     logger.info(f"\nConfiguration:")

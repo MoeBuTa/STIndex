@@ -15,7 +15,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
 from rich.table import Table
 
-from stindex import STIndexExtractor
+from stindex import DimensionalExtractor
 from stindex.eval.metrics import (
     TemporalMetrics,
     SpatialMetrics,
@@ -110,7 +110,7 @@ def _evaluate_extraction_result(
     Common evaluation logic for extraction results.
 
     Args:
-        result: Extraction result from STIndexExtractor
+        result: Extraction result from DimensionalExtractor
         ground_truth_temporal: Ground truth temporal entities
         ground_truth_spatial: Ground truth spatial entities
         spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
@@ -125,14 +125,24 @@ def _evaluate_extraction_result(
     predicted_spatial = []
 
     # Get raw LLM output if available (even on failure)
-    if result.extraction_config and result.extraction_config.raw_llm_output:
-        llm_raw_output = result.extraction_config.raw_llm_output
+    # MultiDimensionalResult has extraction_config as dict
+    if result.extraction_config:
+        if isinstance(result.extraction_config, dict):
+            llm_raw_output = result.extraction_config.get("raw_llm_output", "")
+        else:
+            llm_raw_output = result.extraction_config.raw_llm_output if hasattr(result.extraction_config, "raw_llm_output") else ""
 
     if not result.success:
         return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
 
     # Evaluate temporal entities (only if ground truth exists)
-    predicted_temporal = [e.dict() for e in result.temporal_entities]
+    # Handle both Pydantic models and dicts
+    predicted_temporal = []
+    for e in result.temporal_entities:
+        if isinstance(e, dict):
+            predicted_temporal.append(e)
+        else:
+            predicted_temporal.append(e.dict() if hasattr(e, 'dict') else e.model_dump())
 
     if ground_truth_temporal:
         matched_gt = set()
@@ -166,7 +176,13 @@ def _evaluate_extraction_result(
         temporal_metrics.false_negatives = len(ground_truth_temporal) - len(matched_gt)
 
     # Evaluate spatial entities (only if ground truth exists)
-    predicted_spatial = [e.dict() for e in result.spatial_entities]
+    # Handle both Pydantic models and dicts
+    predicted_spatial = []
+    for e in result.spatial_entities:
+        if isinstance(e, dict):
+            predicted_spatial.append(e)
+        else:
+            predicted_spatial.append(e.dict() if hasattr(e, 'dict') else e.model_dump())
 
     if ground_truth_spatial:
         matched_gt_spatial = set()
@@ -255,7 +271,7 @@ def _build_result_dict(
 
 
 def evaluate_single_item(
-    extractor: STIndexExtractor,
+    extractor: DimensionalExtractor,
     item: Dict[str, Any],
     spatial_match_mode: str,
 ) -> Dict[str, Any]:
@@ -263,7 +279,7 @@ def evaluate_single_item(
     Evaluate a single dataset item.
 
     Args:
-        extractor: STIndexExtractor instance
+        extractor: DimensionalExtractor instance
         item: Dataset item with text and ground_truth
         spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
 
@@ -305,15 +321,15 @@ def evaluate_single_item(
 
 
 def evaluate_batch_items(
-    extractor: STIndexExtractor,
+    extractor: DimensionalExtractor,
     items: List[Dict[str, Any]],
     spatial_match_mode: str,
 ) -> List[Dict[str, Any]]:
     """
-    Evaluate a batch of dataset items using LLM batch API.
+    Evaluate a batch of dataset items (processes sequentially).
 
     Args:
-        extractor: STIndexExtractor instance
+        extractor: DimensionalExtractor instance
         items: List of dataset items with text and ground_truth
         spatial_match_mode: Spatial matching mode (temporal always uses "value_exact")
 
@@ -323,8 +339,8 @@ def evaluate_batch_items(
     # Extract texts
     texts = [item["text"] for item in items]
 
-    # Batch extraction using LLM batch API
-    results = extractor.extract_batch(texts, use_batch_api=True)
+    # Process sequentially (DimensionalExtractor doesn't have extract_batch yet)
+    results = [extractor.extract(text) for text in texts]
 
     # Evaluate each result
     evaluated_results = []
@@ -450,7 +466,7 @@ def execute_evaluate(
         console.print(f"[blue]Processing {len(remaining_items)} remaining items...[/blue]")
 
         # Create extractor
-        extractor = STIndexExtractor(config_path=config)
+        extractor = DimensionalExtractor(config_path=config)
 
         # Prepare CSV output
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

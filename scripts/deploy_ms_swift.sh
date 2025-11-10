@@ -18,25 +18,47 @@ echo "============================================================"
 echo ""
 
 # Load configuration using Python
-read -r MODEL PORT TENSOR_PARALLEL GPU_MEM TRUST_CODE DTYPE MAX_LEN <<< $(python3 << 'EOF'
+read -r MODEL PORT TENSOR_PARALLEL GPU_MEM TRUST_CODE DTYPE MAX_LEN RESULT_PATH <<< $(python3 << 'EOF'
 import yaml
+import os
+
 with open("cfg/hf.yml") as f:
     cfg = yaml.safe_load(f)
 dep = cfg["deployment"]
 vllm = dep.get("vllm", {})
-print(f"{dep['model']} {dep['port']} {vllm.get('tensor_parallel_size', 1)} {vllm.get('gpu_memory_utilization', 0.9)} {str(vllm.get('trust_remote_code', True)).lower()} {vllm.get('dtype', 'auto')} {vllm.get('max_model_len', '')}")
+result_path = dep.get("result_path", "data/output/result")
+
+# Auto-detect GPUs if tensor_parallel_size is "auto" or not set
+tensor_parallel = vllm.get('tensor_parallel_size', 1)
+if tensor_parallel == "auto":
+    import subprocess
+    try:
+        # Get number of available GPUs
+        gpu_count = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            text=True
+        ).strip().split('\n')
+        tensor_parallel = len(gpu_count) if gpu_count and gpu_count[0] else 1
+    except Exception:
+        tensor_parallel = 1
+
+print(f"{dep['model']} {dep['port']} {tensor_parallel} {vllm.get('gpu_memory_utilization', 0.9)} {str(vllm.get('trust_remote_code', True)).lower()} {vllm.get('dtype', 'auto')} {vllm.get('max_model_len', '')} {result_path}")
 EOF
 )
 
 echo "Configuration:"
 echo "  Model: $MODEL"
 echo "  Port: $PORT"
-echo "  Tensor Parallel Size: $TENSOR_PARALLEL"
+echo "  Tensor Parallel Size: $TENSOR_PARALLEL (GPUs)"
 echo "  GPU Memory Utilization: $GPU_MEM"
 echo "  Trust Remote Code: $TRUST_CODE"
 echo "  Dtype: $DTYPE"
 echo "  Max Model Len: $MAX_LEN"
+echo "  Result Path: $RESULT_PATH"
 echo ""
+
+# Create result directory
+mkdir -p "$PROJECT_ROOT/$RESULT_PATH"
 
 # Build command
 CMD="swift deploy \
@@ -45,7 +67,8 @@ CMD="swift deploy \
     --infer_backend vllm \
     --use_hf \
     --vllm_tensor_parallel_size $TENSOR_PARALLEL \
-    --vllm_gpu_memory_utilization $GPU_MEM"
+    --vllm_gpu_memory_utilization $GPU_MEM \
+    --result_path $RESULT_PATH"
 
 # Add optional parameters
 if [ -n "$MAX_LEN" ]; then
