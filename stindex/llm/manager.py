@@ -20,11 +20,10 @@ class LLMManager:
 
         Args:
             config: Configuration dictionary with:
-                - llm_provider: "openai", "anthropic", "vllm", or "ms_swift"
+                - llm_provider: "openai", "anthropic", or "ms_swift"
                 - model_name: Model identifier
                 - temperature: Sampling temperature
                 - max_tokens: Maximum tokens to generate
-                - (vLLM-specific) router_url: URL of vLLM router server
                 - (MS-SWIFT-specific) base_url: URL of MS-SWIFT deployment server
         """
         self.config = config
@@ -36,7 +35,7 @@ class LLMManager:
         Create LLM provider instance based on configuration.
 
         Returns:
-            Configured LLM provider instance (OpenAILLM, AnthropicLLM, VLLMClient, or MSSwiftLLM)
+            Configured LLM provider instance (OpenAILLM, AnthropicLLM, or MSSwiftLLM)
 
         Raises:
             ValueError: If provider is not supported
@@ -49,9 +48,7 @@ class LLMManager:
         }
 
         # Provider-specific kwargs
-        if self.provider_name == "vllm":
-            provider_config["router_url"] = self.config.get("router_url", "http://localhost:8000")
-        elif self.provider_name == "ms_swift":
+        if self.provider_name == "ms_swift":
             provider_config["base_url"] = self.config.get("base_url", "http://localhost:8000")
 
         # Create provider instance
@@ -65,11 +62,6 @@ class LLMManager:
             logger.info(f"Creating Anthropic provider with model: {provider_config['model_name']}")
             return AnthropicLLM(provider_config)
 
-        elif self.provider_name == "vllm":
-            from stindex.llm.vllm_client import VLLMClient
-            logger.info(f"Creating vLLM provider with model: {provider_config['model_name']}")
-            return VLLMClient(provider_config)
-
         elif self.provider_name == "ms_swift":
             from stindex.llm.ms_swift import MSSwiftLLM
             logger.info(f"Creating MS-SWIFT provider with model: {provider_config['model_name']}")
@@ -78,7 +70,7 @@ class LLMManager:
         else:
             raise ValueError(
                 f"Unsupported provider: {self.provider_name}. "
-                f"Supported providers: openai, anthropic, vllm, ms_swift"
+                f"Supported providers: openai, anthropic, ms_swift"
             )
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:

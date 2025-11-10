@@ -1,5 +1,12 @@
-"""Server module for Tagent."""
+"""Server module for STIndex.
 
-from stindex.server.vllm import main as run_vllm_server
+Note: vLLM server and router have been replaced by MS-SWIFT.
+For server deployment, use MS-SWIFT instead:
 
-__all__ = ["run_vllm_server"]
+    from stindex.llm.ms_swift import deploy_server
+
+    config = load_config_from_file("ms_swift")
+    with deploy_server(config) as port:
+        # Server running on port
+        ...
+"""
