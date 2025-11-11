@@ -22,12 +22,12 @@ interface ExtractionResult {
   chunk_id: string
   document_id: string
   document_title: string
+  source: string | null
   extraction: {
-    temporal_entities: TemporalEntity[]
-    document_metadata: {
-      source: string
-      category: string
-      year: number
+    success: boolean
+    entities?: {
+      temporal?: TemporalEntity[]
+      [key: string]: any[] | undefined
     }
   }
 }
@@ -42,11 +42,12 @@ export function TemporalTimeline({ data }: TemporalTimelineProps) {
     const entities: Array<TemporalEntity & { document_title: string; source: string }> = []
 
     data.forEach((item) => {
-      item.extraction.temporal_entities.forEach((entity) => {
+      const temporal_entities = item.extraction.entities?.temporal || []
+      temporal_entities.forEach((entity) => {
         entities.push({
           ...entity,
           document_title: item.document_title,
-          source: item.extraction.document_metadata.source,
+          source: item.source || 'Unknown',
         })
       })
     })

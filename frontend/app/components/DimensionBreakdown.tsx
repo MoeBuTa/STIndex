@@ -15,20 +15,13 @@ interface ExtractionResult {
   chunk_id: string
   document_id: string
   document_title: string
+  source: string | null
   extraction: {
+    success: boolean
     entities?: {
       temporal?: any[]
       spatial?: any[]
       [key: string]: any[] | undefined
-    }
-    temporal_entities: any[]
-    spatial_entities: any[]
-    event_type?: any[]
-    disease?: any[]
-    venue_type?: any[]
-    document_metadata: {
-      source: string
-      category: string
     }
   }
 }
@@ -45,7 +38,7 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
     const dimensionMap = new Map<string, DimensionEntity[]>()
 
     data.forEach((item) => {
-      // First, check extraction.entities object
+      // Check extraction.entities object
       if (item.extraction.entities) {
         Object.entries(item.extraction.entities).forEach(([dimName, entities]) => {
           // Skip temporal and spatial as they're handled separately
@@ -58,36 +51,12 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
           entities.forEach((entity) => {
             dimensionMap.get(dimName)?.push({
               ...entity,
-              source: item.extraction.document_metadata.source,
+              source: item.source || 'Unknown',
               document_title: item.document_title,
             } as DimensionEntity)
           })
         })
       }
-
-      // Also check for top-level dimension arrays (event_type, disease, venue_type, etc.)
-      const customDimensions = ['event_type', 'disease', 'venue_type']
-      customDimensions.forEach((dimName) => {
-        const entities = (item.extraction as any)[dimName]
-        if (entities && Array.isArray(entities) && entities.length > 0) {
-          if (!dimensionMap.has(dimName)) {
-            dimensionMap.set(dimName, [])
-          }
-          entities.forEach((entity) => {
-            // Check if this entity already exists (to avoid duplicates from entities object)
-            const existing = dimensionMap.get(dimName)?.find(
-              (e) => e.text === entity.text && (e as any).source === item.extraction.document_metadata.source
-            )
-            if (!existing) {
-              dimensionMap.get(dimName)?.push({
-                ...entity,
-                source: item.extraction.document_metadata.source,
-                document_title: item.document_title,
-              } as DimensionEntity)
-            }
-          })
-        }
-      })
     })
 
     return dimensionMap

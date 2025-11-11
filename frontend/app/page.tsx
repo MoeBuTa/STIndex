@@ -14,34 +14,18 @@ import { SpatioTemporalEvent } from './lib/analytics'
 
 interface ExtractionResult {
   chunk_id: string
-  chunk_index: number
   document_id: string
   document_title: string
+  source: string | null
+  text: string
   extraction: {
+    success: boolean
     entities?: {
       temporal?: any[]
       spatial?: any[]
       [key: string]: any[] | undefined
     }
-    temporal_entities: any[]
-    spatial_entities: any[]
-    event_type?: any[]
-    disease?: any[]
-    venue_type?: any[]
-    success: boolean
     error?: string
-    document_metadata: {
-      source: string
-      category: string
-      topic: string
-      jurisdiction: string
-      year: number
-    }
-    extraction_config?: {
-      enabled_dimensions?: string[]
-      dimension_config_path?: string
-    }
-    dimension_configs?: Record<string, any>
   }
 }
 
@@ -98,62 +82,63 @@ export default function Home() {
     const events: SpatioTemporalEvent[] = []
 
     successful.forEach((item) => {
-      const { extraction, document_id, document_title } = item
-      const { temporal_entities, spatial_entities, document_metadata } = extraction
+      const { extraction, document_id, document_title, source } = item
+      const entities = extraction.entities || {}
+
+      const temporal_entities = entities.temporal || []
+      const spatial_entities = entities.spatial || []
 
       // Process spatial entities
-      spatial_entities?.forEach((entity: any, idx: number) => {
+      spatial_entities.forEach((entity: any, idx: number) => {
         if (entity.latitude && entity.longitude) {
           events.push({
             id: `${document_id}-spatial-${idx}`,
             text: entity.text,
             latitude: entity.latitude,
             longitude: entity.longitude,
-            timestamp: temporal_entities?.[0]?.normalized || undefined,
-            normalized_date: temporal_entities?.[0]?.normalized || undefined,
-            category: entity.location_type || document_metadata?.category || 'unknown',
+            timestamp: temporal_entities[0]?.normalized || undefined,
+            normalized_date: temporal_entities[0]?.normalized || undefined,
+            category: entity.location_type || 'unknown',
             document_id,
             document_title,
-            source: document_metadata?.source || 'Unknown',
+            source: source || 'Unknown',
             custom_dimensions: entity,
           })
         }
       })
 
       // Process temporal entities
-      temporal_entities?.forEach((entity: any, idx: number) => {
+      temporal_entities.forEach((entity: any, idx: number) => {
         events.push({
           id: `${document_id}-temporal-${idx}`,
           text: entity.text,
           timestamp: entity.normalized,
           normalized_date: entity.normalized,
-          category: document_metadata?.category || 'unknown',
+          category: 'unknown',
           document_id,
           document_title,
-          source: document_metadata?.source || 'Unknown',
+          source: source || 'Unknown',
           custom_dimensions: entity,
         })
       })
 
       // Process custom dimension entities (event_type, disease, etc.)
-      if (extraction.entities) {
-        Object.entries(extraction.entities).forEach(([dimName, dimEntities]) => {
-          if (dimName === 'temporal' || dimName === 'spatial') return
-          if (!Array.isArray(dimEntities)) return
+      Object.entries(entities).forEach(([dimName, dimEntities]) => {
+        if (dimName === 'temporal' || dimName === 'spatial') return
+        if (!Array.isArray(dimEntities)) return
 
-          dimEntities.forEach((entity: any, idx: number) => {
-            events.push({
-              id: `${document_id}-${dimName}-${idx}`,
-              text: entity.text,
-              category: entity.category || dimName,
-              document_id,
-              document_title,
-              source: document_metadata?.source || 'Unknown',
-              custom_dimensions: entity,
-            })
+        dimEntities.forEach((entity: any, idx: number) => {
+          events.push({
+            id: `${document_id}-${dimName}-${idx}`,
+            text: entity.text,
+            category: entity.category || dimName,
+            document_id,
+            document_title,
+            source: source || 'Unknown',
+            custom_dimensions: entity,
           })
         })
-      }
+      })
     })
 
     return events

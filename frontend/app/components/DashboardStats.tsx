@@ -5,20 +5,11 @@ import { SimpleGrid, Box, Text, Stat, StatLabel, StatNumber, StatHelpText } from
 interface ExtractionResult {
   chunk_id: string
   extraction: {
+    success: boolean
     entities?: {
       temporal?: any[]
       spatial?: any[]
       [key: string]: any[] | undefined
-    }
-    temporal_entities: any[]
-    spatial_entities: any[]
-    event_type?: any[]
-    disease?: any[]
-    venue_type?: any[]
-    document_metadata: {
-      source: string
-      category: string
-      topic: string
     }
   }
 }
@@ -37,13 +28,13 @@ export function DashboardStats({ data }: DashboardStatsProps) {
 
   // Count temporal entities
   const totalTemporal = data.reduce(
-    (sum, item) => sum + (item.extraction.temporal_entities?.length || 0),
+    (sum, item) => sum + (item.extraction.entities?.temporal?.length || 0),
     0
   )
 
   // Count spatial entities
   const totalSpatial = data.reduce(
-    (sum, item) => sum + (item.extraction.spatial_entities?.length || 0),
+    (sum, item) => sum + (item.extraction.entities?.spatial?.length || 0),
     0
   )
 
@@ -60,17 +51,6 @@ export function DashboardStats({ data }: DashboardStatsProps) {
         const entities = item.extraction.entities?.[key]
         return keySum + (entities?.length || 0)
       }, 0)
-    }
-
-    // Count from top-level dimension arrays (if not already counted from entities)
-    if (!item.extraction.entities) {
-      const customDims = ['event_type', 'disease', 'venue_type']
-      customDims.forEach((dimName) => {
-        const entities = (item.extraction as any)[dimName]
-        if (entities && Array.isArray(entities)) {
-          count += entities.length
-        }
-      })
     }
 
     return sum + count
