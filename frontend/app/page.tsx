@@ -9,6 +9,7 @@ import { InteractiveMap } from './components/InteractiveMap'
 import { StoryTimeline } from './components/StoryTimeline'
 import { AnalyticsPanels } from './components/AnalyticsPanels'
 import { EntityNetwork } from './components/EntityNetwork'
+import { SpaceTimeCube } from './components/SpaceTimeCube'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SpatioTemporalEvent } from './lib/analytics'
 
@@ -211,6 +212,7 @@ export default function Home() {
                 <Tab>Interactive Map</Tab>
                 <Tab>Story Timeline</Tab>
                 <Tab>Entity Network</Tab>
+                <Tab>3D Space-Time Cube</Tab>
               </TabList>
 
               <TabPanels>
@@ -290,6 +292,25 @@ export default function Home() {
                         minCoOccurrence={2}
                       />
                     </ErrorBoundary>
+                  </VStack>
+                </TabPanel>
+
+                {/* 3D Space-Time Cube */}
+                <TabPanel p={0}>
+                  <VStack align="stretch" spacing={2} h="100%">
+                    <Box px={6} pt={4}>
+                      <Text fontSize="sm" color="gray.600">
+                        3D visualization of events in space-time (rotate, zoom, and explore)
+                      </Text>
+                    </Box>
+                    <Box px={6}>
+                      <ErrorBoundary>
+                        <SpaceTimeCube
+                          events={spatioTemporalEvents}
+                          height="700px"
+                        />
+                      </ErrorBoundary>
+                    </Box>
                   </VStack>
                 </TabPanel>
               </TabPanels>
