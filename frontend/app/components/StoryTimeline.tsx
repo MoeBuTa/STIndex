@@ -56,6 +56,7 @@ export function StoryTimeline({
       id: `burst-${idx}`,
       start: bp.start_time,
       end: bp.end_time,
+      peakTime: bp.start_time, // Use start time as peak
       intensity: bp.intensity,
       eventCount: bp.event_count,
       events: [], // Not needed for visualization

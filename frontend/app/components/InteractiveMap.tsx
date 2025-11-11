@@ -76,21 +76,28 @@ export function InteractiveMap({
   const clusters = useMemo<EventCluster[]>(() => {
     if (!showClusters || !backendClusters || !backendClusters.clusters) return []
 
-    return backendClusters.clusters.map((bc) => ({
-      id: bc.cluster_id,
-      size: bc.size,
-      centroid: {
-        lat: bc.centroid.latitude,
-        lng: bc.centroid.longitude,
-      },
-      timeRange: {
-        start: bc.centroid.time_range.start,
-        end: bc.centroid.time_range.end,
-      },
-      entities: new Set(bc.event_ids),
-      dominantCategory: bc.category_value || undefined,
-    }))
-  }, [backendClusters, showClusters])
+    return backendClusters.clusters.map((bc) => {
+      // Find events belonging to this cluster
+      const clusterEvents = events.filter((e) => bc.event_ids.includes(e.id))
+
+      return {
+        id: bc.cluster_id,
+        size: bc.size,
+        centroid: {
+          lat: bc.centroid.latitude,
+          lng: bc.centroid.longitude,
+        },
+        timeRange: {
+          start: bc.centroid.time_range.start,
+          end: bc.centroid.time_range.end,
+        },
+        entities: new Set(bc.event_ids),
+        dominantCategory: bc.category_value || undefined,
+        events: clusterEvents,
+        density: bc.size, // Use cluster size as a proxy for density
+      }
+    })
+  }, [backendClusters, showClusters, events])
 
   // Filter events by time
   const filteredEvents = useMemo(() => {

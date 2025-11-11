@@ -97,6 +97,9 @@ export default function Home() {
       const temporal_entities = entities.temporal || []
       const spatial_entities = entities.spatial || []
 
+      // Use document_title as source if source is null
+      const eventSource = source || document_title || 'Unknown'
+
       // Process spatial entities
       spatial_entities.forEach((entity: any, idx: number) => {
         if (entity.latitude && entity.longitude) {
@@ -110,7 +113,7 @@ export default function Home() {
             category: entity.location_type || 'unknown',
             document_id,
             document_title,
-            source: source || 'Unknown',
+            source: eventSource,
             custom_dimensions: entity,
           })
         }
@@ -126,7 +129,7 @@ export default function Home() {
           category: 'unknown',
           document_id,
           document_title,
-          source: source || 'Unknown',
+          source: eventSource,
           custom_dimensions: entity,
         })
       })
@@ -143,7 +146,7 @@ export default function Home() {
             category: entity.category || dimName,
             document_id,
             document_title,
-            source: source || 'Unknown',
+            source: eventSource,
             custom_dimensions: entity,
           })
         })

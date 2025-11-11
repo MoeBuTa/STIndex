@@ -77,13 +77,44 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
     const spatialEvents = events.filter((e) => e.latitude && e.longitude)
 
     // Use backend-provided burst periods and map to expected format
-    const burstsData = (backendClusters?.burst_periods || []).map((bp: any) => ({
-      start: bp.start,
-      end: bp.end,
-      eventCount: bp.event_count,
-      intensity: bp.burst_intensity,
-      peakTime: bp.start, // Use start time as peak
-    }))
+    const burstsData = (backendClusters?.burst_periods || []).map((bp: any) => {
+      // Filter events within this burst period
+      const burstEvents = events.filter((e) => {
+        const eventDate = e.timestamp || e.normalized_date
+        if (!eventDate) return false
+        return eventDate >= bp.start && eventDate <= bp.end
+      })
+
+      // Calculate dominant location (using event text as location identifier)
+      const locationCount = new Map<string, number>()
+      burstEvents.forEach((e) => {
+        if (e.text) {
+          locationCount.set(e.text, (locationCount.get(e.text) || 0) + 1)
+        }
+      })
+      const dominantLocation = Array.from(locationCount.entries())
+        .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+      // Calculate dominant category
+      const categoryCount = new Map<string, number>()
+      burstEvents.forEach((e) => {
+        if (e.category) {
+          categoryCount.set(e.category, (categoryCount.get(e.category) || 0) + 1)
+        }
+      })
+      const dominantCategory = Array.from(categoryCount.entries())
+        .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+      return {
+        start: bp.start,
+        end: bp.end,
+        eventCount: bp.event_count,
+        intensity: bp.burst_intensity,
+        peakTime: bp.start, // Use start time as peak
+        dominantLocation,
+        dominantCategory,
+      }
+    })
 
     // Calculate quality metrics from reflection scores
     const eventsWithScores = events.filter(
