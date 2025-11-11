@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { Box, Text, VStack, HStack, Badge, Flex } from '@chakra-ui/react'
 
 interface TemporalEntity {
   text: string
@@ -62,55 +63,59 @@ export function TemporalTimeline({ data }: TemporalTimelineProps) {
 
   if (temporalData.length === 0) {
     return (
-      <div className="p-4 bg-gray-50 rounded-md">
-        <p className="text-gray-500">No temporal entities found</p>
-      </div>
+      <Box p={4} bg="gray.50" borderRadius="md">
+        <Text color="gray.500">No temporal entities found</Text>
+      </Box>
     )
   }
 
   return (
-    <div className="space-y-3">
+    <VStack spacing={3} align="stretch">
       {temporalData.map((entity, index) => (
-        <div
+        <Box
           key={index}
-          className="p-4 bg-gray-50 border-l-4 border-blue-500 rounded-md"
+          p={4}
+          bg="gray.50"
+          borderLeft="4px"
+          borderColor="blue.500"
+          borderRadius="md"
         >
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold">{entity.text}</span>
+          <Flex justify="space-between" align="flex-start">
+            <Box flex={1}>
+              <HStack spacing={2} mb={1}>
+                <Text fontWeight="bold">{entity.text}</Text>
                 {entity.normalization_type && (
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                  <Badge colorScheme="blue" fontSize="xs">
                     {entity.normalization_type}
-                  </span>
+                  </Badge>
                 )}
                 {entity.confidence && (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                  <Badge colorScheme="green" fontSize="xs">
                     {Math.round(entity.confidence * 100)}%
-                  </span>
+                  </Badge>
                 )}
-              </div>
+              </HStack>
               {entity.normalized && (
-                <p className="text-sm text-gray-600 mb-1">
+                <Text fontSize="sm" color="gray.600" mb={1}>
                   Normalized: {entity.normalized}
-                </p>
+                </Text>
               )}
-              <p className="text-xs text-gray-500">
+              <Text fontSize="xs" color="gray.500">
                 Source: {entity.source} • {entity.document_title}
-              </p>
-            </div>
+              </Text>
+            </Box>
 
             {entity.reflection_scores && (
-              <div className="text-right">
-                <p className="text-xs text-gray-600 mb-1">Quality Scores:</p>
-                <p className="text-xs">R: {entity.reflection_scores.relevance.toFixed(2)}</p>
-                <p className="text-xs">A: {entity.reflection_scores.accuracy.toFixed(2)}</p>
-                <p className="text-xs">C: {entity.reflection_scores.consistency.toFixed(2)}</p>
-              </div>
+              <Box textAlign="right">
+                <Text fontSize="xs" color="gray.600" mb={1}>Quality Scores:</Text>
+                <Text fontSize="xs">R: {entity.reflection_scores.relevance.toFixed(2)}</Text>
+                <Text fontSize="xs">A: {entity.reflection_scores.accuracy.toFixed(2)}</Text>
+                <Text fontSize="xs">C: {entity.reflection_scores.consistency.toFixed(2)}</Text>
+              </Box>
             )}
-          </div>
-        </div>
+          </Flex>
+        </Box>
       ))}
-    </div>
+    </VStack>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { Box, Text, VStack, HStack, Badge, Flex, Button, Progress } from '@chakra-ui/react'
 
 interface DimensionEntity {
   text: string
@@ -119,9 +120,9 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
 
   if (dimensions.size === 0) {
     return (
-      <div className="p-4 bg-gray-50 rounded-md">
-        <p className="text-gray-500">No custom dimensions found</p>
-      </div>
+      <Box p={4} bg="gray.50" borderRadius="md">
+        <Text color="gray.500">No custom dimensions found</Text>
+      </Box>
     )
   }
 
@@ -130,26 +131,31 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
   }
 
   return (
-    <div>
+    <Box>
       {/* Tab navigation */}
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200">
+      <Flex flexWrap="wrap" gap={2} mb={6} borderBottom="1px" borderColor="gray.200">
         {Array.from(dimensions.keys()).map((dimName) => (
-          <button
+          <Button
             key={dimName}
             onClick={() => setActiveTab(dimName)}
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === dimName
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            px={4}
+            py={2}
+            fontWeight="medium"
+            fontSize="sm"
+            variant="ghost"
+            borderBottom="2px"
+            borderColor={activeTab === dimName ? 'blue.500' : 'transparent'}
+            color={activeTab === dimName ? 'blue.600' : 'gray.600'}
+            _hover={{ color: 'gray.900' }}
+            borderRadius={0}
           >
             {formatDimensionName(dimName)}
-            <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded">
+            <Badge ml={2} colorScheme="gray">
               {dimensions.get(dimName)?.length || 0}
-            </span>
-          </button>
+            </Badge>
+          </Button>
         ))}
-      </div>
+      </Flex>
 
       {/* Tab content */}
       {Array.from(dimensions.entries()).map(([dimName, entities]) => {
@@ -158,69 +164,75 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
         const categoryStats = getCategoryStats(entities)
 
         return (
-          <div key={dimName} className="space-y-6">
+          <VStack key={dimName} spacing={6} align="stretch">
             {/* Category distribution */}
-            <div>
-              <h3 className="text-lg font-bold mb-3">Category Distribution</h3>
-              <div className="space-y-2">
+            <Box>
+              <Text fontSize="lg" fontWeight="bold" mb={3}>Category Distribution</Text>
+              <VStack spacing={2} align="stretch">
                 {categoryStats.map((stat) => (
-                  <div key={stat.category}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">{stat.category}</span>
-                      <div className="flex gap-2">
-                        <span className="text-sm text-gray-600">{stat.count}</span>
-                        <span className="text-sm text-gray-500">
+                  <Box key={stat.category}>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontSize="sm" fontWeight="medium">{stat.category}</Text>
+                      <HStack spacing={2}>
+                        <Text fontSize="sm" color="gray.600">{stat.count}</Text>
+                        <Text fontSize="sm" color="gray.500">
                           ({stat.percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-md overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${stat.percentage}%` }}
+                        </Text>
+                      </HStack>
+                    </Flex>
+                    <Box w="full" bg="gray.200" borderRadius="md" overflow="hidden" h={2}>
+                      <Box
+                        h="full"
+                        bg="blue.500"
+                        transition="all 0.3s"
+                        w={`${stat.percentage}%`}
                       />
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 ))}
-              </div>
-            </div>
+              </VStack>
+            </Box>
 
             {/* Entity list */}
-            <div>
-              <h3 className="text-lg font-bold mb-3">All Entities</h3>
-              <div className="space-y-2">
+            <Box>
+              <Text fontSize="lg" fontWeight="bold" mb={3}>All Entities</Text>
+              <VStack spacing={2} align="stretch">
                 {entities.map((entity, index) => (
-                  <div
+                  <Box
                     key={index}
-                    className="p-3 bg-gray-50 rounded-md border-l-3 border-blue-400"
+                    p={3}
+                    bg="gray.50"
+                    borderRadius="md"
+                    borderLeft="3px"
+                    borderColor="blue.400"
                   >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{entity.text}</span>
+                    <Flex justify="space-between" align="flex-start">
+                      <Box>
+                        <HStack spacing={2} mb={1}>
+                          <Text fontWeight="medium">{entity.text}</Text>
                           {entity.category && (
-                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
+                            <Badge colorScheme="purple" fontSize="xs">
                               {entity.category}
-                            </span>
+                            </Badge>
                           )}
                           {entity.confidence && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                            <Badge colorScheme="green" fontSize="xs">
                               {Math.round(entity.confidence * 100)}%
-                            </span>
+                            </Badge>
                           )}
-                        </div>
-                        <p className="text-xs text-gray-500">
+                        </HStack>
+                        <Text fontSize="xs" color="gray.500">
                           {(entity as any).source} • {(entity as any).document_title}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                        </Text>
+                      </Box>
+                    </Flex>
+                  </Box>
                 ))}
-              </div>
-            </div>
-          </div>
+              </VStack>
+            </Box>
+          </VStack>
         )
       })}
-    </div>
+    </Box>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { SimpleGrid, Box, Text, Stat, StatLabel, StatNumber, StatHelpText } from '@chakra-ui/react'
+
 interface ExtractionResult {
   chunk_id: string
   extraction: {
@@ -82,14 +84,16 @@ export function DashboardStats({ data }: DashboardStatsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
       {stats.map((stat, index) => (
-        <div key={index} className="bg-white p-6 rounded-lg shadow-md">
-          <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-          <p className="text-3xl font-bold mb-1">{stat.value}</p>
-          <p className="text-xs text-gray-500">{stat.help}</p>
-        </div>
+        <Box key={index} bg="white" p={6} borderRadius="lg" shadow="md">
+          <Stat>
+            <StatLabel fontSize="sm" color="gray.600">{stat.label}</StatLabel>
+            <StatNumber fontSize="3xl">{stat.value}</StatNumber>
+            <StatHelpText fontSize="xs" color="gray.500">{stat.help}</StatHelpText>
+          </Stat>
+        </Box>
       ))}
-    </div>
+    </SimpleGrid>
   )
 }

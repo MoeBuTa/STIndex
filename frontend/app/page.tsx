@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Box, Container, Heading, Text, Spinner, Center, VStack } from '@chakra-ui/react'
 import { DashboardStats } from './components/DashboardStats'
 import { TemporalTimeline } from './components/TemporalTimeline'
 import { DimensionBreakdown } from './components/DimensionBreakdown'
@@ -58,22 +59,20 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading extraction data...</p>
-        </div>
-      </div>
+      <Center minH="100vh" bg="gray.50">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="gray.600">Loading extraction data...</Text>
+        </VStack>
+      </Center>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-500 text-xl">Error loading data: {error}</p>
-        </div>
-      </div>
+      <Center minH="100vh" bg="gray.50">
+        <Text color="red.500" fontSize="xl">Error loading data: {error}</Text>
+      </Center>
     )
   }
 
@@ -81,29 +80,29 @@ export default function Home() {
   const successfulExtractions = data.filter((item) => item.extraction.success)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">STIndex Dashboard</h1>
-            <p className="text-gray-600 text-lg">
+    <Box minH="100vh" bg="gray.50" py={8}>
+      <Container maxW="7xl" px={4}>
+        <VStack spacing={8} align="stretch">
+          <Box>
+            <Heading as="h1" size="2xl" mb={2}>STIndex Dashboard</Heading>
+            <Text color="gray.600" fontSize="lg">
               Multi-Dimensional Data Visualization
-            </p>
-          </div>
+            </Text>
+          </Box>
 
           <DashboardStats data={successfulExtractions} />
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Temporal Timeline</h2>
+          <Box bg="white" p={6} borderRadius="lg" shadow="md">
+            <Heading as="h2" size="xl" mb={4}>Temporal Timeline</Heading>
             <TemporalTimeline data={successfulExtractions} />
-          </div>
+          </Box>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Dimension Analysis</h2>
+          <Box bg="white" p={6} borderRadius="lg" shadow="md">
+            <Heading as="h2" size="xl" mb={4}>Dimension Analysis</Heading>
             <DimensionBreakdown data={successfulExtractions} />
-          </div>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </VStack>
+      </Container>
+    </Box>
   )
 }
