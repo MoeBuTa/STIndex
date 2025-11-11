@@ -9,6 +9,7 @@ import { InteractiveMap } from './components/InteractiveMap'
 import { StoryTimeline } from './components/StoryTimeline'
 import { AnalyticsPanels } from './components/AnalyticsPanels'
 import { EntityNetwork } from './components/EntityNetwork'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { SpatioTemporalEvent } from './lib/analytics'
 
 interface ExtractionResult {
@@ -81,8 +82,11 @@ export default function Home() {
     )
   }
 
-  // Filter successful extractions
-  const successfulExtractions = data.filter((item) => item.extraction.success)
+  // Filter successful extractions - memoize to prevent infinite re-renders
+  const successfulExtractions = useMemo(
+    () => data.filter((item) => item.extraction.success),
+    [data]
+  )
 
   // Transform extraction data into SpatioTemporalEvent format for analytics
   const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
@@ -171,7 +175,9 @@ export default function Home() {
             <Heading as="h2" size="lg" mb={4}>
               Advanced Analytics
             </Heading>
-            <AnalyticsPanels events={spatioTemporalEvents} />
+            <ErrorBoundary>
+              <AnalyticsPanels events={spatioTemporalEvents} />
+            </ErrorBoundary>
           </Box>
 
           {/* Tabbed Visualizations */}
@@ -192,13 +198,15 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Spatiotemporal event clustering with story arc visualization
                     </Text>
-                    <InteractiveMap
-                      events={spatioTemporalEvents}
-                      height="600px"
-                      showClusters={true}
-                      showStoryArcs={true}
-                      enableAnimation={true}
-                    />
+                    <ErrorBoundary>
+                      <InteractiveMap
+                        events={spatioTemporalEvents}
+                        height="600px"
+                        showClusters={true}
+                        showStoryArcs={true}
+                        enableAnimation={true}
+                      />
+                    </ErrorBoundary>
                   </VStack>
                 </TabPanel>
 
@@ -208,12 +216,14 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Multi-track timeline with burst detection and story arcs
                     </Text>
-                    <StoryTimeline
-                      events={spatioTemporalEvents}
-                      height={500}
-                      showBursts={true}
-                      showStoryArcs={true}
-                    />
+                    <ErrorBoundary>
+                      <StoryTimeline
+                        events={spatioTemporalEvents}
+                        height={500}
+                        showBursts={true}
+                        showStoryArcs={true}
+                      />
+                    </ErrorBoundary>
                   </VStack>
                 </TabPanel>
 
@@ -223,11 +233,13 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Entity co-occurrence network graph
                     </Text>
-                    <EntityNetwork
-                      events={spatioTemporalEvents}
-                      height="600px"
-                      minCoOccurrence={2}
-                    />
+                    <ErrorBoundary>
+                      <EntityNetwork
+                        events={spatioTemporalEvents}
+                        height="600px"
+                        minCoOccurrence={2}
+                      />
+                    </ErrorBoundary>
                   </VStack>
                 </TabPanel>
 
@@ -237,7 +249,9 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Temporal entity timeline with quality scores
                     </Text>
-                    <TemporalTimeline data={successfulExtractions} />
+                    <ErrorBoundary>
+                      <TemporalTimeline data={successfulExtractions} />
+                    </ErrorBoundary>
                   </VStack>
                 </TabPanel>
 
@@ -247,7 +261,9 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Dimension-agnostic entity analysis
                     </Text>
-                    <DimensionBreakdown data={successfulExtractions} />
+                    <ErrorBoundary>
+                      <DimensionBreakdown data={successfulExtractions} />
+                    </ErrorBoundary>
                   </VStack>
                 </TabPanel>
               </TabPanels>
