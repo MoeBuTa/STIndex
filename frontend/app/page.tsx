@@ -9,8 +9,6 @@ import { InteractiveMap } from './components/InteractiveMap'
 import { StoryTimeline } from './components/StoryTimeline'
 import { AnalyticsPanels } from './components/AnalyticsPanels'
 import { EntityNetwork } from './components/EntityNetwork'
-import { SpaceTimeCube } from './components/SpaceTimeCube'
-import { ErrorBoundary } from './components/ErrorBoundary'
 import { SpatioTemporalEvent } from './lib/analytics'
 
 interface ExtractionResult {
@@ -58,6 +56,7 @@ export default function Home() {
   const [backendClusters, setBackendClusters] = useState<BackendClusters | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTabIndex, setActiveTabIndex] = useState(0)
 
   useEffect(() => {
     Promise.all([
@@ -194,25 +193,27 @@ export default function Home() {
             <Heading as="h2" size="lg" mb={4}>
               Advanced Analytics
             </Heading>
-            <ErrorBoundary>
-              <AnalyticsPanels
-                events={spatioTemporalEvents}
-                storyArcs={storyArcs}
-                backendClusters={backendClusters}
-              />
-            </ErrorBoundary>
+            <AnalyticsPanels
+              events={spatioTemporalEvents}
+              storyArcs={storyArcs}
+              backendClusters={backendClusters}
+            />
           </Box>
 
           {/* Tabbed Visualizations */}
           <Box bg="white" p={6} borderRadius="lg" shadow="md">
-            <Tabs colorScheme="blue" variant="enclosed">
+            <Tabs
+              colorScheme="blue"
+              variant="enclosed"
+              index={activeTabIndex}
+              onChange={(index) => setActiveTabIndex(index)}
+            >
               <TabList>
                 <Tab>Basic Timeline</Tab>
                 <Tab>Dimension Breakdown</Tab>
                 <Tab>Interactive Map</Tab>
                 <Tab>Story Timeline</Tab>
                 <Tab>Entity Network</Tab>
-                <Tab>3D Space-Time Cube</Tab>
               </TabList>
 
               <TabPanels>
@@ -222,9 +223,9 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Temporal entity timeline with quality scores
                     </Text>
-                    <ErrorBoundary>
+                    {activeTabIndex === 0 && (
                       <TemporalTimeline data={successfulExtractions} />
-                    </ErrorBoundary>
+                    )}
                   </VStack>
                 </TabPanel>
 
@@ -234,31 +235,32 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Dimension-agnostic entity analysis
                     </Text>
-                    <ErrorBoundary>
+                    {activeTabIndex === 1 && (
                       <DimensionBreakdown data={successfulExtractions} />
-                    </ErrorBoundary>
+                    )}
                   </VStack>
                 </TabPanel>
 
                 {/* Interactive Map */}
-                <TabPanel p={0}>
-                  <VStack align="stretch" spacing={2}>
-                    <Box px={6} pt={4}>
-                      <Text fontSize="sm" color="gray.600">
-                        Spatiotemporal event clustering with story arc visualization
-                      </Text>
-                    </Box>
-                    <ErrorBoundary>
+                <TabPanel p={0} display="flex" flexDirection="column" height="800px">
+                  <Box px={6} pt={4} pb={2} flexShrink={0}>
+                    <Text fontSize="sm" color="gray.600">
+                      Spatiotemporal event clustering with story arc visualization
+                    </Text>
+                  </Box>
+                  <Box flex="1">
+                    {activeTabIndex === 2 && (
                       <InteractiveMap
                         events={spatioTemporalEvents}
                         storyArcs={storyArcs}
-                        height="750px"
+                        backendClusters={backendClusters}
+                        height="100%"
                         showClusters={true}
                         showStoryArcs={true}
                         enableAnimation={true}
                       />
-                    </ErrorBoundary>
-                  </VStack>
+                    )}
+                  </Box>
                 </TabPanel>
 
                 {/* Story Timeline */}
@@ -267,15 +269,16 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Multi-track timeline with burst detection and story arcs
                     </Text>
-                    <ErrorBoundary>
+                    {activeTabIndex === 3 && (
                       <StoryTimeline
                         events={spatioTemporalEvents}
                         storyArcs={storyArcs}
+                        burstPeriods={backendClusters?.burst_periods}
                         height={500}
                         showBursts={true}
                         showStoryArcs={true}
                       />
-                    </ErrorBoundary>
+                    )}
                   </VStack>
                 </TabPanel>
 
@@ -285,32 +288,13 @@ export default function Home() {
                     <Text fontSize="sm" color="gray.600">
                       Entity co-occurrence network graph
                     </Text>
-                    <ErrorBoundary>
+                    {activeTabIndex === 4 && (
                       <EntityNetwork
                         events={spatioTemporalEvents}
                         height="600px"
                         minCoOccurrence={2}
                       />
-                    </ErrorBoundary>
-                  </VStack>
-                </TabPanel>
-
-                {/* 3D Space-Time Cube */}
-                <TabPanel p={0}>
-                  <VStack align="stretch" spacing={2}>
-                    <Box px={6} pt={4}>
-                      <Text fontSize="sm" color="gray.600">
-                        3D visualization of events in space-time (rotate, zoom, and explore)
-                      </Text>
-                    </Box>
-                    <Box px={6}>
-                      <ErrorBoundary>
-                        <SpaceTimeCube
-                          events={spatioTemporalEvents}
-                          height="700px"
-                        />
-                      </ErrorBoundary>
-                    </Box>
+                    )}
                   </VStack>
                 </TabPanel>
               </TabPanels>

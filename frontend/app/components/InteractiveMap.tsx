@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import Map, { Marker, Popup, Source, Layer } from 'react-map-gl'
 import { Box, Badge, Text, VStack, HStack, Button, Slider, SliderTrack, SliderFilledTrack, SliderThumb } from '@chakra-ui/react'
-import { clusterEvents, EventCluster, SpatioTemporalEvent } from '../lib/analytics'
+import { EventCluster, SpatioTemporalEvent } from '../lib/analytics'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 interface BackendStoryArc {
@@ -12,9 +12,34 @@ interface BackendStoryArc {
   confidence: number
 }
 
+interface BackendCluster {
+  cluster_id: string
+  cluster_type: string
+  size: number
+  centroid: {
+    latitude: number
+    longitude: number
+    datetime: string
+    time_range: {
+      start: string
+      end: string
+    }
+  }
+  category_value: string | null
+  dimension: string | null
+  event_ids: string[]
+}
+
+interface BackendClusters {
+  clusters: BackendCluster[]
+  burst_periods: any[]
+  statistics: any
+}
+
 interface InteractiveMapProps {
   events: SpatioTemporalEvent[]
   storyArcs: BackendStoryArc[]
+  backendClusters?: BackendClusters | null
   height?: string
   showClusters?: boolean
   showStoryArcs?: boolean
@@ -24,15 +49,16 @@ interface InteractiveMapProps {
 export function InteractiveMap({
   events,
   storyArcs,
+  backendClusters,
   height = '600px',
   showClusters = true,
   showStoryArcs = true,
   enableAnimation = true,
 }: InteractiveMapProps) {
   const [viewport, setViewport] = useState({
-    longitude: -122.4,
-    latitude: 37.8,
-    zoom: 3,
+    longitude: 133.7751,
+    latitude: -25.2744,
+    zoom: 4,
   })
   const [selectedEvent, setSelectedEvent] = useState<SpatioTemporalEvent | null>(null)
   const [selectedCluster, setSelectedCluster] = useState<EventCluster | null>(null)
@@ -46,11 +72,25 @@ export function InteractiveMap({
     return events.filter((e) => e.latitude && e.longitude)
   }, [events])
 
-  // Compute clusters
-  const clusters = useMemo(() => {
-    if (!showClusters || validEvents.length === 0) return []
-    return clusterEvents(validEvents, 50, 7, 3)
-  }, [validEvents, showClusters])
+  // Transform backend clusters to the format expected by the component
+  const clusters = useMemo<EventCluster[]>(() => {
+    if (!showClusters || !backendClusters || !backendClusters.clusters) return []
+
+    return backendClusters.clusters.map((bc) => ({
+      id: bc.cluster_id,
+      size: bc.size,
+      centroid: {
+        lat: bc.centroid.latitude,
+        lng: bc.centroid.longitude,
+      },
+      timeRange: {
+        start: bc.centroid.time_range.start,
+        end: bc.centroid.time_range.end,
+      },
+      entities: new Set(bc.event_ids),
+      dominantCategory: bc.category_value || undefined,
+    }))
+  }, [backendClusters, showClusters])
 
   // Filter events by time
   const filteredEvents = useMemo(() => {

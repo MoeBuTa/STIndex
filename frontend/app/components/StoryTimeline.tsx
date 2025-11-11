@@ -3,7 +3,7 @@
 import { useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 import { Box, Text, VStack, HStack, Badge } from '@chakra-ui/react'
-import { detectBursts, clusterEvents, SpatioTemporalEvent, BurstPeriod } from '../lib/analytics'
+import { SpatioTemporalEvent, BurstPeriod } from '../lib/analytics'
 
 interface BackendStoryArc {
   story_id: string
@@ -16,9 +16,17 @@ interface BackendStoryArc {
   }
 }
 
+interface BackendBurstPeriod {
+  start_time: string
+  end_time: string
+  event_count: number
+  intensity: number
+}
+
 interface StoryTimelineProps {
   events: SpatioTemporalEvent[]
   storyArcs: BackendStoryArc[]
+  burstPeriods?: BackendBurstPeriod[]
   height?: number
   showBursts?: boolean
   showStoryArcs?: boolean
@@ -27,6 +35,7 @@ interface StoryTimelineProps {
 export function StoryTimeline({
   events,
   storyArcs,
+  burstPeriods = [],
   height = 400,
   showBursts = true,
   showStoryArcs = true,
@@ -39,11 +48,19 @@ export function StoryTimeline({
     return events.filter((e) => e.timestamp || e.normalized_date)
   }, [events])
 
-  // Detect bursts
-  const bursts = useMemo(() => {
-    if (!showBursts || temporalEvents.length === 0) return []
-    return detectBursts(temporalEvents, 1, 3)
-  }, [temporalEvents, showBursts])
+  // Transform backend burst periods to component format
+  const bursts = useMemo<BurstPeriod[]>(() => {
+    if (!showBursts || !burstPeriods || burstPeriods.length === 0) return []
+
+    return burstPeriods.map((bp, idx) => ({
+      id: `burst-${idx}`,
+      start: bp.start_time,
+      end: bp.end_time,
+      intensity: bp.intensity,
+      eventCount: bp.event_count,
+      events: [], // Not needed for visualization
+    }))
+  }, [burstPeriods, showBursts])
 
   useEffect(() => {
     if (!svgRef.current || temporalEvents.length === 0) return
@@ -68,7 +85,8 @@ export function StoryTimeline({
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
     // Parse dates and prepare data
-    const parseDate = (dateStr: string) => {
+    const parseDate = (dateStr: string | undefined) => {
+      if (!dateStr) return null
       // Handle ISO 8601 durations
       if (dateStr.startsWith('P')) return null
       try {
@@ -155,6 +173,8 @@ export function StoryTimeline({
     // Draw story arcs
     if (showStoryArcs && storyArcs.length > 0) {
       storyArcs.forEach((story, idx) => {
+        if (!story.temporal_span?.start || !story.temporal_span?.end) return
+
         const storyPoints = [
           new Date(story.temporal_span.start),
           new Date(story.temporal_span.end)

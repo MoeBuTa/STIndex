@@ -19,11 +19,7 @@ import {
   ListIcon,
 } from '@chakra-ui/react'
 import { MdTrendingUp, MdLocationOn, MdEvent, MdTimeline } from 'react-icons/md'
-import {
-  detectBursts,
-  clusterEvents,
-  SpatioTemporalEvent,
-} from '../lib/analytics'
+import { SpatioTemporalEvent } from '../lib/analytics'
 
 interface StoryArc {
   story_id: string
@@ -80,7 +76,14 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
     const temporalEvents = events.filter((e) => e.timestamp || e.normalized_date)
     const spatialEvents = events.filter((e) => e.latitude && e.longitude)
 
-    const burstsData = detectBursts(temporalEvents, 1, 3)
+    // Use backend-provided burst periods and map to expected format
+    const burstsData = (backendClusters?.burst_periods || []).map((bp: any) => ({
+      start: bp.start,
+      end: bp.end,
+      eventCount: bp.event_count,
+      intensity: bp.burst_intensity,
+      peakTime: bp.start, // Use start time as peak
+    }))
 
     // Calculate quality metrics from reflection scores
     const eventsWithScores = events.filter(
@@ -158,7 +161,7 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
       qualityMetrics: quality,
       dimensionStats: dimStats,
     }
-  }, [events])
+  }, [events, backendClusters])
 
   return (
     <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
@@ -229,9 +232,6 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
 
           <Box mt={2}>
             <Text fontSize="xs" color="gray.600">
-              Avg Confidence: {(qualityMetrics.avgConfidence * 100).toFixed(1)}%
-            </Text>
-            <Text fontSize="xs" color="gray.600">
               Events with Scores: {qualityMetrics.withScores} / {qualityMetrics.totalEvents}
             </Text>
           </Box>
@@ -272,7 +272,7 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
                     {burst.start} → {burst.end}
                   </Text>
                   <Text fontSize="xs" color="gray.600">
-                    Peak: {burst.peakTime} (Intensity: {burst.intensity.toFixed(1)})
+                    Peak: {burst.peakTime} (Intensity: {burst.intensity?.toFixed(1) || 'N/A'})
                   </Text>
                   {burst.dominantLocation && (
                     <Text fontSize="xs" color="gray.600">

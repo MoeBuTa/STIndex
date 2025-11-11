@@ -26,6 +26,12 @@ const CATEGORY_COLORS: { [key: string]: [number, number, number] } = {
 export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [webGLSupported, setWebGLSupported] = useState(true)
+  const [deckGLReady, setDeckGLReady] = useState(false)
+  const [initError, setInitError] = useState<string | null>(null)
+  const [hasSize, setHasSize] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const deckGLKeyRef = useRef(0)
+
   const [viewState, setViewState] = useState<MapViewState>({
     longitude: 0,
     latitude: 20,
@@ -50,12 +56,43 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
       const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
       if (!gl) {
         setWebGLSupported(false)
+        setIsMounted(true)
+        return
       }
     } catch (e) {
       setWebGLSupported(false)
+      setIsMounted(true)
+      return
     }
+
     setIsMounted(true)
   }, [])
+
+  // Wait for container to have proper dimensions before initializing DeckGL
+  useEffect(() => {
+    if (!isMounted || !containerRef.current) return
+
+    const checkSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          setHasSize(true)
+          // Additional delay after size is confirmed
+          setTimeout(() => {
+            setDeckGLReady(true)
+          }, 200)
+        }
+      }
+    }
+
+    // Check size immediately
+    checkSize()
+
+    // Also check after a short delay in case of layout shifts
+    const timer = setTimeout(checkSize, 100)
+
+    return () => clearTimeout(timer)
+  }, [isMounted])
 
   // Filter events with both spatial and temporal data
   const spatioTemporalEvents = useMemo(() => {
@@ -180,8 +217,8 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
     )
   }
 
-  // Don't render DeckGL on server side
-  if (!isMounted) {
+  // Don't render DeckGL on server side or before ready
+  if (!isMounted || !deckGLReady) {
     return (
       <Box height={height} display="flex" alignItems="center" justifyContent="center">
         <Text color="gray.500" fontSize="lg">
@@ -201,6 +238,22 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
           </Text>
           <Text color="gray.500" fontSize="sm">
             Please try a different browser or enable WebGL to view the 3D visualization
+          </Text>
+        </VStack>
+      </Box>
+    )
+  }
+
+  // Show initialization error if any
+  if (initError) {
+    return (
+      <Box height={height} display="flex" alignItems="center" justifyContent="center">
+        <VStack>
+          <Text color="red.500" fontSize="lg">
+            Failed to initialize 3D visualization
+          </Text>
+          <Text color="gray.500" fontSize="sm">
+            {initError}
           </Text>
         </VStack>
       </Box>
@@ -272,28 +325,62 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
       </HStack>
 
       {/* 3D Visualization */}
-      <Box height={height} position="relative" borderRadius="md" overflow="hidden" boxShadow="md">
-        <DeckGL
-          viewState={viewState}
-          onViewStateChange={({ viewState }: any) => setViewState(viewState)}
-          controller={true}
-          layers={layers}
-          getTooltip={getTooltip}
-          useDevicePixels={1}
-        >
-          {/* Base map (optional) - using solid color background */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              background: '#f7fafc',
-              zIndex: -1,
-            }}
-          />
-        </DeckGL>
+      <Box
+        ref={containerRef}
+        height={height}
+        position="relative"
+        borderRadius="md"
+        overflow="hidden"
+        boxShadow="md"
+      >
+        {(() => {
+          try {
+            return (
+              <DeckGL
+                key={`deckgl-${deckGLKeyRef.current}`}
+                viewState={viewState}
+                onViewStateChange={({ viewState }: any) => setViewState(viewState)}
+                controller={true}
+                layers={layers}
+                getTooltip={getTooltip}
+                useDevicePixels={1}
+                onError={(error: Error) => {
+                  console.error('DeckGL error:', error)
+                  setInitError(error.message)
+                }}
+                onWebGLInitialized={(gl: WebGLRenderingContext) => {
+                  console.log('WebGL initialized successfully')
+                }}
+              >
+                {/* Base map (optional) - using solid color background */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: '#f7fafc',
+                    zIndex: -1,
+                  }}
+                />
+              </DeckGL>
+            )
+          } catch (error: any) {
+            console.error('Error rendering DeckGL:', error)
+            setInitError(error.message || 'Unknown error')
+            return (
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                height="100%"
+              >
+                <Text color="red.500">Failed to render 3D visualization</Text>
+              </Box>
+            )
+          }
+        })()}
       </Box>
 
       {/* Legend */}
