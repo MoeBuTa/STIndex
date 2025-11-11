@@ -51,7 +51,12 @@ export function StoryTimeline({
     // Clear previous content
     d3.select(svgRef.current).selectAll('*').remove()
 
-    const margin = { top: 40, right: 30, bottom: 60, left: 60 }
+    const margin = {
+      top: 40,
+      right: 30,
+      bottom: showStoryArcs && storyArcs.length > 0 ? 80 + (storyArcs.length * 15) : 60,
+      left: 60
+    }
     const width = svgRef.current.clientWidth - margin.left - margin.right
     const innerHeight = height - margin.top - margin.bottom
 
@@ -157,33 +162,47 @@ export function StoryTimeline({
 
         if (storyPoints.length < 2) return
 
-        // Create arc path
-        const arcGenerator = d3
-          .line<Date>()
-          .x((d) => xScale(d))
-          .y((_, i) => innerHeight / 2 + Math.sin((i / storyPoints.length) * Math.PI) * 20)
-          .curve(d3.curveBasis)
+        const startX = xScale(storyPoints[0])
+        const endX = xScale(storyPoints[1])
+        const arcY = innerHeight + 20 + (idx * 15) // Position below the timeline
 
+        // Draw arc line
         svg
-          .append('path')
-          .datum(storyPoints)
-          .attr('fill', 'none')
+          .append('line')
+          .attr('x1', startX)
+          .attr('y1', arcY)
+          .attr('x2', endX)
+          .attr('y2', arcY)
           .attr('stroke', '#3182ce')
-          .attr('stroke-width', 2)
-          .attr('stroke-dasharray', '5,5')
-          .attr('opacity', 0.5)
-          .attr('d', arcGenerator)
+          .attr('stroke-width', 3)
+          .attr('opacity', 0.7)
 
-        // Add story label
-        if (storyPoints.length > 0) {
-          svg
-            .append('text')
-            .attr('x', xScale(storyPoints[0]))
-            .attr('y', innerHeight + 35)
-            .attr('font-size', '9px')
-            .attr('fill', '#3182ce')
-            .text(`Story ${idx + 1}`)
-        }
+        // Draw start marker
+        svg
+          .append('circle')
+          .attr('cx', startX)
+          .attr('cy', arcY)
+          .attr('r', 5)
+          .attr('fill', '#3182ce')
+
+        // Draw end marker
+        svg
+          .append('circle')
+          .attr('cx', endX)
+          .attr('cy', arcY)
+          .attr('r', 5)
+          .attr('fill', '#3182ce')
+
+        // Add story label with details
+        const labelText = `Story ${idx + 1} (${story.length} clusters, ${story.temporal_span.duration_days}d, ${(story.confidence * 100).toFixed(0)}%)`
+        svg
+          .append('text')
+          .attr('x', startX)
+          .attr('y', arcY - 8)
+          .attr('font-size', '10px')
+          .attr('fill', '#3182ce')
+          .attr('font-weight', 'bold')
+          .text(labelText)
       })
     }
 
@@ -286,8 +305,8 @@ export function StoryTimeline({
           )}
           {showStoryArcs && storyArcs.length > 0 && (
             <HStack spacing={2}>
-              <Box w="20px" h="2px" bg="blue.500" />
-              <Text fontSize="xs">Story Arc</Text>
+              <Box w="20px" h="3px" bg="blue.500" />
+              <Text fontSize="xs">Story Arc (progression across time)</Text>
             </HStack>
           )}
         </HStack>
