@@ -37,19 +37,25 @@ interface StoryArc {
   }
 }
 
+interface BackendClusters {
+  clusters: any[]
+  burst_periods: any[]
+  statistics: any
+}
+
 interface AnalyticsPanelsProps {
   events: SpatioTemporalEvent[]
   storyArcs: StoryArc[]
+  backendClusters: BackendClusters | null
 }
 
-export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
+export function AnalyticsPanels({ events, storyArcs, backendClusters }: AnalyticsPanelsProps) {
   // Compute analytics with safety checks
-  const { bursts, clusters, qualityMetrics, dimensionStats } = useMemo(() => {
+  const { bursts, qualityMetrics, dimensionStats } = useMemo(() => {
     // Safety check - return empty state if no events
     if (!events || events.length === 0) {
       return {
         bursts: [],
-        clusters: [],
         qualityMetrics: {
           relevance: 0,
           accuracy: 0,
@@ -75,7 +81,6 @@ export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
     const spatialEvents = events.filter((e) => e.latitude && e.longitude)
 
     const burstsData = detectBursts(temporalEvents, 1, 3)
-    const clustersData = clusterEvents(events, 50, 7, 3)
 
     // Calculate quality metrics from reflection scores
     const eventsWithScores = events.filter(
@@ -150,7 +155,6 @@ export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
 
     return {
       bursts: burstsData,
-      clusters: clustersData,
       qualityMetrics: quality,
       dimensionStats: dimStats,
     }
@@ -242,11 +246,13 @@ export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
             <Text fontSize="lg" fontWeight="bold">
               Event Bursts
             </Text>
-            <Badge colorScheme="red">{bursts.length}</Badge>
+            <Badge colorScheme="red">
+              {backendClusters?.burst_periods.length || bursts.length}
+            </Badge>
           </HStack>
           <Divider />
 
-          {bursts.length === 0 ? (
+          {(backendClusters?.burst_periods.length || bursts.length) === 0 ? (
             <Text fontSize="sm" color="gray.500">
               No significant burst periods detected
             </Text>
@@ -352,7 +358,8 @@ export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
 
             <Stat>
               <StatLabel fontSize="xs">Clusters</StatLabel>
-              <StatNumber fontSize="2xl">{clusters.length}</StatNumber>
+              <StatNumber fontSize="2xl">{backendClusters?.clusters.length || 0}</StatNumber>
+              <StatHelpText fontSize="xs">From backend analysis</StatHelpText>
             </Stat>
 
             <Stat>

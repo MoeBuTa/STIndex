@@ -1,5 +1,7 @@
 # Frontend Deployment Guide
 
+> **Quick Start:** For most users, deploy directly to Vercel and set environment variables in the Vercel dashboard. See [DEPLOYMENT_OPTIONS.md](./DEPLOYMENT_OPTIONS.md) for alternative approaches.
+
 ## Environment Variables Setup
 
 ### Local Development
@@ -25,6 +27,8 @@
    ```
 
 ### Production Deployment
+
+> **Important:** GitHub repository secrets are for **GitHub Actions only**. They are NOT available at runtime in your Next.js app. You must set environment variables in your deployment platform (Vercel, Netlify, etc.).
 
 #### Vercel (Recommended)
 

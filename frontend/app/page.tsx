@@ -45,20 +45,29 @@ interface StoryArc {
   event_ids: string[]
 }
 
+interface BackendClusters {
+  clusters: any[]
+  burst_periods: any[]
+  statistics: any
+}
+
 export default function Home() {
   const [data, setData] = useState<ExtractionResult[]>([])
   const [storyArcs, setStoryArcs] = useState<StoryArc[]>([])
+  const [backendClusters, setBackendClusters] = useState<BackendClusters | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
       fetch('/data/extraction_results.json').then((res) => res.json()),
-      fetch('/data/story_arcs.json').then((res) => res.json())
+      fetch('/data/story_arcs.json').then((res) => res.json()),
+      fetch('/data/clusters.json').then((res) => res.json())
     ])
-      .then(([results, arcs]) => {
+      .then(([results, arcs, clusters]) => {
         setData(results)
         setStoryArcs(arcs)
+        setBackendClusters(clusters)
         setLoading(false)
       })
       .catch((err) => {
@@ -185,7 +194,11 @@ export default function Home() {
               Advanced Analytics
             </Heading>
             <ErrorBoundary>
-              <AnalyticsPanels events={spatioTemporalEvents} storyArcs={storyArcs} />
+              <AnalyticsPanels
+                events={spatioTemporalEvents}
+                storyArcs={storyArcs}
+                backendClusters={backendClusters}
+              />
             </ErrorBoundary>
           </Box>
 
