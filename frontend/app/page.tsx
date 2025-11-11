@@ -1,10 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Box, Container, Heading, Text, Spinner, Center, VStack } from '@chakra-ui/react'
+import { useEffect, useState, useMemo } from 'react'
+import { Box, Container, Heading, Text, Spinner, Center, VStack, Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import { DashboardStats } from './components/DashboardStats'
 import { TemporalTimeline } from './components/TemporalTimeline'
 import { DimensionBreakdown } from './components/DimensionBreakdown'
+import { InteractiveMap } from './components/InteractiveMap'
+import { StoryTimeline } from './components/StoryTimeline'
+import { AnalyticsPanels } from './components/AnalyticsPanels'
+import { EntityNetwork } from './components/EntityNetwork'
+import { SpatioTemporalEvent } from './lib/analytics'
 
 interface ExtractionResult {
   chunk_id: string
@@ -79,27 +84,174 @@ export default function Home() {
   // Filter successful extractions
   const successfulExtractions = data.filter((item) => item.extraction.success)
 
+  // Transform extraction data into SpatioTemporalEvent format for analytics
+  const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
+    const events: SpatioTemporalEvent[] = []
+
+    successfulExtractions.forEach((item) => {
+      const { extraction, document_id, document_title } = item
+      const { temporal_entities, spatial_entities, document_metadata } = extraction
+
+      // Process spatial entities
+      spatial_entities?.forEach((entity: any) => {
+        if (entity.latitude && entity.longitude) {
+          events.push({
+            id: `${document_id}-spatial-${entity.text}`,
+            text: entity.text,
+            latitude: entity.latitude,
+            longitude: entity.longitude,
+            timestamp: temporal_entities?.[0]?.normalized || undefined,
+            normalized_date: temporal_entities?.[0]?.normalized || undefined,
+            category: entity.location_type || document_metadata?.category || 'unknown',
+            document_id,
+            document_title,
+            source: document_metadata?.source || 'Unknown',
+            custom_dimensions: entity,
+          })
+        }
+      })
+
+      // Process temporal entities
+      temporal_entities?.forEach((entity: any) => {
+        events.push({
+          id: `${document_id}-temporal-${entity.text}`,
+          text: entity.text,
+          timestamp: entity.normalized,
+          normalized_date: entity.normalized,
+          category: document_metadata?.category || 'unknown',
+          document_id,
+          document_title,
+          source: document_metadata?.source || 'Unknown',
+          custom_dimensions: entity,
+        })
+      })
+
+      // Process custom dimension entities (event_type, disease, etc.)
+      if (extraction.entities) {
+        Object.entries(extraction.entities).forEach(([dimName, dimEntities]) => {
+          if (dimName === 'temporal' || dimName === 'spatial') return
+          if (!Array.isArray(dimEntities)) return
+
+          dimEntities.forEach((entity: any) => {
+            events.push({
+              id: `${document_id}-${dimName}-${entity.text}`,
+              text: entity.text,
+              category: entity.category || dimName,
+              document_id,
+              document_title,
+              source: document_metadata?.source || 'Unknown',
+              custom_dimensions: entity,
+            })
+          })
+        })
+      }
+    })
+
+    return events
+  }, [successfulExtractions])
+
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
       <Container maxW="7xl" px={4}>
         <VStack spacing={8} align="stretch">
           <Box>
-            <Heading as="h1" size="2xl" mb={2}>STIndex Dashboard</Heading>
+            <Heading as="h1" size="2xl" mb={2}>
+              STIndex Dashboard
+            </Heading>
             <Text color="gray.600" fontSize="lg">
-              Multi-Dimensional Data Visualization
+              Multi-Dimensional Spatiotemporal Information Extraction & Analysis
             </Text>
           </Box>
 
+          {/* Overview Stats */}
           <DashboardStats data={successfulExtractions} />
 
-          <Box bg="white" p={6} borderRadius="lg" shadow="md">
-            <Heading as="h2" size="xl" mb={4}>Temporal Timeline</Heading>
-            <TemporalTimeline data={successfulExtractions} />
+          {/* Analytics Panels */}
+          <Box>
+            <Heading as="h2" size="lg" mb={4}>
+              Advanced Analytics
+            </Heading>
+            <AnalyticsPanels events={spatioTemporalEvents} />
           </Box>
 
+          {/* Tabbed Visualizations */}
           <Box bg="white" p={6} borderRadius="lg" shadow="md">
-            <Heading as="h2" size="xl" mb={4}>Dimension Analysis</Heading>
-            <DimensionBreakdown data={successfulExtractions} />
+            <Tabs colorScheme="blue" variant="enclosed">
+              <TabList>
+                <Tab>Interactive Map</Tab>
+                <Tab>Story Timeline</Tab>
+                <Tab>Entity Network</Tab>
+                <Tab>Basic Timeline</Tab>
+                <Tab>Dimension Breakdown</Tab>
+              </TabList>
+
+              <TabPanels>
+                {/* Interactive Map */}
+                <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Spatiotemporal event clustering with story arc visualization
+                    </Text>
+                    <InteractiveMap
+                      events={spatioTemporalEvents}
+                      height="600px"
+                      showClusters={true}
+                      showStoryArcs={true}
+                      enableAnimation={true}
+                    />
+                  </VStack>
+                </TabPanel>
+
+                {/* Story Timeline */}
+                <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Multi-track timeline with burst detection and story arcs
+                    </Text>
+                    <StoryTimeline
+                      events={spatioTemporalEvents}
+                      height={500}
+                      showBursts={true}
+                      showStoryArcs={true}
+                    />
+                  </VStack>
+                </TabPanel>
+
+                {/* Entity Network */}
+                <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Entity co-occurrence network graph
+                    </Text>
+                    <EntityNetwork
+                      events={spatioTemporalEvents}
+                      height="600px"
+                      minCoOccurrence={2}
+                    />
+                  </VStack>
+                </TabPanel>
+
+                {/* Basic Timeline */}
+                <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Temporal entity timeline with quality scores
+                    </Text>
+                    <TemporalTimeline data={successfulExtractions} />
+                  </VStack>
+                </TabPanel>
+
+                {/* Dimension Breakdown */}
+                <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Dimension-agnostic entity analysis
+                    </Text>
+                    <DimensionBreakdown data={successfulExtractions} />
+                  </VStack>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </Box>
         </VStack>
       </Container>
