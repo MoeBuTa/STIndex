@@ -46,6 +46,50 @@ interface AnalyticsPanelsProps {
 }
 
 export function AnalyticsPanels({ events, storyArcs, backendClusters }: AnalyticsPanelsProps) {
+  // Helper function to parse various date formats
+  const parseNormalizedDate = (dateStr: string | undefined) => {
+    if (!dateStr) return null
+
+    // Skip durations (P9Y, P7D, etc.)
+    if (dateStr.startsWith('P')) return null
+
+    // Handle intervals (2023-01-01/2023-12-31)
+    if (dateStr.includes('/')) {
+      const [start, end] = dateStr.split('/')
+      return { start: new Date(start), end: new Date(end), isInterval: true }
+    }
+
+    // Handle year only (2023)
+    if (/^\d{4}$/.test(dateStr)) {
+      return new Date(dateStr + '-01-01')
+    }
+
+    // Handle year-month (2020-08)
+    if (/^\d{4}-\d{2}$/.test(dateStr)) {
+      return new Date(dateStr + '-01')
+    }
+
+    // Handle full date
+    return new Date(dateStr)
+  }
+
+  // Check if a date falls within a burst period
+  const isInBurst = (normalizedDate: string | undefined, burstStart: string, burstEnd: string) => {
+    const parsedDate = parseNormalizedDate(normalizedDate)
+    if (!parsedDate) return false
+
+    const start = new Date(burstStart)
+    const end = new Date(burstEnd)
+
+    if ((parsedDate as any).isInterval) {
+      // Check if interval overlaps with burst
+      const interval = parsedDate as any
+      return interval.start <= end && interval.end >= start
+    }
+
+    return parsedDate >= start && parsedDate <= end
+  }
+
   // Compute analytics with safety checks
   const { bursts, qualityMetrics, dimensionStats } = useMemo(() => {
     // Safety check - return empty state if no events
@@ -78,11 +122,11 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
 
     // Use backend-provided burst periods and map to expected format
     const burstsData = (backendClusters?.burst_periods || []).map((bp: any) => {
-      // Filter events within this burst period
+      // Filter events within this burst period using proper date parsing
       const burstEvents = events.filter((e) => {
         const eventDate = e.timestamp || e.normalized_date
         if (!eventDate) return false
-        return eventDate >= bp.start && eventDate <= bp.end
+        return isInBurst(eventDate, bp.start, bp.end)
       })
 
       // Calculate dominant location (using event text as location identifier)
@@ -108,7 +152,8 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
       return {
         start: bp.start,
         end: bp.end,
-        eventCount: bp.event_count,
+        eventCount: burstEvents.length, // Use frontend calculated count for display
+        backendEventCount: bp.event_count, // Keep backend count for reference
         intensity: bp.burst_intensity,
         peakTime: bp.start, // Use start time as peak
         dominantLocation,
@@ -289,7 +334,7 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
             </Text>
           ) : (
             <VStack align="stretch" spacing={3} maxH="300px" overflowY="auto">
-              {bursts.slice(0, 5).map((burst, idx) => (
+              {bursts.map((burst, idx) => (
                 <Box key={idx} p={3} bg="red.50" borderRadius="md" borderLeft="3px solid" borderColor="red.500">
                   <HStack justify="space-between" mb={1}>
                     <Text fontSize="sm" fontWeight="bold">
@@ -340,7 +385,7 @@ export function AnalyticsPanels({ events, storyArcs, backendClusters }: Analytic
             </Text>
           ) : (
             <VStack align="stretch" spacing={3} maxH="300px" overflowY="auto">
-              {storyArcs.slice(0, 5).map((story, idx) => (
+              {storyArcs.map((story, idx) => (
                 <Box
                   key={story.story_id}
                   p={3}

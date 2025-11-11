@@ -38,23 +38,18 @@ export function DashboardStats({ data }: DashboardStatsProps) {
     0
   )
 
-  // Count custom dimension entities (anything not temporal/spatial)
-  const totalCustomDimensions = data.reduce((sum, item) => {
-    let count = 0
-
-    // Count from entities object
+  // Count unique custom dimension types (anything not temporal/spatial)
+  const customDimensionTypes = new Set<string>()
+  data.forEach((item) => {
     if (item.extraction.entities) {
-      const customKeys = Object.keys(item.extraction.entities).filter(
-        (key) => key !== 'temporal' && key !== 'spatial'
-      )
-      count += customKeys.reduce((keySum, key) => {
-        const entities = item.extraction.entities?.[key]
-        return keySum + (entities?.length || 0)
-      }, 0)
+      Object.keys(item.extraction.entities).forEach((key) => {
+        if (key !== 'temporal' && key !== 'spatial') {
+          customDimensionTypes.add(key)
+        }
+      })
     }
-
-    return sum + count
-  }, 0)
+  })
+  const totalCustomDimensions = customDimensionTypes.size
 
   const stats = [
     { label: 'Documents', value: totalDocuments, help: `${totalChunks} chunks processed` },

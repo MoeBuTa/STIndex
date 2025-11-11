@@ -1,8 +1,22 @@
 'use client'
 
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import * as d3 from 'd3'
-import { Box, Text, VStack, HStack, Badge } from '@chakra-ui/react'
+import {
+  Box,
+  Text,
+  VStack,
+  HStack,
+  Badge,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Divider,
+} from '@chakra-ui/react'
 import { SpatioTemporalEvent, BurstPeriod } from '../lib/analytics'
 
 interface BackendStoryArc {
@@ -42,6 +56,8 @@ export function StoryTimeline({
 }: StoryTimelineProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const [selectedEvent, setSelectedEvent] = useState<SpatioTemporalEvent | null>(null)
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   // Filter events with temporal data
   const temporalEvents = useMemo(() => {
@@ -243,7 +259,7 @@ export function StoryTimeline({
         .attr('opacity', 0.8)
         .style('cursor', 'pointer')
 
-      // Tooltip
+      // Tooltip and click handlers
       circle
         .on('mouseover', function (mouseEvent) {
           d3.select(this).attr('r', 6).attr('opacity', 1)
@@ -260,7 +276,7 @@ export function StoryTimeline({
                   <strong>${event.text}</strong><br/>
                   <span style="color: #666;">${event.date.toLocaleDateString()}</span><br/>
                   ${event.category ? `<span style="color: ${colorScale(event.category)};">${event.category}</span><br/>` : ''}
-                  ${event.source ? `<em>${event.source}</em>` : ''}
+                  <span style="color: #3182ce; font-size: 10px;">Click for details</span>
                 </div>
               `
               )
@@ -272,6 +288,10 @@ export function StoryTimeline({
           if (tooltipRef.current) {
             d3.select(tooltipRef.current).style('opacity', 0)
           }
+        })
+        .on('click', function () {
+          setSelectedEvent(event)
+          onOpen()
         })
     })
 
@@ -314,6 +334,168 @@ export function StoryTimeline({
           transition: 'opacity 0.2s',
         }}
       />
+
+      {/* Event Details Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Event Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {selectedEvent && (
+              <VStack align="stretch" spacing={4}>
+                <Box>
+                  <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={1}>
+                    Event Text
+                  </Text>
+                  <Text fontSize="lg" fontWeight="bold">
+                    {selectedEvent.text}
+                  </Text>
+                </Box>
+
+                <Divider />
+
+                <HStack spacing={4} flexWrap="wrap">
+                  {selectedEvent.category && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Category
+                      </Text>
+                      <Badge colorScheme="blue">{selectedEvent.category}</Badge>
+                    </Box>
+                  )}
+                  {selectedEvent.confidence !== undefined && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Confidence
+                      </Text>
+                      <Badge colorScheme="green">
+                        {Math.round(selectedEvent.confidence * 100)}%
+                      </Badge>
+                    </Box>
+                  )}
+                </HStack>
+
+                <Divider />
+
+                <VStack align="stretch" spacing={3}>
+                  {selectedEvent.timestamp && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Timestamp
+                      </Text>
+                      <Text fontSize="sm">{selectedEvent.timestamp}</Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.normalized_date && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Normalized Date
+                      </Text>
+                      <Text fontSize="sm">{selectedEvent.normalized_date}</Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.location && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Location
+                      </Text>
+                      <Text fontSize="sm">{selectedEvent.location}</Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.normalized_location && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Normalized Location
+                      </Text>
+                      <Text fontSize="sm">{selectedEvent.normalized_location}</Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.source && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Source
+                      </Text>
+                      <Text fontSize="sm">{selectedEvent.source}</Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.document_id && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Document ID
+                      </Text>
+                      <Text fontSize="xs" fontFamily="mono">
+                        {selectedEvent.document_id}
+                      </Text>
+                    </Box>
+                  )}
+
+                  {selectedEvent.chunk_id && (
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                        Chunk ID
+                      </Text>
+                      <Text fontSize="xs" fontFamily="mono">
+                        {selectedEvent.chunk_id}
+                      </Text>
+                    </Box>
+                  )}
+                </VStack>
+
+                {selectedEvent.reflection_scores && (
+                  <>
+                    <Divider />
+                    <Box>
+                      <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={2}>
+                        Quality Scores
+                      </Text>
+                      <VStack align="stretch" spacing={2}>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm">Relevance:</Text>
+                          <Badge colorScheme="purple">
+                            {selectedEvent.reflection_scores.relevance.toFixed(2)}
+                          </Badge>
+                        </HStack>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm">Accuracy:</Text>
+                          <Badge colorScheme="purple">
+                            {selectedEvent.reflection_scores.accuracy.toFixed(2)}
+                          </Badge>
+                        </HStack>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm">Completeness:</Text>
+                          <Badge colorScheme="purple">
+                            {selectedEvent.reflection_scores.completeness.toFixed(2)}
+                          </Badge>
+                        </HStack>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm">Consistency:</Text>
+                          <Badge colorScheme="purple">
+                            {selectedEvent.reflection_scores.consistency.toFixed(2)}
+                          </Badge>
+                        </HStack>
+                      </VStack>
+                      {selectedEvent.reflection_scores.reasoning && (
+                        <Box mt={3} p={3} bg="gray.50" borderRadius="md">
+                          <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>
+                            Reasoning:
+                          </Text>
+                          <Text fontSize="sm">{selectedEvent.reflection_scores.reasoning}</Text>
+                        </Box>
+                      )}
+                    </Box>
+                  </>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
       {/* Legend */}
       <Box mt={4}>

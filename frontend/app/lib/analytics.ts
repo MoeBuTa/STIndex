@@ -10,11 +10,22 @@ export interface SpatioTemporalEvent {
   longitude?: number
   timestamp?: string
   normalized_date?: string
+  location?: string
+  normalized_location?: string
   category?: string
+  confidence?: number
   document_id: string
   document_title: string
+  chunk_id?: string
   source: string
   custom_dimensions?: Record<string, any>
+  reflection_scores?: {
+    relevance: number
+    accuracy: number
+    completeness: number
+    consistency: number
+    reasoning?: string
+  }
 }
 
 export interface EventCluster {
