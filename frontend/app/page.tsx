@@ -242,7 +242,7 @@ export default function Home() {
 
                 {/* Interactive Map */}
                 <TabPanel p={0}>
-                  <VStack align="stretch" spacing={2} h="100%">
+                  <VStack align="stretch" spacing={2}>
                     <Box px={6} pt={4}>
                       <Text fontSize="sm" color="gray.600">
                         Spatiotemporal event clustering with story arc visualization
@@ -297,7 +297,7 @@ export default function Home() {
 
                 {/* 3D Space-Time Cube */}
                 <TabPanel p={0}>
-                  <VStack align="stretch" spacing={2} h="100%">
+                  <VStack align="stretch" spacing={2}>
                     <Box px={6} pt={4}>
                       <Text fontSize="sm" color="gray.600">
                         3D visualization of events in space-time (rotate, zoom, and explore)

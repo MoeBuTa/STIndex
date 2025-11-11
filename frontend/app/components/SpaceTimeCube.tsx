@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Box, VStack, HStack, Text, Select, Switch, FormControl, FormLabel, Slider, SliderTrack, SliderFilledTrack, SliderThumb } from '@chakra-ui/react'
 import DeckGL from '@deck.gl/react'
 import { ColumnLayer } from '@deck.gl/layers'
@@ -24,6 +24,8 @@ const CATEGORY_COLORS: { [key: string]: [number, number, number] } = {
 }
 
 export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) {
+  const [isMounted, setIsMounted] = useState(false)
+  const [webGLSupported, setWebGLSupported] = useState(true)
   const [viewState, setViewState] = useState<MapViewState>({
     longitude: 0,
     latitude: 20,
@@ -39,6 +41,21 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
   const [showLabels, setShowLabels] = useState(true)
   const [elevationScale, setElevationScale] = useState(50000)
   const [radiusScale, setRadiusScale] = useState(10000)
+
+  // Ensure component only renders on client side and check WebGL support
+  useEffect(() => {
+    // Check if WebGL is supported
+    try {
+      const canvas = document.createElement('canvas')
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+      if (!gl) {
+        setWebGLSupported(false)
+      }
+    } catch (e) {
+      setWebGLSupported(false)
+    }
+    setIsMounted(true)
+  }, [])
 
   // Filter events with both spatial and temporal data
   const spatioTemporalEvents = useMemo(() => {
@@ -163,6 +180,33 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
     )
   }
 
+  // Don't render DeckGL on server side
+  if (!isMounted) {
+    return (
+      <Box height={height} display="flex" alignItems="center" justifyContent="center">
+        <Text color="gray.500" fontSize="lg">
+          Loading 3D visualization...
+        </Text>
+      </Box>
+    )
+  }
+
+  // Check WebGL support
+  if (!webGLSupported) {
+    return (
+      <Box height={height} display="flex" alignItems="center" justifyContent="center">
+        <VStack>
+          <Text color="red.500" fontSize="lg">
+            WebGL is not supported in your browser
+          </Text>
+          <Text color="gray.500" fontSize="sm">
+            Please try a different browser or enable WebGL to view the 3D visualization
+          </Text>
+        </VStack>
+      </Box>
+    )
+  }
+
   return (
     <VStack align="stretch" spacing={4}>
       {/* Controls */}
@@ -235,6 +279,7 @@ export function SpaceTimeCube({ events, height = '700px' }: SpaceTimeCubeProps) 
           controller={true}
           layers={layers}
           getTooltip={getTooltip}
+          useDevicePixels={1}
         >
           {/* Base map (optional) - using solid color background */}
           <div
