@@ -89,7 +89,8 @@ export default function Home() {
   )
 
   // Transform extraction data into SpatioTemporalEvent format for analytics
-  // Only recalculate when data changes (not when array reference changes)
+  // TEMPORARILY DISABLED - debugging infinite re-render
+  /*
   const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
     if (!data || data.length === 0) return []
 
@@ -157,6 +158,7 @@ export default function Home() {
 
     return events
   }, [data])
+  */
 
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
