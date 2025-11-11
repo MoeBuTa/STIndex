@@ -196,39 +196,41 @@ export function DimensionBreakdown({ data }: DimensionBreakdownProps) {
             {/* Entity list */}
             <Box>
               <Text fontSize="lg" fontWeight="bold" mb={3}>All Entities</Text>
-              <VStack spacing={2} align="stretch">
-                {entities.map((entity, index) => (
-                  <Box
-                    key={index}
-                    p={3}
-                    bg="gray.50"
-                    borderRadius="md"
-                    borderLeft="3px"
-                    borderColor="blue.400"
-                  >
-                    <Flex justify="space-between" align="flex-start">
-                      <Box>
-                        <HStack spacing={2} mb={1}>
-                          <Text fontWeight="medium">{entity.text}</Text>
-                          {entity.category && (
-                            <Badge colorScheme="purple" fontSize="xs">
-                              {entity.category}
-                            </Badge>
-                          )}
-                          {entity.confidence && (
-                            <Badge colorScheme="green" fontSize="xs">
-                              {Math.round(entity.confidence * 100)}%
-                            </Badge>
-                          )}
-                        </HStack>
-                        <Text fontSize="xs" color="gray.500">
-                          {(entity as any).source} • {(entity as any).document_title}
-                        </Text>
-                      </Box>
-                    </Flex>
-                  </Box>
-                ))}
-              </VStack>
+              <Box maxH="400px" overflowY="auto">
+                <VStack spacing={2} align="stretch">
+                  {entities.map((entity, index) => (
+                    <Box
+                      key={index}
+                      p={3}
+                      bg="gray.50"
+                      borderRadius="md"
+                      borderLeft="3px"
+                      borderColor="blue.400"
+                    >
+                      <Flex justify="space-between" align="flex-start">
+                        <Box>
+                          <HStack spacing={2} mb={1}>
+                            <Text fontWeight="medium">{entity.text}</Text>
+                            {entity.category && (
+                              <Badge colorScheme="purple" fontSize="xs">
+                                {entity.category}
+                              </Badge>
+                            )}
+                            {entity.confidence && (
+                              <Badge colorScheme="green" fontSize="xs">
+                                {Math.round(entity.confidence * 100)}%
+                              </Badge>
+                            )}
+                          </HStack>
+                          <Text fontSize="xs" color="gray.500">
+                            {(entity as any).source} • {(entity as any).document_title}
+                          </Text>
+                        </Box>
+                      </Flex>
+                    </Box>
+                  ))}
+                </VStack>
+              </Box>
             </Box>
           </VStack>
         )
