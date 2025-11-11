@@ -89,8 +89,6 @@ export default function Home() {
   )
 
   // Transform extraction data into SpatioTemporalEvent format for analytics
-  // TEMPORARILY DISABLED - debugging infinite re-render
-  /*
   const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
     if (!data || data.length === 0) return []
 
@@ -158,7 +156,6 @@ export default function Home() {
 
     return events
   }, [data])
-  */
 
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
@@ -176,15 +173,15 @@ export default function Home() {
           {/* Overview Stats */}
           <DashboardStats data={successfulExtractions} />
 
-          {/* Analytics Panels - Temporarily disabled to debug infinite re-render */}
-          {/* <Box>
+          {/* Analytics Panels */}
+          <Box>
             <Heading as="h2" size="lg" mb={4}>
               Advanced Analytics
             </Heading>
             <ErrorBoundary>
               <AnalyticsPanels events={spatioTemporalEvents} />
             </ErrorBoundary>
-          </Box> */}
+          </Box>
 
           {/* Tabbed Visualizations */}
           <Box bg="white" p={6} borderRadius="lg" shadow="md">
@@ -192,10 +189,9 @@ export default function Home() {
               <TabList>
                 <Tab>Basic Timeline</Tab>
                 <Tab>Dimension Breakdown</Tab>
-                {/* Temporarily disabled advanced visualizations */}
-                {/* <Tab>Interactive Map</Tab>
+                <Tab>Interactive Map</Tab>
                 <Tab>Story Timeline</Tab>
-                <Tab>Entity Network</Tab> */}
+                <Tab>Entity Network</Tab>
               </TabList>
 
               <TabPanels>
@@ -223,8 +219,8 @@ export default function Home() {
                   </VStack>
                 </TabPanel>
 
-                {/* Interactive Map - Temporarily disabled */}
-                {/* <TabPanel>
+                {/* Interactive Map */}
+                <TabPanel>
                   <VStack align="stretch" spacing={4}>
                     <Text fontSize="sm" color="gray.600">
                       Spatiotemporal event clustering with story arc visualization
@@ -239,10 +235,10 @@ export default function Home() {
                       />
                     </ErrorBoundary>
                   </VStack>
-                </TabPanel> */}
+                </TabPanel>
 
-                {/* Story Timeline - Temporarily disabled */}
-                {/* <TabPanel>
+                {/* Story Timeline */}
+                <TabPanel>
                   <VStack align="stretch" spacing={4}>
                     <Text fontSize="sm" color="gray.600">
                       Multi-track timeline with burst detection and story arcs
@@ -256,10 +252,10 @@ export default function Home() {
                       />
                     </ErrorBoundary>
                   </VStack>
-                </TabPanel> */}
+                </TabPanel>
 
-                {/* Entity Network - Temporarily disabled */}
-                {/* <TabPanel>
+                {/* Entity Network */}
+                <TabPanel>
                   <VStack align="stretch" spacing={4}>
                     <Text fontSize="sm" color="gray.600">
                       Entity co-occurrence network graph
@@ -272,7 +268,7 @@ export default function Home() {
                       />
                     </ErrorBoundary>
                   </VStack>
-                </TabPanel> */}
+                </TabPanel>
               </TabPanels>
             </Tabs>
           </Box>
