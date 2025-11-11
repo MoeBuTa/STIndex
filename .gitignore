@@ -75,3 +75,7 @@ models/*.bin
 docs/*
 docs
 CLAUDE.md
+
+# MS-SWIFT Result folder
+result/
+result/*
