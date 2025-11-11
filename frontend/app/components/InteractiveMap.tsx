@@ -3,11 +3,18 @@
 import { useState, useMemo, useCallback } from 'react'
 import Map, { Marker, Popup, Source, Layer } from 'react-map-gl'
 import { Box, Badge, Text, VStack, HStack, Button, Slider, SliderTrack, SliderFilledTrack, SliderThumb } from '@chakra-ui/react'
-import { clusterEvents, extractStoryArcs, EventCluster, StoryArc, SpatioTemporalEvent } from '../lib/analytics'
+import { clusterEvents, EventCluster, SpatioTemporalEvent } from '../lib/analytics'
 import 'mapbox-gl/dist/mapbox-gl.css'
+
+interface BackendStoryArc {
+  story_id: string
+  length: number
+  confidence: number
+}
 
 interface InteractiveMapProps {
   events: SpatioTemporalEvent[]
+  storyArcs: BackendStoryArc[]
   height?: string
   showClusters?: boolean
   showStoryArcs?: boolean
@@ -16,6 +23,7 @@ interface InteractiveMapProps {
 
 export function InteractiveMap({
   events,
+  storyArcs,
   height = '600px',
   showClusters = true,
   showStoryArcs = true,
@@ -43,12 +51,6 @@ export function InteractiveMap({
     if (!showClusters || validEvents.length === 0) return []
     return clusterEvents(validEvents, 50, 7, 3)
   }, [validEvents, showClusters])
-
-  // Compute story arcs
-  const stories = useMemo(() => {
-    if (!showStoryArcs || clusters.length === 0) return []
-    return extractStoryArcs(clusters, 0.3)
-  }, [clusters, showStoryArcs])
 
   // Filter events by time
   const filteredEvents = useMemo(() => {
@@ -85,29 +87,6 @@ export function InteractiveMap({
       zoom: 6,
     })
   }, [validEvents])
-
-  // GeoJSON for story arc lines
-  const storyArcGeoJSON = useMemo(() => {
-    if (!showStoryArcs || stories.length === 0) return null
-
-    const features = stories.map((story) => ({
-      type: 'Feature' as const,
-      properties: {
-        storyId: story.id,
-        narrative: story.narrative,
-        strength: story.strength,
-      },
-      geometry: {
-        type: 'LineString' as const,
-        coordinates: story.locations.map((loc) => [loc.lng, loc.lat]),
-      },
-    }))
-
-    return {
-      type: 'FeatureCollection' as const,
-      features,
-    }
-  }, [stories, showStoryArcs])
 
   // Heatmap data
   const heatmapGeoJSON = useMemo(() => {
@@ -194,21 +173,8 @@ export function InteractiveMap({
           </Source>
         )}
 
-        {/* Story Arc Lines */}
-        {storyArcGeoJSON && (
-          <Source id="story-arcs" type="geojson" data={storyArcGeoJSON}>
-            <Layer
-              id="story-arc-layer"
-              type="line"
-              paint={{
-                'line-color': '#3182ce',
-                'line-width': 3,
-                'line-opacity': 0.7,
-                'line-dasharray': [2, 2],
-              }}
-            />
-          </Source>
-        )}
+        {/* Story Arc Lines - Disabled: backend story arcs use different format */}
+        {/* TODO: Transform backend story arcs to GeoJSON format for visualization */}
 
         {/* Event Markers */}
         {filteredEvents.map((event, idx) => (
@@ -439,7 +405,7 @@ export function InteractiveMap({
           </Text>
           <Text fontSize="xs">Events: {filteredEvents.length}</Text>
           {showClusters && <Text fontSize="xs">Clusters: {clusters.length}</Text>}
-          {showStoryArcs && <Text fontSize="xs">Stories: {stories.length}</Text>}
+          {showStoryArcs && <Text fontSize="xs">Stories: {storyArcs.length}</Text>}
         </VStack>
       </Box>
     </Box>

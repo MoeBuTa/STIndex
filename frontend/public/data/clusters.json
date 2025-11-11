@@ -1,0 +1,503 @@
+{
+  "clusters": [
+    {
+      "cluster_id": "spatiotemporal_0",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 1.2063956,
+        "longitude": 34.2079667,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 1.2063956,
+          "max_lat": 1.2063956,
+          "min_lon": 34.2079667,
+          "max_lon": 34.2079667
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_4",
+        "who_immunization_coverage_chunk_4"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_1",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 5.6143275,
+        "longitude": -0.2749407,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 5.6143275,
+          "max_lat": 5.6143275,
+          "min_lon": -0.2749407,
+          "max_lon": -0.2749407
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_4",
+        "who_immunization_coverage_chunk_4"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_2",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -1.2136405,
+        "longitude": 36.8793053,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -1.2136405,
+          "max_lat": -1.2136405,
+          "min_lon": 36.8793053,
+          "max_lon": 36.8793053
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_4",
+        "who_immunization_coverage_chunk_4"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_3",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -13.9999971,
+        "longitude": 33.5561295,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -13.9999971,
+          "max_lat": -13.9999971,
+          "min_lon": 33.5561295,
+          "max_lon": 33.5561295
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_4",
+        "who_immunization_coverage_chunk_4"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_4",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 4.8652169,
+        "longitude": 31.5981904,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 4.8652169,
+          "max_lat": 4.8652169,
+          "min_lon": 31.5981904,
+          "max_lon": 31.5981904
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_5",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 7.8699431,
+        "longitude": 29.6667897,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 7.8699431,
+          "max_lat": 7.8699431,
+          "min_lon": 29.6667897,
+          "max_lon": 29.6667897
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_6",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "datetime": "2025-01-01 00:00:00",
+        "time_range": {
+          "start": "2025-01-01T00:00:00",
+          "end": "2025-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -36.5986096,
+          "max_lat": -36.5986096,
+          "min_lon": 144.6780052,
+          "max_lon": 144.6780052
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "vic_health_measles_chunk_18",
+        "vic_health_measles_chunk_19",
+        "vic_health_measles_chunk_25"
+      ]
+    }
+  ],
+  "burst_periods": [
+    {
+      "start": "1965-01-01T00:00:00",
+      "end": "1965-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "1966-01-01T00:00:00",
+      "end": "1966-01-02T00:00:00",
+      "event_count": 3,
+      "burst_intensity": 32.34827596202759
+    },
+    {
+      "start": "1988-01-01T00:00:00",
+      "end": "1988-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "1994-01-01T00:00:00",
+      "end": "1994-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "1999-12-31T00:00:00",
+      "end": "2000-01-01T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2000-01-01T00:00:00",
+      "end": "2000-01-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2002-06-01T00:00:00",
+      "end": "2002-06-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2009-01-01T00:00:00",
+      "end": "2009-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2014-01-01T00:00:00",
+      "end": "2014-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2014-03-27T00:00:00",
+      "end": "2014-03-28T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2019-01-01T00:00:00",
+      "end": "2019-01-02T00:00:00",
+      "event_count": 4,
+      "burst_intensity": 43.14255239056532
+    },
+    {
+      "start": "2019-03-27T00:00:00",
+      "end": "2019-03-28T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2020-01-01T00:00:00",
+      "end": "2020-01-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2023-01-01T00:00:00",
+      "end": "2023-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2023-08-09T00:00:00",
+      "end": "2023-08-10T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2023-12-31T00:00:00",
+      "end": "2024-01-01T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-01-02T00:00:00",
+      "event_count": 7,
+      "burst_intensity": 75.5253816761785
+    },
+    {
+      "start": "2024-04-07T00:00:00",
+      "end": "2024-04-08T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2024-05-06T00:00:00",
+      "end": "2024-05-07T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2024-09-25T00:00:00",
+      "end": "2024-09-26T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2024-09-26T00:00:00",
+      "end": "2024-09-27T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2024-10-03T00:00:00",
+      "end": "2024-10-04T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2024-12-11T00:00:00",
+      "end": "2024-12-12T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2024-12-31T00:00:00",
+      "end": "2025-01-01T00:00:00",
+      "event_count": 6,
+      "burst_intensity": 64.73110524764077
+    },
+    {
+      "start": "2025-01-01T00:00:00",
+      "end": "2025-01-02T00:00:00",
+      "event_count": 5,
+      "burst_intensity": 53.93682881910305
+    },
+    {
+      "start": "2025-02-28T00:00:00",
+      "end": "2025-03-01T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-03-25T00:00:00",
+      "end": "2025-03-26T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-04-14T00:00:00",
+      "end": "2025-04-15T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-05-01T00:00:00",
+      "end": "2025-05-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-05-22T00:00:00",
+      "end": "2025-05-23T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-05-29T00:00:00",
+      "end": "2025-05-30T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-07-10T00:00:00",
+      "end": "2025-07-11T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-07-15T00:00:00",
+      "end": "2025-07-16T00:00:00",
+      "event_count": 3,
+      "burst_intensity": 32.34827596202759
+    },
+    {
+      "start": "2025-07-28T00:00:00",
+      "end": "2025-07-29T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-08-21T00:00:00",
+      "end": "2025-08-22T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-09-03T00:00:00",
+      "end": "2025-09-04T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-09-22T00:00:00",
+      "end": "2025-09-23T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-09-26T00:00:00",
+      "end": "2025-09-27T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-09-30T00:00:00",
+      "end": "2025-10-01T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-10-02T00:00:00",
+      "end": "2025-10-03T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-11-03T00:00:00",
+      "end": "2025-11-04T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2025-11-06T00:00:00",
+      "end": "2025-11-07T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 21.553999533489872
+    },
+    {
+      "start": "2025-11-07T00:00:00",
+      "end": "2025-11-08T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2026-02-23T00:00:00",
+      "end": "2026-02-24T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2026-03-09T00:00:00",
+      "end": "2026-03-10T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2026-09-21T00:00:00",
+      "end": "2026-09-22T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2026-10-05T00:00:00",
+      "end": "2026-10-06T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    },
+    {
+      "start": "2030-01-01T00:00:00",
+      "end": "2030-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 10.759723104952144
+    }
+  ],
+  "statistics": {
+    "total_events": 79,
+    "total_clusters": 7,
+    "total_bursts": 48,
+    "dimension_counts": {
+      "temporal": 118,
+      "event_type": 125,
+      "disease": 137,
+      "spatial": 53,
+      "venue_type": 41
+    },
+    "cluster_sizes": {
+      "min": 2,
+      "max": 4,
+      "mean": 2.4285714285714284,
+      "median": 2.0
+    },
+    "clustering_params": {
+      "temporal_window": "1D",
+      "spatial_radius_km": 50,
+      "min_cluster_size": 2,
+      "eps_temporal_hours": 24
+    }
+  }
+}

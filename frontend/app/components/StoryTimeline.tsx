@@ -3,10 +3,22 @@
 import { useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 import { Box, Text, VStack, HStack, Badge } from '@chakra-ui/react'
-import { detectBursts, extractStoryArcs, clusterEvents, SpatioTemporalEvent, BurstPeriod, StoryArc } from '../lib/analytics'
+import { detectBursts, clusterEvents, SpatioTemporalEvent, BurstPeriod } from '../lib/analytics'
+
+interface BackendStoryArc {
+  story_id: string
+  length: number
+  confidence: number
+  temporal_span: {
+    start: string
+    end: string
+    duration_days: number
+  }
+}
 
 interface StoryTimelineProps {
   events: SpatioTemporalEvent[]
+  storyArcs: BackendStoryArc[]
   height?: number
   showBursts?: boolean
   showStoryArcs?: boolean
@@ -14,6 +26,7 @@ interface StoryTimelineProps {
 
 export function StoryTimeline({
   events,
+  storyArcs,
   height = 400,
   showBursts = true,
   showStoryArcs = true,
@@ -31,13 +44,6 @@ export function StoryTimeline({
     if (!showBursts || temporalEvents.length === 0) return []
     return detectBursts(temporalEvents, 1, 3)
   }, [temporalEvents, showBursts])
-
-  // Get story arcs
-  const stories = useMemo(() => {
-    if (!showStoryArcs || temporalEvents.length === 0) return []
-    const clusters = clusterEvents(temporalEvents, 50, 7, 3)
-    return extractStoryArcs(clusters, 0.3)
-  }, [temporalEvents, showStoryArcs])
 
   useEffect(() => {
     if (!svgRef.current || temporalEvents.length === 0) return
@@ -142,11 +148,12 @@ export function StoryTimeline({
     }
 
     // Draw story arcs
-    if (showStoryArcs && stories.length > 0) {
-      stories.forEach((story, idx) => {
-        const storyPoints = story.timeline
-          .map((timeStr) => parseDate(timeStr))
-          .filter((d) => d !== null) as Date[]
+    if (showStoryArcs && storyArcs.length > 0) {
+      storyArcs.forEach((story, idx) => {
+        const storyPoints = [
+          new Date(story.temporal_span.start),
+          new Date(story.temporal_span.end)
+        ].filter((d) => d && !isNaN(d.getTime()))
 
         if (storyPoints.length < 2) return
 
@@ -238,7 +245,7 @@ export function StoryTimeline({
       .attr('font-weight', 'bold')
       .text('Temporal Event Timeline')
 
-  }, [temporalEvents, bursts, stories, height, showBursts, showStoryArcs])
+  }, [temporalEvents, bursts, storyArcs, height, showBursts, showStoryArcs])
 
   if (temporalEvents.length === 0) {
     return (
@@ -277,7 +284,7 @@ export function StoryTimeline({
               <Text fontSize="xs">Burst Period</Text>
             </HStack>
           )}
-          {showStoryArcs && stories.length > 0 && (
+          {showStoryArcs && storyArcs.length > 0 && (
             <HStack spacing={2}>
               <Box w="20px" h="2px" bg="blue.500" />
               <Text fontSize="xs">Story Arc</Text>
@@ -292,7 +299,7 @@ export function StoryTimeline({
           <HStack spacing={4}>
             <Badge colorScheme="blue">{temporalEvents.length} events</Badge>
             {showBursts && <Badge colorScheme="red">{bursts.length} bursts</Badge>}
-            {showStoryArcs && <Badge colorScheme="purple">{stories.length} stories</Badge>}
+            {showStoryArcs && <Badge colorScheme="purple">{storyArcs.length} stories</Badge>}
           </HStack>
         </VStack>
       </Box>

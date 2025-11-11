@@ -1,0 +1,4908 @@
+[
+  {
+    "id": 0,
+    "chunk_id": "who_measles_factsheet_chunk_7",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2023",
+      "normalized": "2023",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The risk of measles outbreaks is particularly high amongst refugees",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 1,
+    "chunk_id": "who_measles_factsheet_chunk_7",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2020",
+      "normalized": "2020",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The risk of measles outbreaks is particularly high amongst refugees",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 2,
+    "chunk_id": "who_measles_factsheet_chunk_7",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2021–2030",
+      "normalized": "P9Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The risk of measles outbreaks is particularly high amongst refugees",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 3,
+    "chunk_id": "who_measles_factsheet_chunk_8",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "in 2020",
+      "normalized": "2020",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "measles elimination is under threat",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 4,
+    "chunk_id": "who_measles_factsheet_chunk_8",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2001",
+      "normalized": "2001",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "measles elimination is under threat",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 5,
+    "chunk_id": "who_measles_factsheet_chunk_9",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2000–2023",
+      "normalized": "P23Y",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 2.9354323,
+      "longitude": 11.9756561,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The Partnership helps countries plan, fund and measure efforts to permanently stop measles and rubella",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 6,
+    "chunk_id": "who_measles_factsheet_chunk_9",
+    "document_id": "who_measles_factsheet",
+    "document_title": "Measles Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "15 July 2025",
+      "normalized": "2025-07-15",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 2.9354323,
+      "longitude": 11.9756561,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The Partnership helps countries plan, fund and measure efforts to permanently stop measles and rubella",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 7,
+    "chunk_id": "who_flu_factsheet_chunk_1",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "28 February 2025",
+      "normalized": "2025-02-28",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Influenza (seasonal)",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "seasonal influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 8,
+    "chunk_id": "who_flu_factsheet_chunk_2",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "usually last around a week",
+      "normalized": "P7D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Influenza A and B viruses circulate and cause seasonal epidemics of disease",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 9,
+    "chunk_id": "who_flu_factsheet_chunk_2",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "caused the pandemic in 2009",
+      "normalized": "2009-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Influenza A and B viruses circulate and cause seasonal epidemics of disease",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 10,
+    "chunk_id": "who_flu_factsheet_chunk_5",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "The time from infection to illness, known as the incubation period, is about 2 days, but ranges from 1–4 days",
+      "normalized": "P2D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "venue_type": {
+        "text": "schools",
+        "category": "school"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 11,
+    "chunk_id": "who_flu_factsheet_chunk_7",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "more than 60 years",
+      "normalized": "P60Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The WHO Global Influenza Surveillance and Response System (GISRS) monitors resistance to antivirals",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 12,
+    "chunk_id": "who_flu_factsheet_chunk_9",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "26 September 2025",
+      "normalized": "2025-09-26",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 18.238145,
+      "longitude": -72.5376556,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommendations announced for influenza vaccine composition for the 2026 southern hemisphere influenza season",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 13,
+    "chunk_id": "who_flu_factsheet_chunk_9",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "9 August 2023",
+      "normalized": "2023-08-09",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 18.238145,
+      "longitude": -72.5376556,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommendations announced for influenza vaccine composition for the 2026 southern hemisphere influenza season",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 14,
+    "chunk_id": "who_flu_factsheet_chunk_9",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "25 March 2025",
+      "normalized": "2025-03-25",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 18.238145,
+      "longitude": -72.5376556,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommendations announced for influenza vaccine composition for the 2026 southern hemisphere influenza season",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 15,
+    "chunk_id": "who_flu_factsheet_chunk_9",
+    "document_id": "who_flu_factsheet",
+    "document_title": "Influenza (Seasonal) Fact Sheet - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "30 September 2025",
+      "normalized": "2025-09-30",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": 18.238145,
+      "longitude": -72.5376556,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommendations announced for influenza vaccine composition for the 2026 southern hemisphere influenza season",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "influenza",
+        "category": "influenza"
+      }
+    }
+  },
+  {
+    "id": 16,
+    "chunk_id": "who_immunization_coverage_chunk_1",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "15 July 2025",
+      "normalized": "2025-07-15",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Community-wide vaccination is the most effective way to prevent measles",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "Felix Marquez Community-wide vaccination",
+        "category": "community"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 17,
+    "chunk_id": "who_immunization_coverage_chunk_1",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2024",
+      "normalized": "2024",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Community-wide vaccination is the most effective way to prevent measles",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "Felix Marquez Community-wide vaccination",
+        "category": "community"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 18,
+    "chunk_id": "who_immunization_coverage_chunk_2",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2024",
+      "normalized": "2024",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "low-income countries",
+      "latitude": 0.3003124,
+      "longitude": 32.5921657,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "data highlight a troubling trajectory in progress toward key targets of the global Immunization Agenda 2030 (IA2030)",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 19,
+    "chunk_id": "who_immunization_coverage_chunk_2",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2019 level",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "low-income countries",
+      "latitude": 0.3003124,
+      "longitude": 32.5921657,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "data highlight a troubling trajectory in progress toward key targets of the global Immunization Agenda 2030 (IA2030)",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 20,
+    "chunk_id": "who_immunization_coverage_chunk_2",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "low-income countries",
+      "latitude": 0.3003124,
+      "longitude": 32.5921657,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "data highlight a troubling trajectory in progress toward key targets of the global Immunization Agenda 2030 (IA2030)",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 21,
+    "chunk_id": "who_immunization_coverage_chunk_3",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Global coverage with 3 doses of Hib vaccine is estimated at 78%",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "Hib",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 22,
+    "chunk_id": "who_immunization_coverage_chunk_3",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "in 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Global coverage with 3 doses of Hib vaccine is estimated at 78%",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "Hib",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 23,
+    "chunk_id": "who_immunization_coverage_chunk_3",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2019",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Global coverage with 3 doses of Hib vaccine is estimated at 78%",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "Hib",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 24,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "17% coverage in 2019",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "sub-Saharan Africa",
+      "latitude": 1.2063956,
+      "longitude": 34.2079667,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 25,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "17% coverage in 2019",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Ghana",
+      "latitude": 5.6143275,
+      "longitude": -0.2749407,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 26,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "17% coverage in 2019",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Kenya",
+      "latitude": -1.2136405,
+      "longitude": 36.8793053,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 27,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "17% coverage in 2019",
+      "normalized": "2019-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Malawi",
+      "latitude": -13.9999971,
+      "longitude": 33.5561295,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 28,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since last year",
+      "normalized": "2023-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "sub-Saharan Africa",
+      "latitude": 1.2063956,
+      "longitude": 34.2079667,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 29,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since last year",
+      "normalized": "2023-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Ghana",
+      "latitude": 5.6143275,
+      "longitude": -0.2749407,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 30,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since last year",
+      "normalized": "2023-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Kenya",
+      "latitude": -1.2136405,
+      "longitude": 36.8793053,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 31,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since last year",
+      "normalized": "2023-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Malawi",
+      "latitude": -13.9999971,
+      "longitude": 33.5561295,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 32,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "from 2019 to 2023",
+      "normalized": "2019-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "sub-Saharan Africa",
+      "latitude": 1.2063956,
+      "longitude": 34.2079667,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 33,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "from 2019 to 2023",
+      "normalized": "2019-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Ghana",
+      "latitude": 5.6143275,
+      "longitude": -0.2749407,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 34,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "from 2019 to 2023",
+      "normalized": "2019-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Kenya",
+      "latitude": -1.2136405,
+      "longitude": 36.8793053,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 35,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "from 2019 to 2023",
+      "normalized": "2019-01-01/2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Malawi",
+      "latitude": -13.9999971,
+      "longitude": 33.5561295,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 36,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "sub-Saharan Africa",
+      "latitude": 1.2063956,
+      "longitude": 34.2079667,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 37,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Ghana",
+      "latitude": 5.6143275,
+      "longitude": -0.2749407,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 38,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Kenya",
+      "latitude": -1.2136405,
+      "longitude": 36.8793053,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 39,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Malawi",
+      "latitude": -13.9999971,
+      "longitude": 33.5561295,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 40,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "sub-Saharan Africa",
+      "latitude": 1.2063956,
+      "longitude": 34.2079667,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 41,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Ghana",
+      "latitude": 5.6143275,
+      "longitude": -0.2749407,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 42,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Kenya",
+      "latitude": -1.2136405,
+      "longitude": 36.8793053,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 43,
+    "chunk_id": "who_immunization_coverage_chunk_4",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Malawi",
+      "latitude": -13.9999971,
+      "longitude": 33.5561295,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Malaria Vaccine Implementation Programme (MVIP) demonstrated high public impact",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 44,
+    "chunk_id": "who_immunization_coverage_chunk_5",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "By the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "24 of 26 countries in the belt conducted preventive campaigns",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 45,
+    "chunk_id": "who_immunization_coverage_chunk_5",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "starting in 2025",
+      "normalized": "2025-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "24 of 26 countries in the belt conducted preventive campaigns",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 46,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO South-East Asia Region",
+      "latitude": 1.3639617,
+      "longitude": 173.1353335,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 47,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO Western Pacific Region",
+      "latitude": 14.5815714,
+      "longitude": 120.9843891,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 48,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO South-East Asia Region",
+      "latitude": 1.3639617,
+      "longitude": 173.1353335,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 49,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO Western Pacific Region",
+      "latitude": 14.5815714,
+      "longitude": 120.9843891,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 50,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO South-East Asia Region",
+      "latitude": 1.3639617,
+      "longitude": 173.1353335,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 51,
+    "chunk_id": "who_immunization_coverage_chunk_6",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2023",
+      "normalized": "2023-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "WHO Western Pacific Region",
+      "latitude": 14.5815714,
+      "longitude": 120.9843891,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Pneumococcal vaccine had been introduced in 163 Member States by the end of 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "mumps",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 52,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Nigeria",
+      "latitude": 4.8652169,
+      "longitude": 31.5981904,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 53,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Sudan",
+      "latitude": 7.8699431,
+      "longitude": 29.6667897,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 54,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South Sudan",
+      "latitude": 7.8699431,
+      "longitude": 29.6667897,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 55,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Nigeria",
+      "latitude": 4.8652169,
+      "longitude": 31.5981904,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 56,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Sudan",
+      "latitude": 7.8699431,
+      "longitude": 29.6667897,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 57,
+    "chunk_id": "who_immunization_coverage_chunk_7",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "by the end of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South Sudan",
+      "latitude": 7.8699431,
+      "longitude": 29.6667897,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "all countries remain at risk of importation of polio",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 58,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "As of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Papua New Guinea",
+      "latitude": -4.4695972,
+      "longitude": 144.0686135,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 59,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "As of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Somalia",
+      "latitude": 10.4356716,
+      "longitude": 45.0087938,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 60,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "As of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Sudan",
+      "latitude": 14.54114,
+      "longitude": 43.61812,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 61,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "As of 2024",
+      "normalized": "2024-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Yemen",
+      "latitude": 16.3471243,
+      "longitude": 47.8915271,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 62,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Papua New Guinea",
+      "latitude": -4.4695972,
+      "longitude": 144.0686135,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 63,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Somalia",
+      "latitude": 10.4356716,
+      "longitude": 45.0087938,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 64,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Sudan",
+      "latitude": 14.54114,
+      "longitude": 43.61812,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 65,
+    "chunk_id": "who_immunization_coverage_chunk_8",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Yemen",
+      "latitude": 16.3471243,
+      "longitude": 47.8915271,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Monitoring data at subnational levels is critical to helping countries prioritize and tailor vaccination strategies",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "yellow fever",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 66,
+    "chunk_id": "who_immunization_coverage_chunk_9",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2021–2030",
+      "normalized": "P10Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global strategy towards eliminating cervical cancer as a public health problem",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "cervical cancer",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 67,
+    "chunk_id": "who_immunization_coverage_chunk_9",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2020",
+      "normalized": "2020-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global strategy towards eliminating cervical cancer as a public health problem",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "cervical cancer",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 68,
+    "chunk_id": "who_immunization_coverage_chunk_10",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "next 10 years",
+      "normalized": "P10Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "programme improvements to reach the 90% coverage targets",
+        "category": "surveillance_update"
+      }
+    }
+  },
+  {
+    "id": 69,
+    "chunk_id": "who_immunization_coverage_chunk_10",
+    "document_id": "who_immunization_coverage",
+    "document_title": "Immunization Coverage - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2030 targets",
+      "normalized": "2030-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "programme improvements to reach the 90% coverage targets",
+        "category": "surveillance_update"
+      }
+    }
+  },
+  {
+    "id": 70,
+    "chunk_id": "who_vaccines_immunization_chunk_2",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024, the routine first dose of measles vaccine was missed by 20.6 million children",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "The most recent data for diphtheria-pertussis-tetanus (DTP) immunization coverage underscores the need for ongoing catch-up",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 71,
+    "chunk_id": "who_vaccines_immunization_chunk_3",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "August 2020",
+      "normalized": "2020-08",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO is working with countries and partners to improve global vaccination coverage",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "cervical cancer",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 72,
+    "chunk_id": "who_vaccines_immunization_chunk_4",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "6 November 2025",
+      "normalized": "2025-11-06",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Implementing the Immunization Agenda 2030: A Framework for Action",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "cholera",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 73,
+    "chunk_id": "who_vaccines_immunization_chunk_5",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "6 November 2025",
+      "normalized": "2025-11-06",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Departmental update",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "TB",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 74,
+    "chunk_id": "who_vaccines_immunization_chunk_5",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "3 November 2025",
+      "normalized": "2025-11-03",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Departmental update",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "TB",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 75,
+    "chunk_id": "who_vaccines_immunization_chunk_5",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2 October 2025",
+      "normalized": "2025-10-02",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Departmental update",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "TB",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 76,
+    "chunk_id": "who_vaccines_immunization_chunk_5",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "22 September 2025",
+      "normalized": "2025-09-22",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Departmental update",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "TB",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 77,
+    "chunk_id": "who_vaccines_immunization_chunk_5",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "7 November 2025",
+      "normalized": "2025-11-07",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Departmental update",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "TB",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 78,
+    "chunk_id": "who_vaccines_immunization_chunk_6",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "held from April 7 to 9, 2024",
+      "normalized": "2024-04-07/2024-04-09",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Abu Dhabi, United Arab Emirates",
+      "latitude": 24.4538352,
+      "longitude": 54.3774014,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "overview of the third WLPF",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 79,
+    "chunk_id": "who_vaccines_immunization_chunk_7",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "1 May 2025",
+      "normalized": "2025-05-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO press conference on global health issues",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "vaccine safety",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 80,
+    "chunk_id": "who_vaccines_immunization_chunk_8",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "23 – 27 February 2026",
+      "normalized": "2026-02-23",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Why is it important to continue to wear masks, ventilate closed spaces, avoid crowds, wash hands and observe all other precautions?",
+        "category": "risk_warning"
+      }
+    }
+  },
+  {
+    "id": 81,
+    "chunk_id": "who_vaccines_immunization_chunk_8",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "9 – 12 March 2026",
+      "normalized": "2026-03-09",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Why is it important to continue to wear masks, ventilate closed spaces, avoid crowds, wash hands and observe all other precautions?",
+        "category": "risk_warning"
+      }
+    }
+  },
+  {
+    "id": 82,
+    "chunk_id": "who_vaccines_immunization_chunk_8",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "21 – 25 September 2026",
+      "normalized": "2026-09-21",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Why is it important to continue to wear masks, ventilate closed spaces, avoid crowds, wash hands and observe all other precautions?",
+        "category": "risk_warning"
+      }
+    }
+  },
+  {
+    "id": 83,
+    "chunk_id": "who_vaccines_immunization_chunk_8",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "5 – 8 October 2026",
+      "normalized": "2026-10-05",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Why is it important to continue to wear masks, ventilate closed spaces, avoid crowds, wash hands and observe all other precautions?",
+        "category": "risk_warning"
+      }
+    }
+  },
+  {
+    "id": 84,
+    "chunk_id": "who_vaccines_immunization_chunk_9",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "disease": {
+        "text": "Hepatitis",
+        "category": "hepatitis"
+      }
+    }
+  },
+  {
+    "id": 85,
+    "chunk_id": "who_vaccines_immunization_chunk_9",
+    "document_id": "who_vaccines_immunization",
+    "document_title": "Vaccines and Immunization - WHO",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1471071,
+      "longitude": -49.9681984,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "disease": {
+        "text": "Hepatitis",
+        "category": "hepatitis"
+      }
+    }
+  },
+  {
+    "id": 86,
+    "chunk_id": "vic_health_measles_chunk_0",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Measles public exposure sites in Victoria",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 87,
+    "chunk_id": "vic_health_measles_chunk_1",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Notification requirement for measles",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 88,
+    "chunk_id": "vic_health_measles_chunk_3",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "7 years after the measles infection",
+      "normalized": "P7Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Measles infection during pregnancy is associated with an increased risk of miscarriage, premature labour and low birth weight infants",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 89,
+    "chunk_id": "vic_health_measles_chunk_4",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "3 days or less after rash onset",
+      "normalized": "P3D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "testing for measles in suspected cases",
+        "category": "case_report"
+      },
+      "venue_type": {
+        "text": "Victorian Infectious Diseases Reference Laboratory",
+        "category": "other"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 90,
+    "chunk_id": "vic_health_measles_chunk_4",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "4 to 14 days after rash onset",
+      "normalized": "P14D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "testing for measles in suspected cases",
+        "category": "case_report"
+      },
+      "venue_type": {
+        "text": "Victorian Infectious Diseases Reference Laboratory",
+        "category": "other"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 91,
+    "chunk_id": "vic_health_measles_chunk_5",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "on time since onset of rash",
+      "normalized": "P0D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommended testing for measles based on time since onset of rash",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 92,
+    "chunk_id": "vic_health_measles_chunk_5",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Up to 3 weeks since onset of rash",
+      "normalized": "P21D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommended testing for measles based on time since onset of rash",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 93,
+    "chunk_id": "vic_health_measles_chunk_5",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "After 3 weeks since onset of rash",
+      "normalized": "P21D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Recommended testing for measles based on time since onset of rash",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 94,
+    "chunk_id": "vic_health_measles_chunk_7",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "late 1990s",
+      "normalized": "1999-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -24.7761086,
+      "longitude": 134.755,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "measles-containing vaccines in infant immunisation programs has led to a significant reduction in measles cases",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 95,
+    "chunk_id": "vic_health_measles_chunk_7",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2014",
+      "normalized": "2014-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -24.7761086,
+      "longitude": 134.755,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "measles-containing vaccines in infant immunisation programs has led to a significant reduction in measles cases",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 96,
+    "chunk_id": "vic_health_measles_chunk_8",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Australia",
+      "latitude": -24.7761086,
+      "longitude": 134.755,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Control measures for measles",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 97,
+    "chunk_id": "vic_health_measles_chunk_8",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Control measures for measles",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 98,
+    "chunk_id": "vic_health_measles_chunk_9",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "born during or after 1966",
+      "normalized": "1966-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "measles-containing vaccines are contraindicated in pregnant women",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 99,
+    "chunk_id": "vic_health_measles_chunk_10",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "born during or after 1966",
+      "normalized": "1966-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -24.7761086,
+      "longitude": 134.755,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "healthcare workers at high risk of measles infection",
+        "category": "risk_warning"
+      },
+      "venue_type": {
+        "text": "GPs",
+        "category": "clinic_gp"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 100,
+    "chunk_id": "vic_health_measles_chunk_12",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "up to 30 minutes after the case left",
+      "normalized": "P30M",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "LPHUs will trace and manage susceptible community contacts of cases",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "healthcare institutions, such as medical practices or emergency departments",
+        "category": "hospital_emergency"
+      }
+    }
+  },
+  {
+    "id": 101,
+    "chunk_id": "vic_health_measles_chunk_13",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "born during or after 1966",
+      "normalized": "1966-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Contacts who cannot be individually identified but who may have been present in the general area where the case was known to be",
+        "category": "risk_warning"
+      },
+      "venue_type": {
+        "text": "cinemas",
+        "category": "entertainment"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 102,
+    "chunk_id": "vic_health_measles_chunk_13",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "born before 1966",
+      "normalized": "1965-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Contacts who cannot be individually identified but who may have been present in the general area where the case was known to be",
+        "category": "risk_warning"
+      },
+      "venue_type": {
+        "text": "cinemas",
+        "category": "entertainment"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 103,
+    "chunk_id": "vic_health_measles_chunk_14",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 3 days (72 hours)",
+      "normalized": "P3D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Post-exposure prophylaxis for measles",
+        "category": "exposure_site"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 104,
+    "chunk_id": "vic_health_measles_chunk_14",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 6 days (144 hours)",
+      "normalized": "P6D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Post-exposure prophylaxis for measles",
+        "category": "exposure_site"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 105,
+    "chunk_id": "vic_health_measles_chunk_15",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "left vacant for at least 30 minutes after the patient has left",
+      "normalized": "P30M",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Outbreaks in the community occur sporadically as a result of imported measles cases exposing local susceptible people",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "medical consulting rooms",
+        "category": "clinic_gp"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 106,
+    "chunk_id": "vic_health_measles_chunk_16",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "4 days after rash onset",
+      "normalized": "P4D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Outbreaks in schools may still occur",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 107,
+    "chunk_id": "vic_health_measles_chunk_16",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "14 days after the first day of appearance of the rash in the last case",
+      "normalized": "P14D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Outbreaks in schools may still occur",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 108,
+    "chunk_id": "vic_health_measles_chunk_16",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 72 hours of their first contact with the first case",
+      "normalized": "P3D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Outbreaks in schools may still occur",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 109,
+    "chunk_id": "vic_health_measles_chunk_16",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 144 hours of the contact",
+      "normalized": "P6D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Outbreaks in schools may still occur",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 110,
+    "chunk_id": "vic_health_measles_chunk_17",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 72 hours of their first contact with the first case",
+      "normalized": "P3D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "during an outbreak",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 111,
+    "chunk_id": "vic_health_measles_chunk_17",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "within 144 hours of the contact",
+      "normalized": "P6D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "during an outbreak",
+        "category": "outbreak_alert"
+      },
+      "venue_type": {
+        "text": "school",
+        "category": "school"
+      },
+      "disease": {
+        "text": "measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 112,
+    "chunk_id": "vic_health_measles_chunk_18",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Improving Cancer Outcomes (Diagnosis Reporting) Regulations 2025",
+      "normalized": "2025-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "venue_type": {
+        "text": "Emergency Care",
+        "category": "hospital_emergency"
+      }
+    }
+  },
+  {
+    "id": 113,
+    "chunk_id": "vic_health_measles_chunk_18",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Improving Cancer Outcomes (Diagnosis Reporting) Regulations 2025",
+      "normalized": "2025-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -38.0947194,
+      "longitude": 145.4369447,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "venue_type": {
+        "text": "Emergency Care",
+        "category": "hospital_emergency"
+      }
+    }
+  },
+  {
+    "id": 114,
+    "chunk_id": "vic_health_measles_chunk_19",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Improving Cancer Outcomes (Diagnosis Reporting) Regulations 2025",
+      "normalized": "2025-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 115,
+    "chunk_id": "vic_health_measles_chunk_19",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Improving Cancer Outcomes (Diagnosis Reporting) Regulations 2025",
+      "normalized": "2025-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -36.4470887,
+      "longitude": 141.7978513,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 116,
+    "chunk_id": "vic_health_measles_chunk_20",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 117,
+    "chunk_id": "vic_health_measles_chunk_21",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Victoria's public dental care fees",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 118,
+    "chunk_id": "vic_health_measles_chunk_23",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "disease": {
+        "text": "Infectious diseases",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 119,
+    "chunk_id": "vic_health_measles_chunk_25",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Wellbeing in Victoria: A Strategy to Promote Good Mental Health 2025-35",
+      "normalized": "2025-01-01/2035-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 120,
+    "chunk_id": "vic_health_measles_chunk_25",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Wellbeing in Victoria: A Strategy to Promote Good Mental Health 2025-35",
+      "normalized": "2025-01-01/2035-12-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Australia",
+      "latitude": -38.2007549,
+      "longitude": 146.3137644,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 121,
+    "chunk_id": "vic_health_measles_chunk_27",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Specialist Family Violence Advisor capacity building program in mental health and alcohol and other drug services - Victoria",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 122,
+    "chunk_id": "vic_health_measles_chunk_27",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Specialist Family Violence Advisor capacity building program in mental health and alcohol and other drug services - Victoria",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 123,
+    "chunk_id": "vic_health_measles_chunk_29",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Victoria",
+      "latitude": -36.5986096,
+      "longitude": 144.6780052,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {}
+  },
+  {
+    "id": 124,
+    "chunk_id": "vic_health_measles_chunk_31",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Melbourne, VIC 3000",
+      "latitude": -37.8142454,
+      "longitude": 144.9631732,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Notification procedures for measles",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "Department of Health GPO Box 4057",
+        "category": "other"
+      },
+      "disease": {
+        "text": "Measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 125,
+    "chunk_id": "vic_health_measles_chunk_31",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "GPO Box 4057, Melbourne, VIC 3000",
+      "latitude": -37.8136578,
+      "longitude": 144.9633006,
+      "location_type": "address",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Notification procedures for measles",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "Department of Health GPO Box 4057",
+        "category": "other"
+      },
+      "disease": {
+        "text": "Measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 126,
+    "chunk_id": "vic_health_measles_chunk_31",
+    "document_id": "vic_health_measles",
+    "document_title": "Measles - Victoria Health",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "50 Lonsdale Street, Melbourne, VIC 3000",
+      "latitude": -37.8092742,
+      "longitude": 144.970652,
+      "location_type": "address",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Notification procedures for measles",
+        "category": "surveillance_update"
+      },
+      "venue_type": {
+        "text": "Department of Health GPO Box 4057",
+        "category": "other"
+      },
+      "disease": {
+        "text": "Measles",
+        "category": "measles"
+      }
+    }
+  },
+  {
+    "id": 127,
+    "chunk_id": "who_polio_chunk_1",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "on 27 March 2019",
+      "normalized": "2019-03-27",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Hargeisa, Somaliland",
+      "latitude": 9.561733,
+      "longitude": 44.061803,
+      "location_type": "city",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "national immunization campaign",
+        "category": "vaccination_clinic"
+      },
+      "venue_type": {
+        "text": "national immunization campaign",
+        "category": "community"
+      },
+      "disease": {
+        "text": "poliomyelitis",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 128,
+    "chunk_id": "who_polio_chunk_2",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "since 1988",
+      "normalized": "1988-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Failure to eradicate polio from these last remaining strongholds could result in a global resurgence of the disease",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 129,
+    "chunk_id": "who_polio_chunk_4",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Afghanistan",
+      "latitude": 24.8155345,
+      "longitude": 67.0264106,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Failure to stop polio in these last remaining areas could result in global resurgence of the disease",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 130,
+    "chunk_id": "who_polio_chunk_4",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "spatial": {
+      "text": "Pakistan",
+      "latitude": 30.3308401,
+      "longitude": 71.247499,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Failure to stop polio in these last remaining areas could result in global resurgence of the disease",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 131,
+    "chunk_id": "who_polio_chunk_5",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 1994",
+      "normalized": "1994-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global effort to eradicate polio",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 132,
+    "chunk_id": "who_polio_chunk_5",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "in 2000",
+      "normalized": "2000-01-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global effort to eradicate polio",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 133,
+    "chunk_id": "who_polio_chunk_5",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "in June 2002",
+      "normalized": "2002-06-01",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global effort to eradicate polio",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 134,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+      "normalized": "2000-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 135,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "the WHO European Region in June 2002",
+      "normalized": "2002-06-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 136,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "On 27 March 2014, the WHO South-East Asia Region was certified polio-free",
+      "normalized": "2014-03-27",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 137,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2020, Africa became the fifth region to be certified wild poliovirus-free",
+      "normalized": "2020-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 138,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Statement of the Forty-second meeting of the Polio IHR Emergency Committee 28 July 2025",
+      "normalized": "2025-07-28",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 139,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Global childhood vaccination coverage holds steady, yet over 14 million infants remain unvaccinated – WHO, UNICEF 15 July 2025",
+      "normalized": "2025-07-15",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 140,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Malawi Secures Gains Against Polio, Strengthens Health Systems for the Future 29 May 2025",
+      "normalized": "2025-05-29",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 141,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Transition for Sustaining a Polio-Free World 3 September 2025",
+      "normalized": "2025-09-03",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 142,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Donors making a difference: United against mpox, swift and effective response in action 25 September 2024",
+      "normalized": "2024-09-25",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 143,
+    "chunk_id": "who_polio_chunk_6",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Donors making a difference: CERF helps WHO deliver on its pledge for one billion more people better protected from health emergencies 6 May 2024",
+      "normalized": "2024-05-06",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 53.869095,
+      "longitude": 27.5316794,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "the WHO Region of the Americas was certified polio-free, followed by the WHO Western Pacific Region in 2000 and the WHO European Region in June 2002",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "polio",
+        "category": "other"
+      }
+    }
+  },
+  {
+    "id": 144,
+    "chunk_id": "who_polio_chunk_7",
+    "document_id": "who_polio",
+    "document_title": "Poliomyelitis - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "6 May 2024",
+      "normalized": "2024-05-06",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Donors making a difference: CERF helps WHO deliver on its pledge for one billion more people better protected from health emergencies",
+        "category": "surveillance_update"
+      }
+    }
+  },
+  {
+    "id": 145,
+    "chunk_id": "who_dengue_chunk_1",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "21 August 2025",
+      "normalized": "2025-08-21",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "community health workers visit local residents to help find and destroy mosquito breeding sites",
+        "category": "exposure_site"
+      },
+      "venue_type": {
+        "text": "community health workers visit local residents",
+        "category": "community"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 146,
+    "chunk_id": "who_dengue_chunk_2",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "–400 million infections occurring each year",
+      "normalized": "P1Y",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Prevention and control of dengue rely on vector control",
+        "category": "risk_warning"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 147,
+    "chunk_id": "who_dengue_chunk_3",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "last for 2–7 days",
+      "normalized": "P7D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Diagnostics and treatment",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 148,
+    "chunk_id": "who_dengue_chunk_4",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "in 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Region of the Americas",
+      "latitude": 37.85183,
+      "longitude": -1.4278642,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global burden of dengue",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 149,
+    "chunk_id": "who_dengue_chunk_4",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "12-month period",
+      "normalized": "P12M",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Region of the Americas",
+      "latitude": 37.85183,
+      "longitude": -1.4278642,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "global burden of dengue",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 150,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "From January to July 2025",
+      "normalized": "2025-01-01/2025-07-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "France",
+      "latitude": 48.588066,
+      "longitude": 7.7551717,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 151,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "From January to July 2025",
+      "normalized": "2025-01-01/2025-07-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Italy",
+      "latitude": 50.8436667,
+      "longitude": 4.3840729,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 152,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "From January to July 2025",
+      "normalized": "2025-01-01/2025-07-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Mayotte",
+      "latitude": -12.825543,
+      "longitude": 45.1484908,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 153,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "From January to July 2025",
+      "normalized": "2025-01-01/2025-07-31",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Réunion",
+      "latitude": -21.1309332,
+      "longitude": 55.5265771,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 154,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "France",
+      "latitude": 48.588066,
+      "longitude": 7.7551717,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 155,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Italy",
+      "latitude": 50.8436667,
+      "longitude": 4.3840729,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 156,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Mayotte",
+      "latitude": -12.825543,
+      "longitude": 45.1484908,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 157,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "In 2024",
+      "normalized": "2024-01-01",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Réunion",
+      "latitude": -21.1309332,
+      "longitude": 55.5265771,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 158,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "390 million infections per year",
+      "normalized": "P1Y",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "France",
+      "latitude": 48.588066,
+      "longitude": 7.7551717,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 159,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "390 million infections per year",
+      "normalized": "P1Y",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Italy",
+      "latitude": 50.8436667,
+      "longitude": 4.3840729,
+      "location_type": "country",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 160,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "390 million infections per year",
+      "normalized": "P1Y",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Mayotte",
+      "latitude": -12.825543,
+      "longitude": 45.1484908,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 161,
+    "chunk_id": "who_dengue_chunk_5",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "390 million infections per year",
+      "normalized": "P1Y",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Réunion",
+      "latitude": -21.1309332,
+      "longitude": 55.5265771,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Over 4 million cases and over 3000 deaths reported to WHO",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 162,
+    "chunk_id": "who_dengue_chunk_6",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "the extrinsic incubation period (EIP) takes about 8–12 days",
+      "normalized": "P8D/P12D",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Réunion",
+      "latitude": -21.1309332,
+      "longitude": 55.5265771,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "Transmission through the mosquito bite",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 163,
+    "chunk_id": "who_dengue_chunk_7",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "4–5 days",
+      "normalized": "P4D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "maternal transmission",
+        "category": "other"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 164,
+    "chunk_id": "who_dengue_chunk_7",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "12 days",
+      "normalized": "P12D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "maternal transmission",
+        "category": "other"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 165,
+    "chunk_id": "who_dengue_chunk_7",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2 days before",
+      "normalized": "P2D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "maternal transmission",
+        "category": "other"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 166,
+    "chunk_id": "who_dengue_chunk_7",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "2 days after",
+      "normalized": "P2D",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "maternal transmission",
+        "category": "other"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 167,
+    "chunk_id": "who_dengue_chunk_10",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "April 2025",
+      "normalized": "2025-04",
+      "temporal_type": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "supporting countries to improve their reporting systems...",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 168,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "dengue virus: interim guidance, April 2025",
+      "normalized": "2025-04",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 169,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "dengue virus: interim guidance, April 2025",
+      "normalized": "2025-04",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 170,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "New WHO guidelines for clinical management of arboviral diseases: dengue, chikungunya, Zika and yellow fever 10 July 2025",
+      "normalized": "2025-07-10",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 171,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "New WHO guidelines for clinical management of arboviral diseases: dengue, chikungunya, Zika and yellow fever 10 July 2025",
+      "normalized": "2025-07-10",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 172,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Dengue Expert Review Panel for Diagnostics 22 May 2025",
+      "normalized": "2025-05-22",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 173,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Dengue Expert Review Panel for Diagnostics 22 May 2025",
+      "normalized": "2025-05-22",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 174,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+      "normalized": "2024-10-03",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 175,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+      "normalized": "2024-10-03",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 176,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Chikungunya 14 April 2025",
+      "normalized": "2025-04-14",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 177,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Chikungunya 14 April 2025",
+      "normalized": "2025-04-14",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 178,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Malaria 11 December 2024",
+      "normalized": "2024-12-11",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 179,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Malaria 11 December 2024",
+      "normalized": "2024-12-11",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 180,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Vector-borne diseases 26 September 2024",
+      "normalized": "2024-09-26",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "Africa",
+      "latitude": 0.3399269,
+      "longitude": 32.5769426,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  },
+  {
+    "id": 181,
+    "chunk_id": "who_dengue_chunk_11",
+    "document_id": "who_dengue",
+    "document_title": "Dengue and Severe Dengue - WHO",
+    "source": null,
+    "text": "",
+    "temporal": {
+      "text": "Vector-borne diseases 26 September 2024",
+      "normalized": "2024-09-26",
+      "temporal_type": null
+    },
+    "spatial": {
+      "text": "South-East Asia",
+      "latitude": -23.1469861,
+      "longitude": -49.9688951,
+      "location_type": "region",
+      "parent_region": null
+    },
+    "dimensions": {
+      "event_type": {
+        "text": "WHO launches global strategic plan to fight rising dengue and other Aedes-borne arboviral diseases 3 October 2024",
+        "category": "surveillance_update"
+      },
+      "disease": {
+        "text": "dengue",
+        "category": "dengue"
+      }
+    }
+  }
+]

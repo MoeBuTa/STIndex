@@ -45,16 +45,36 @@ interface ExtractionResult {
   }
 }
 
+interface StoryArc {
+  story_id: string
+  length: number
+  progression_type: string
+  confidence: number
+  temporal_span: {
+    start: string
+    end: string
+    duration_days: number
+  }
+  spatial_span: any
+  narrative_summary: any
+  key_dimensions: any
+  event_ids: string[]
+}
+
 export default function Home() {
   const [data, setData] = useState<ExtractionResult[]>([])
+  const [storyArcs, setStoryArcs] = useState<StoryArc[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/data/extraction_results.json')
-      .then((res) => res.json())
-      .then((results) => {
+    Promise.all([
+      fetch('/data/extraction_results.json').then((res) => res.json()),
+      fetch('/data/story_arcs.json').then((res) => res.json())
+    ])
+      .then(([results, arcs]) => {
         setData(results)
+        setStoryArcs(arcs)
         setLoading(false)
       })
       .catch((err) => {
@@ -63,26 +83,8 @@ export default function Home() {
       })
   }, [])
 
-  if (loading) {
-    return (
-      <Center minH="100vh" bg="gray.50">
-        <VStack spacing={4}>
-          <Spinner size="xl" color="blue.500" thickness="4px" />
-          <Text color="gray.600">Loading extraction data...</Text>
-        </VStack>
-      </Center>
-    )
-  }
-
-  if (error) {
-    return (
-      <Center minH="100vh" bg="gray.50">
-        <Text color="red.500" fontSize="xl">Error loading data: {error}</Text>
-      </Center>
-    )
-  }
-
   // Filter successful extractions - memoize to prevent infinite re-renders
+  // IMPORTANT: Must be called before any conditional returns to satisfy Rules of Hooks
   const successfulExtractions = useMemo(
     () => data.filter((item) => item.extraction.success),
     [data]
@@ -157,6 +159,25 @@ export default function Home() {
     return events
   }, [data])
 
+  if (loading) {
+    return (
+      <Center minH="100vh" bg="gray.50">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="gray.600">Loading extraction data...</Text>
+        </VStack>
+      </Center>
+    )
+  }
+
+  if (error) {
+    return (
+      <Center minH="100vh" bg="gray.50">
+        <Text color="red.500" fontSize="xl">Error loading data: {error}</Text>
+      </Center>
+    )
+  }
+
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
       <Container maxW="7xl" px={4}>
@@ -179,7 +200,7 @@ export default function Home() {
               Advanced Analytics
             </Heading>
             <ErrorBoundary>
-              <AnalyticsPanels events={spatioTemporalEvents} />
+              <AnalyticsPanels events={spatioTemporalEvents} storyArcs={storyArcs} />
             </ErrorBoundary>
           </Box>
 
@@ -228,6 +249,7 @@ export default function Home() {
                     <ErrorBoundary>
                       <InteractiveMap
                         events={spatioTemporalEvents}
+                        storyArcs={storyArcs}
                         height="600px"
                         showClusters={true}
                         showStoryArcs={true}
@@ -246,6 +268,7 @@ export default function Home() {
                     <ErrorBoundary>
                       <StoryTimeline
                         events={spatioTemporalEvents}
+                        storyArcs={storyArcs}
                         height={500}
                         showBursts={true}
                         showStoryArcs={true}

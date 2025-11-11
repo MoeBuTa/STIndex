@@ -21,23 +21,34 @@ import {
 import { MdTrendingUp, MdLocationOn, MdEvent, MdTimeline } from 'react-icons/md'
 import {
   detectBursts,
-  extractStoryArcs,
   clusterEvents,
   SpatioTemporalEvent,
 } from '../lib/analytics'
 
-interface AnalyticsPanelsProps {
-  events: SpatioTemporalEvent[]
+interface StoryArc {
+  story_id: string
+  length: number
+  confidence: number
+  progression_type: string
+  temporal_span: {
+    start: string
+    end: string
+    duration_days: number
+  }
 }
 
-export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
+interface AnalyticsPanelsProps {
+  events: SpatioTemporalEvent[]
+  storyArcs: StoryArc[]
+}
+
+export function AnalyticsPanels({ events, storyArcs }: AnalyticsPanelsProps) {
   // Compute analytics with safety checks
-  const { bursts, stories, clusters, qualityMetrics, dimensionStats } = useMemo(() => {
+  const { bursts, clusters, qualityMetrics, dimensionStats } = useMemo(() => {
     // Safety check - return empty state if no events
     if (!events || events.length === 0) {
       return {
         bursts: [],
-        stories: [],
         clusters: [],
         qualityMetrics: {
           relevance: 0,
@@ -65,7 +76,6 @@ export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
 
     const burstsData = detectBursts(temporalEvents, 1, 3)
     const clustersData = clusterEvents(events, 50, 7, 3)
-    const storiesData = extractStoryArcs(clustersData, 0.3)
 
     // Calculate quality metrics from reflection scores
     const eventsWithScores = events.filter(
@@ -140,7 +150,6 @@ export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
 
     return {
       bursts: burstsData,
-      stories: storiesData,
       clusters: clustersData,
       qualityMetrics: quality,
       dimensionStats: dimStats,
@@ -284,19 +293,19 @@ export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
             <Text fontSize="lg" fontWeight="bold">
               Story Arcs
             </Text>
-            <Badge colorScheme="purple">{stories.length}</Badge>
+            <Badge colorScheme="purple">{storyArcs.length}</Badge>
           </HStack>
           <Divider />
 
-          {stories.length === 0 ? (
+          {storyArcs.length === 0 ? (
             <Text fontSize="sm" color="gray.500">
               No story arcs detected
             </Text>
           ) : (
             <VStack align="stretch" spacing={3} maxH="300px" overflowY="auto">
-              {stories.slice(0, 5).map((story, idx) => (
+              {storyArcs.slice(0, 5).map((story, idx) => (
                 <Box
-                  key={idx}
+                  key={story.story_id}
                   p={3}
                   bg="purple.50"
                   borderRadius="md"
@@ -308,22 +317,15 @@ export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
                       Story {idx + 1}
                     </Text>
                     <Badge colorScheme="purple" fontSize="xs">
-                      {story.clusters.length} clusters
+                      {story.length} clusters
                     </Badge>
                   </HStack>
                   <Text fontSize="xs" color="gray.600" mb={1}>
-                    {story.narrative}
+                    {story.temporal_span.duration_days} day span
                   </Text>
                   <Text fontSize="xs" color="gray.500">
-                    Strength: {story.strength.toFixed(1)} | Entities: {story.entities.length}
+                    Confidence: {(story.confidence * 100).toFixed(0)}% | Type: {story.progression_type}
                   </Text>
-                  <HStack spacing={1} mt={1} flexWrap="wrap">
-                    {story.locations.slice(0, 3).map((loc, locIdx) => (
-                      <Badge key={locIdx} colorScheme="blue" fontSize="xs">
-                        {loc.name}
-                      </Badge>
-                    ))}
-                  </HStack>
                 </Box>
               ))}
             </VStack>

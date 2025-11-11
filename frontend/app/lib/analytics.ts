@@ -28,16 +28,6 @@ export interface EventCluster {
   entities: Set<string>
 }
 
-export interface StoryArc {
-  id: string
-  clusters: EventCluster[]
-  timeline: string[]
-  entities: string[]
-  locations: Array<{ lat: number; lng: number; name: string }>
-  narrative: string
-  strength: number
-}
-
 export interface BurstPeriod {
   start: string
   end: string
@@ -313,120 +303,6 @@ export function detectBursts(
   }
 
   return bursts.sort((a, b) => b.intensity - a.intensity)
-}
-
-/**
- * Extract story arcs by connecting related clusters over time
- * @param clusters - Array of event clusters
- * @param minOverlap - Minimum entity overlap to connect clusters
- */
-export function extractStoryArcs(
-  clusters: EventCluster[],
-  minOverlap: number = 0.3
-): StoryArc[] {
-  const stories: StoryArc[] = []
-  const used = new Set<string>()
-
-  // Sort clusters by start time
-  const sortedClusters = [...clusters].sort((a, b) =>
-    a.timeRange.start.localeCompare(b.timeRange.start)
-  )
-
-  for (let i = 0; i < sortedClusters.length; i++) {
-    if (used.has(sortedClusters[i].id)) continue
-
-    const story: EventCluster[] = [sortedClusters[i]]
-    used.add(sortedClusters[i].id)
-
-    // Find connected clusters
-    for (let j = i + 1; j < sortedClusters.length; j++) {
-      if (used.has(sortedClusters[j].id)) continue
-
-      const currentCluster = story[story.length - 1]
-      const candidateCluster = sortedClusters[j]
-
-      // Calculate entity overlap
-      const overlap = calculateEntityOverlap(
-        currentCluster.entities,
-        candidateCluster.entities
-      )
-
-      // Check temporal continuity (within 30 days)
-      const timeDiff = temporalDistance(
-        currentCluster.timeRange.end,
-        candidateCluster.timeRange.start
-      )
-
-      if (overlap >= minOverlap && timeDiff <= 30) {
-        story.push(candidateCluster)
-        used.add(candidateCluster.id)
-      }
-    }
-
-    // Only keep stories with multiple clusters
-    if (story.length >= 2) {
-      stories.push(createStoryArc(story, stories.length))
-    }
-  }
-
-  return stories.sort((a, b) => b.strength - a.strength)
-}
-
-function calculateEntityOverlap(set1: Set<string>, set2: Set<string>): number {
-  const intersection = new Set([...set1].filter((x) => set2.has(x)))
-  const union = new Set([...set1, ...set2])
-  return intersection.size / union.size
-}
-
-function createStoryArc(clusters: EventCluster[], id: number): StoryArc {
-  const allEntities = new Set<string>()
-  const locations: Array<{ lat: number; lng: number; name: string }> = []
-  const timeline: string[] = []
-
-  clusters.forEach((cluster) => {
-    cluster.entities.forEach((e) => allEntities.add(e))
-    locations.push({
-      lat: cluster.centroid.lat,
-      lng: cluster.centroid.lng,
-      name: Array.from(cluster.entities)[0] || 'Unknown',
-    })
-    timeline.push(cluster.timeRange.start)
-  })
-
-  // Generate narrative
-  const narrative = generateNarrative(clusters)
-
-  // Calculate story strength (based on cluster sizes and connectivity)
-  const strength =
-    clusters.reduce((sum, c) => sum + c.size, 0) / clusters.length
-
-  return {
-    id: `story-${id}`,
-    clusters,
-    timeline,
-    entities: Array.from(allEntities),
-    locations,
-    narrative,
-    strength,
-  }
-}
-
-function generateNarrative(clusters: EventCluster[]): string {
-  const parts: string[] = []
-
-  clusters.forEach((cluster, idx) => {
-    const location = Array.from(cluster.entities)[0] || 'Unknown location'
-    const category = cluster.dominantCategory || 'events'
-    const count = cluster.size
-
-    if (idx === 0) {
-      parts.push(`Started with ${count} ${category} in ${location}`)
-    } else {
-      parts.push(`followed by ${count} ${category} in ${location}`)
-    }
-  })
-
-  return parts.join(', ')
 }
 
 /**
