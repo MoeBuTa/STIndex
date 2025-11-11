@@ -82,50 +82,68 @@ class MSSwiftLLM:
 
         return RequestConfig(**kwargs)
 
-    def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:
-        """Generate completion using MS-SWIFT InferClient."""
-        try:
-            # Create request config
-            request_config = self._create_request_config()
+    def generate(self, messages: List[Dict[str, str]], max_retries: int = 3) -> LLMResponse:
+        """Generate completion using MS-SWIFT InferClient with retry logic."""
+        import time
 
-            # Create InferRequest
-            request = InferRequest(messages=messages)
+        last_error = None
 
-            # Call MS-SWIFT InferClient
-            responses = self.client.infer(
-                [request],
-                request_config=request_config,
-                model=self.model_name,
-            )
+        for attempt in range(max_retries):
+            try:
+                # Create request config
+                request_config = self._create_request_config()
 
-            # Extract response (first item in list)
-            response = responses[0]
+                # Create InferRequest
+                request = InferRequest(messages=messages)
 
-            # Extract content and usage
-            content = response.choices[0].message.content
-            usage = response.usage if hasattr(response, 'usage') else None
+                # Call MS-SWIFT InferClient
+                responses = self.client.infer(
+                    [request],
+                    request_config=request_config,
+                    model=self.model_name,
+                )
 
-            return LLMResponse(
-                model=getattr(response, 'model', self.model_name),
-                input=messages,
-                status="processed",
-                content=content,
-                usage=TokenUsage(
-                    prompt_tokens=getattr(usage, 'prompt_tokens', 0) if usage else 0,
-                    completion_tokens=getattr(usage, 'completion_tokens', 0) if usage else 0,
-                    total_tokens=getattr(usage, 'total_tokens', 0) if usage else 0,
-                ),
-                success=True,
-            )
-        except Exception as e:
-            logger.error(f"MS-SWIFT generation failed: {e}")
-            return LLMResponse(
-                model=self.model_name,
-                input=messages,
-                status="error",
-                error_msg=str(e),
-                success=False,
-            )
+                # Extract response (first item in list)
+                response = responses[0]
+
+                # Extract content and usage
+                content = response.choices[0].message.content
+                usage = response.usage if hasattr(response, 'usage') else None
+
+                return LLMResponse(
+                    model=getattr(response, 'model', self.model_name),
+                    input=messages,
+                    status="processed",
+                    content=content,
+                    usage=TokenUsage(
+                        prompt_tokens=getattr(usage, 'prompt_tokens', 0) if usage else 0,
+                        completion_tokens=getattr(usage, 'completion_tokens', 0) if usage else 0,
+                        total_tokens=getattr(usage, 'total_tokens', 0) if usage else 0,
+                    ),
+                    success=True,
+                )
+            except Exception as e:
+                last_error = e
+                error_str = str(e).lower()
+
+                # Retry on mimetype errors (server warmup) or connection errors
+                if ('mimetype' in error_str or 'connection' in error_str) and attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    logger.warning(f"MS-SWIFT server error (attempt {attempt + 1}/{max_retries}): {e}")
+                    logger.info(f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"MS-SWIFT generation failed: {e}")
+                    break
+
+        return LLMResponse(
+            model=self.model_name,
+            input=messages,
+            status="error",
+            error_msg=str(last_error),
+            success=False,
+        )
 
     def generate_batch(
         self,

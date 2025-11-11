@@ -2,10 +2,10 @@
 End-to-end pipeline orchestrator for STIndex.
 
 Supports multiple execution modes:
-1. Full pipeline: preprocessing → extraction → visualization
+1. Full pipeline: preprocessing → extraction → analysis → export
 2. Preprocessing only: scraping → parsing → chunking
 3. Extraction only: dimensional extraction from chunks
-4. Visualization only: generate visualizations from results
+4. Analysis only: clustering → story detection → dimension analysis → export
 """
 
 import json
@@ -14,16 +14,21 @@ from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
 
+from stindex.analysis import (
+    DimensionAnalyzer,
+    EventClusterAnalyzer,
+    StoryArcDetector,
+    AnalysisDataExporter,
+)
 from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.dimensional_extraction import DimensionalExtractor
 from stindex.postprocess.reflection import ExtractionReflector
 from stindex.preprocess import DocumentChunk, InputDocument, Preprocessor
-from stindex.visualization import STIndexVisualizer
 
 
 class STIndexPipeline:
     """
-    End-to-end pipeline orchestrator with context-aware extraction and reflection.
+    End-to-end pipeline orchestrator with context-aware extraction and analysis.
 
     Context-aware features:
     - Maintains memory across document chunks
@@ -37,16 +42,21 @@ class STIndexPipeline:
     - Context-aware reasoning (when combined with context-aware extraction)
     - Reduces extraction errors by 30-50%
 
+    Analysis features:
+    - Spatiotemporal clustering (DBSCAN with geodesic distance)
+    - Event burst detection (temporal spikes)
+    - Story arc detection (narrative sequences)
+    - Multi-dimensional statistical analysis
+    - Static JSON export for frontend (no backend required)
+
     Usage:
-        # Full pipeline with context-aware extraction (default)
+        # Full pipeline with analysis
         pipeline = STIndexPipeline(
             extractor_config="extract",
             dimension_config="dimensions",
             enable_context_aware=True,
-            max_memory_refs=10,
-            enable_reflection=True,  # Enable two-pass reflection
-            relevance_threshold=0.7,
-            accuracy_threshold=0.7
+            enable_reflection=True,
+            enable_analysis=True
         )
 
         docs = [
@@ -55,19 +65,13 @@ class STIndexPipeline:
             InputDocument.from_text("Your text here")
         ]
 
-        results = pipeline.run_pipeline(docs)
+        results = pipeline.run_pipeline(docs, analyze=True)
 
-        # Disable context-aware extraction (legacy mode)
-        pipeline = STIndexPipeline(enable_context_aware=False)
-
-        # Preprocessing only
-        chunks = pipeline.run_preprocessing(docs)
-
-        # Extraction only (from preprocessed chunks)
-        results = pipeline.run_extraction(chunks)
-
-        # Visualization only
-        pipeline.run_visualization(results, output_dir="output/viz")
+        # Analysis only (from existing results)
+        analysis_data = pipeline.run_analysis(
+            results=results,
+            dimensions=['temporal', 'spatial', 'disease', 'event_type']
+        )
     """
 
     def __init__(
@@ -235,23 +239,23 @@ class STIndexPipeline:
         self,
         input_docs: List[InputDocument],
         save_results: bool = True,
-        visualize: bool = True,
+        analyze: bool = True,
         load_to_warehouse: bool = True
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
-        Run full pipeline: preprocessing → extraction → warehouse → visualization.
+        Run full pipeline: preprocessing → extraction → analysis → export.
 
-        Visualization is enabled by default and creates a zip archive with HTML report and all assets.
+        Analysis is enabled by default and generates static JSON files for frontend.
         Warehouse loading is enabled if warehouse is initialized and load_to_warehouse=True.
 
         Args:
             input_docs: List of InputDocument objects
             save_results: Save extraction results to file
-            visualize: Generate visualizations (default: True, creates zip archive)
+            analyze: Run analysis and export data (default: True, creates JSON files)
             load_to_warehouse: Load results to data warehouse if enabled (default: True)
 
         Returns:
-            List of extraction results (one per chunk)
+            Dict with 'results' (extraction results) and 'analysis' (analysis data if enabled)
         """
         logger.info("=" * 80)
         logger.info("STIndex Pipeline: Full Mode")
@@ -275,18 +279,22 @@ class STIndexPipeline:
         else:
             logger.info("\n[3/4] Warehouse loading: SKIPPED")
 
-        # Step 4: Visualization (optional)
-        if visualize:
-            logger.info("\n[4/4] Visualization...")
-            self.run_visualization(results)
+        # Step 4: Analysis (optional)
+        analysis_data = None
+        if analyze:
+            logger.info("\n[4/4] Analysis & Export...")
+            analysis_data = self.run_analysis(results)
         else:
-            logger.info("\n[4/4] Visualization: SKIPPED")
+            logger.info("\n[4/4] Analysis: SKIPPED")
 
         logger.info("\n" + "=" * 80)
         logger.info("Pipeline Complete")
         logger.info("=" * 80)
 
-        return results
+        return {
+            'results': results,
+            'analysis': analysis_data
+        }
 
     def run_preprocessing(
         self,
@@ -418,10 +426,12 @@ class STIndexPipeline:
                             "document_title": chunk.document_title,
                         }
 
-                        # Extract (context memory is automatically updated inside)
+                        # Extract
+                        # If reflection is enabled, defer context update until after reflection
                         result = extractor.extract(
                             text=chunk.text,
-                            document_metadata=extraction_metadata
+                            document_metadata=extraction_metadata,
+                            update_context=(reflector is None)  # Only update if no reflection
                         )
 
                         # Apply two-pass reflection if enabled
@@ -447,6 +457,9 @@ class STIndexPipeline:
                             # Update backward-compatible fields
                             result.temporal_entities = reflected_entities.get("temporal", [])
                             result.spatial_entities = reflected_entities.get("spatial", [])
+
+                            # Update context with reflected entities (high-quality only)
+                            extractor.update_context_memory(reflected_entities)
 
                             # Mark as reflected
                             if isinstance(result.extraction_config, dict):
@@ -524,7 +537,8 @@ class STIndexPipeline:
                     # Extract
                     result = self.extractor.extract(
                         text=chunk.text,
-                        document_metadata=extraction_metadata
+                        document_metadata=extraction_metadata,
+                        update_context=(reflector is None)  # Consistent with context-aware mode
                     )
 
                     # Apply two-pass reflection if enabled
@@ -550,6 +564,8 @@ class STIndexPipeline:
                         # Update backward-compatible fields
                         result.temporal_entities = reflected_entities.get("temporal", [])
                         result.spatial_entities = reflected_entities.get("spatial", [])
+
+                        # Note: No context update needed in non-context-aware mode
 
                         # Mark as reflected
                         if isinstance(result.extraction_config, dict):
@@ -602,69 +618,128 @@ class STIndexPipeline:
 
         return results
 
-    def run_visualization(
+    def run_analysis(
         self,
         results: Union[List[Dict[str, Any]], str],
+        dimensions: Optional[List[str]] = None,
         output_dir: Optional[str] = None,
-        animated_map: bool = True
-    ) -> Optional[str]:
+        clustering_mode: str = 'spatiotemporal',
+        export_geojson: bool = True
+    ) -> Dict[str, Any]:
         """
-        Run visualization only (requires extraction results).
+        Run analysis only (requires extraction results).
 
-        All visualization settings loaded from cfg/visualization.yml.
-
-        Automatically creates a zip archive containing the HTML report and all source files.
+        Performs:
+        1. Event clustering (spatiotemporal + categorical)
+        2. Story arc detection (narrative sequences)
+        3. Dimension analysis (statistics for all dimensions)
+        4. Data export (static JSON files for frontend)
 
         Args:
             results: Extraction results or path to results file
-            output_dir: Output directory for visualizations
-            animated_map: Create animated timeline map if True
+            dimensions: Dimensions to analyze (None = all discovered dimensions)
+            output_dir: Output directory for exported data
+            clustering_mode: 'temporal', 'spatial', 'spatiotemporal', 'categorical', 'multi'
+            export_geojson: Export GeoJSON file for map visualization
 
         Returns:
-            Path to generated zip file
+            Dict with analysis results:
+                - clusters: Cluster analysis results
+                - story_arcs: Story arc detection results
+                - dimension_analysis: Dimension statistics
+                - exported_files: Paths to exported JSON files
         """
         logger.info("=" * 80)
-        logger.info("STIndex Pipeline: Visualization Mode")
+        logger.info("STIndex Pipeline: Analysis Mode")
         logger.info("=" * 80)
 
+        # Load results if file path provided
+        if isinstance(results, str):
+            logger.info(f"Loading results from: {results}")
+            with open(results, 'r') as f:
+                results = json.load(f)
+
         # Set output directory
-        viz_dir = Path(output_dir) if output_dir else self.viz_dir
-        viz_dir.mkdir(parents=True, exist_ok=True)
+        analysis_dir = Path(output_dir) if output_dir else (self.output_dir / "analysis")
+        analysis_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"\nGenerating visualizations in: {viz_dir}")
+        logger.info(f"\nAnalyzing {len(results)} extraction results...")
+        logger.info(f"Output directory: {analysis_dir}")
 
-        # Initialize visualizer (loads from cfg/visualization.yml)
-        visualizer = STIndexVisualizer()
-
-        # Generate visualization
         try:
-            if isinstance(results, str):
-                # Results file path provided
-                zip_path = visualizer.visualize(
-                    results_file=results,
-                    output_dir=str(viz_dir),
-                    animated_map=animated_map
-                )
-            else:
-                # Results list provided
-                zip_path = visualizer.visualize(
-                    results=results,
-                    output_dir=str(viz_dir),
-                    animated_map=animated_map
-                )
+            # 1. Event clustering
+            logger.info("\n[1/4] Event Clustering...")
+            cluster_analyzer = EventClusterAnalyzer(
+                temporal_window='1D',
+                spatial_radius_km=50,
+                min_cluster_size=2
+            )
+            cluster_results = cluster_analyzer.detect_clusters(
+                extraction_results=results,
+                dimensions=dimensions,
+                clustering_mode=clustering_mode
+            )
 
-            logger.info(f"\n✓ Visualization complete: {zip_path}")
-            return zip_path
+            # 2. Story arc detection
+            logger.info("\n[2/4] Story Arc Detection...")
+            story_detector = StoryArcDetector(
+                max_temporal_gap_days=7,
+                min_entity_overlap=0.3,
+                min_arc_length=2
+            )
+            story_arcs = story_detector.detect_story_arcs(
+                clusters=cluster_results.get('clusters', []),
+                events=cluster_results.get('events', []),
+                dimensions=dimensions
+            )
+
+            # 3. Dimension analysis
+            logger.info("\n[3/4] Dimension Analysis...")
+            dim_analyzer = DimensionAnalyzer()
+            dimension_analysis = dim_analyzer.analyze(
+                extraction_results=results,
+                dimensions=dimensions
+            )
+
+            # 4. Export data
+            logger.info("\n[4/4] Exporting Data...")
+            exporter = AnalysisDataExporter(output_dir=str(analysis_dir))
+
+            exported_files = exporter.export_all(
+                extraction_results=results,
+                clusters=cluster_results,
+                story_arcs=story_arcs,
+                dimension_analysis=dimension_analysis,
+                metadata={
+                    'clustering_mode': clustering_mode,
+                    'dimensions_analyzed': dimensions or 'all'
+                }
+            )
+
+            # Export GeoJSON if requested
+            if export_geojson:
+                events = cluster_results.get('events', [])
+                geojson_path = exporter.export_geojson(events)
+                exported_files['geojson'] = geojson_path
+
+            logger.info(f"\n✓ Analysis complete!")
+            logger.info(f"  Clusters: {len(cluster_results.get('clusters', []))}")
+            logger.info(f"  Story arcs: {len(story_arcs)}")
+            logger.info(f"  Dimensions: {len(dimension_analysis) - 2}")  # Exclude global & cross_dimensional
+            logger.info(f"  Exported files: {len(exported_files)}")
+
+            return {
+                'clusters': cluster_results,
+                'story_arcs': story_arcs,
+                'dimension_analysis': dimension_analysis,
+                'exported_files': exported_files
+            }
 
         except Exception as e:
-            logger.error(f"Visualization failed: {e}")
-            # Fallback to basic summary
-            logger.info("Generating basic summary instead...")
-            if isinstance(results, str):
-                with open(results, 'r') as f:
-                    results = json.load(f)
-            self._generate_summary(results, viz_dir)
-            return None
+            logger.error(f"Analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
 
     def load_chunks_from_file(self, chunks_file: str) -> List[DocumentChunk]:
         """

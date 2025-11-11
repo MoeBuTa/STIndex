@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-CONFIG_FILE="cfg/hf.yml"
+CONFIG_FILE="cfg/extraction/inference/hf.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -22,7 +22,7 @@ read -r MODEL PORT TENSOR_PARALLEL GPU_MEM TRUST_CODE DTYPE MAX_LEN RESULT_PATH 
 import yaml
 import os
 
-with open("cfg/hf.yml") as f:
+with open("cfg/extraction/inference/hf.yml") as f:
     cfg = yaml.safe_load(f)
 dep = cfg["deployment"]
 vllm = dep.get("vllm", {})

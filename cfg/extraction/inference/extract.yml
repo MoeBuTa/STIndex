@@ -45,10 +45,45 @@ context_aware:
 # Note: For detailed reflection settings, see cfg/extraction/inference/reflection.yml
 reflection:
   # Enable two-pass reflection (LLM-based quality filtering)
-  enabled: false
+  enabled: true
 
   # Load detailed reflection settings from reflection.yml
   config_file: "cfg/extraction/inference/reflection.yml"
+
+# Spatial Post-Processing Configuration
+spatial:
+  # Enable OpenStreetMap context provider for nearby location information
+  # Uses Overpass API to fetch nearby POIs (based on GeoLLM research: 3.3x improvement)
+  enable_osm_context: true
+
+  # OSM context radius in kilometers
+  osm_radius_km: 100
+
+  # Maximum nearby locations to retrieve
+  osm_max_results: 10
+
+# Temporal Post-Processing Configuration
+temporal:
+  # Enable relative temporal resolution (e.g., "Monday" → "2025-10-27")
+  enable_relative_resolution: true
+
+  # Default timezone for temporal resolution
+  timezone: "UTC"
+
+# Categorical Post-Processing Configuration
+categorical:
+  # Enable categorical validation against predefined allowed values
+  enable_validation: true
+
+  # Strict mode: If true, reject entities with invalid categories
+  # If false, keep entities but set category to "unknown" (default: false)
+  strict_mode: false
+
+  # Enable fuzzy matching for misspellings (default: true)
+  allow_fuzzy_match: true
+
+  # Minimum similarity threshold for fuzzy matching (0.0-1.0)
+  fuzzy_threshold: 0.8
 
 # Geocoding Configuration
 geocoding:

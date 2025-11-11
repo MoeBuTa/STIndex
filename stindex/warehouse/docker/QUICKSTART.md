@@ -25,7 +25,6 @@ docker exec -it stindex-warehouse psql -U stindex -d stindex_warehouse
 
 # In psql:
 \dt  # List tables (should see 20+ tables)
-SELECT COUNT(*) FROM dim_date;  # Should return ~18,628 dates (2000-2050)
 \q   # Exit
 ```
 

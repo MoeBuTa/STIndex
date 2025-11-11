@@ -1,25 +1,28 @@
 # Chunking Configuration
 # Settings for document chunking strategies
+# Optimized for case study documents (news articles, government reports, health alerts)
 
 # Chunking strategy
 # Options: "sliding_window", "paragraph", "element_based", "semantic"
 strategy: "sliding_window"
 
 # Sliding window settings
+# Balanced for entity extraction and manageable chunk sizes
 sliding_window:
-  max_chunk_size: 2000        # Maximum chunk size in characters
-  overlap: 200                 # Character overlap between chunks
+  max_chunk_size: 1500        # Optimal for entity extraction
+  overlap: 150                 # 10% overlap for continuity
   preserve_sentences: true     # Try to break at sentence boundaries
 
 # Paragraph-based chunking
 paragraph:
-  max_chunk_size: 2000        # Maximum chunk size
-  min_chunk_size: 500         # Minimum chunk size (merge smaller paragraphs)
-  overlap: 100                # Overlap between paragraph chunks
+  max_chunk_size: 1500        # Maximum chunk size
+  min_chunk_size: 400         # Minimum chunk size (merge smaller paragraphs)
+  overlap: 150                # Overlap between paragraph chunks
 
 # Element-based chunking (preserves document structure)
+# Best for structured documents like PDFs with tables and sections
 element_based:
-  max_chunk_size: 2000
+  max_chunk_size: 2000        # For structured content
   preserve_titles: true        # Keep titles with their content
   preserve_tables: true        # Keep tables intact
   preserve_lists: true         # Keep lists intact
@@ -27,12 +30,12 @@ element_based:
 
 # Semantic chunking (future)
 semantic:
-  max_chunk_size: 2000
+  max_chunk_size: 1500
   embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
   similarity_threshold: 0.7    # Similarity threshold for grouping
 
 # General settings
 general:
   remove_empty_chunks: true    # Remove chunks with no content
-  min_word_count: 10           # Minimum words per chunk
+  min_word_count: 15           # Minimum words per chunk
   normalize_whitespace: true   # Normalize whitespace in chunks

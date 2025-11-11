@@ -164,15 +164,42 @@ class ExtractionReflector:
             # Parse scores from response
             scores = extract_json_from_text(response.content, None, return_dict=True)
 
-            if 'entity_scores' in scores:
-                scores = scores['entity_scores']
+            # Debug: Log what we got
+            logger.debug(f"Reflection response type: {type(scores)}")
+
+            # Handle different response formats
+            if isinstance(scores, dict):
+                # If LLM wrapped array in an object, try to extract it
+                if 'entity_scores' in scores:
+                    scores = scores['entity_scores']
+                    logger.debug("Extracted scores from 'entity_scores' key")
+                elif 'scores' in scores:
+                    scores = scores['scores']
+                    logger.debug("Extracted scores from 'scores' key")
+                elif 'results' in scores:
+                    scores = scores['results']
+                    logger.debug("Extracted scores from 'results' key")
+                else:
+                    # Try to find any list value
+                    for key, value in scores.items():
+                        if isinstance(value, list) and len(value) > 0:
+                            scores = value
+                            logger.debug(f"Extracted scores from key: {key}")
+                            break
 
             # Ensure we have scores for all entities
-            if not isinstance(scores, list) or len(scores) != len(entities):
+            if not isinstance(scores, list):
                 logger.warning(
-                    f"Reflection returned {len(scores) if isinstance(scores, list) else 0} scores "
-                    f"for {len(entities)} entities. Using default scores."
+                    f"Reflection returned {type(scores).__name__} instead of list. Using default scores."
                 )
+                logger.debug(f"Raw response (first 500 chars): {response.content[:500]}")
+                return self._default_scores(len(entities))
+
+            if len(scores) != len(entities):
+                logger.warning(
+                    f"Reflection returned {len(scores)} scores for {len(entities)} entities. Using default scores."
+                )
+                logger.debug(f"Raw response (first 500 chars): {response.content[:500]}")
                 return self._default_scores(len(entities))
 
             # Log reflection reasoning for first few entities

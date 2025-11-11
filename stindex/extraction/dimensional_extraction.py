@@ -21,6 +21,9 @@ from stindex.llm.response.dimension_models import (
     CategoricalDimensionEntity,
 )
 from stindex.postprocess.spatial.geocoder import GeocoderService
+from stindex.postprocess.spatial.osm_context import OSMContextProvider
+from stindex.postprocess.temporal.relative_resolver import RelativeTemporalResolver
+from stindex.postprocess.categorical_validator import CategoricalValidator
 from stindex.extraction.dimension_loader import DimensionConfigLoader
 from stindex.utils.config import load_config_from_file
 
@@ -68,8 +71,43 @@ class DimensionalExtractor:
 
         self.llm_manager = LLMManager(llm_config)
 
-        # Initialize geocoder (loads from cfg/extraction/postprocess/spatial.yml)
+        # Initialize spatial post-processors (loads from cfg/extraction/postprocess/spatial.yml)
         self.geocoder = GeocoderService()
+
+        # Initialize OSM context provider for nearby location context
+        spatial_config = config.get("spatial", {})
+        enable_osm_context = spatial_config.get("enable_osm_context", False)
+        if enable_osm_context:
+            osm_radius = spatial_config.get("osm_radius_km", 100)
+            osm_max_results = spatial_config.get("osm_max_results", 10)
+            self.osm_context = OSMContextProvider(
+                max_results=osm_max_results
+            )
+            self.osm_radius_km = osm_radius
+            logger.debug(f"✓ OSM context provider enabled (radius: {osm_radius}km, max_results: {osm_max_results})")
+        else:
+            self.osm_context = None
+            self.osm_radius_km = 100  # Default fallback
+
+        # Initialize temporal post-processor
+        temporal_config = config.get("temporal", {})
+        enable_relative_resolution = temporal_config.get("enable_relative_resolution", True)
+        timezone = temporal_config.get("timezone", "UTC")
+        if enable_relative_resolution:
+            self.temporal_resolver = RelativeTemporalResolver(timezone=timezone)
+            logger.debug(f"✓ Temporal resolver enabled (timezone: {timezone})")
+        else:
+            self.temporal_resolver = None
+
+        # Initialize categorical validator
+        categorical_config = config.get("categorical", {})
+        enable_categorical_validation = categorical_config.get("enable_validation", True)
+        if enable_categorical_validation:
+            strict_mode = categorical_config.get("strict_mode", False)
+            self.categorical_validator = CategoricalValidator(strict_mode=strict_mode)
+            logger.debug(f"✓ Categorical validator enabled (strict_mode: {strict_mode})")
+        else:
+            self.categorical_validator = None
 
         # Load dimension configuration
         dimension_config_path = dimension_config_path or "dimensions"
@@ -88,7 +126,8 @@ class DimensionalExtractor:
     def extract(
         self,
         text: str,
-        document_metadata: Optional[Dict[str, Any]] = None
+        document_metadata: Optional[Dict[str, Any]] = None,
+        update_context: bool = True
     ) -> MultiDimensionalResult:
         """
         Extract multi-dimensional information from text.
@@ -100,6 +139,8 @@ class DimensionalExtractor:
                 - source_location: Geographic context (for spatial disambiguation)
                 - source_url: Original document URL
                 - Any other metadata
+            update_context: Whether to update extraction context with results (default: True)
+                           Set to False if reflection will be applied afterward
 
         Returns:
             MultiDimensionalResult with entities for all dimensions
@@ -180,8 +221,9 @@ class DimensionalExtractor:
                 if entities:
                     processed_entities[dim_name] = [e.model_dump() for e in entities]
 
-            # Step 5: Update extraction context memory if available
-            if self.extraction_context:
+            # Step 5: Update extraction context memory if requested
+            # Note: Set update_context=False if reflection will be applied afterward
+            if self.extraction_context and update_context:
                 self.extraction_context.update_memory(processed_entities)
                 logger.debug("✓ Updated extraction context memory")
 
@@ -246,18 +288,42 @@ class DimensionalExtractor:
         dim_config,
         document_metadata: Dict
     ) -> List[NormalizedDimensionEntity]:
-        """Process normalized dimensions (e.g., temporal)."""
+        """Process normalized dimensions (e.g., temporal) with relative resolution."""
         entities = []
 
         for mention in mentions:
-            # TODO: Add relative temporal resolution here if needed
-            # For now, assume LLM already normalized
+            text = mention.get("text", "")
+            normalized = mention.get("normalized", "")
+            normalization_type = mention.get(list(mention.keys())[2] if len(mention) > 2 else "type", "")
+
+            # Apply relative temporal resolution if available and dimension is temporal
+            if self.temporal_resolver and dim_name == "temporal" and normalized:
+                try:
+                    # Get document publication date for anchor
+                    publication_date = document_metadata.get("publication_date")
+
+                    # Resolve relative expressions to absolute dates
+                    resolved_normalized, resolved_type = self.temporal_resolver.resolve(
+                        temporal_text=normalized,
+                        document_date=publication_date,
+                        temporal_type=normalization_type
+                    )
+
+                    # Update normalized value and type if resolution succeeded
+                    if resolved_normalized != normalized:
+                        logger.debug(f"Resolved temporal: '{normalized}' → '{resolved_normalized}'")
+                        normalized = resolved_normalized
+                        normalization_type = resolved_type
+
+                except Exception as e:
+                    logger.warning(f"Temporal resolution failed for '{normalized}': {e}")
+                    # Continue with original normalized value
 
             entity = NormalizedDimensionEntity(
-                text=mention.get("text", ""),
+                text=text,
                 dimension_name=dim_name,
-                normalized=mention.get("normalized", ""),
-                normalization_type=mention.get(list(mention.keys())[2] if len(mention) > 2 else "type", ""),
+                normalized=normalized,
+                normalization_type=normalization_type,
                 confidence=mention.get("confidence", 0.95)
             )
             entities.append(entity)
@@ -271,7 +337,7 @@ class DimensionalExtractor:
         document_text: str,
         document_metadata: Dict
     ) -> List[GeocodedDimensionEntity]:
-        """Process geocoded dimensions (e.g., spatial)."""
+        """Process geocoded dimensions (e.g., spatial) with optional OSM context."""
         entities = []
 
         for mention in mentions:
@@ -288,6 +354,21 @@ class DimensionalExtractor:
 
                 if coords:
                     lat, lon = coords
+
+                    # Get nearby location context if OSM provider is enabled
+                    nearby_locations = None
+                    if self.osm_context:
+                        try:
+                            nearby_locations = self.osm_context.get_nearby_locations(
+                                location=coords,
+                                radius_km=self.osm_radius_km
+                            )
+                            if nearby_locations:
+                                logger.debug(f"Found {len(nearby_locations)} nearby locations for '{location_text}'")
+                        except Exception as e:
+                            logger.debug(f"OSM context retrieval failed for '{location_text}': {e}")
+                            # Continue without nearby context
+
                     entity = GeocodedDimensionEntity(
                         text=location_text,
                         dimension_name=dim_name,
@@ -296,6 +377,12 @@ class DimensionalExtractor:
                         location_type=mention.get("location_type"),
                         confidence=0.95
                     )
+
+                    # Add nearby locations as metadata if available
+                    if nearby_locations and hasattr(entity, 'metadata'):
+                        entity.metadata = entity.metadata or {}
+                        entity.metadata['nearby_locations'] = nearby_locations
+
                     entities.append(entity)
                 else:
                     logger.warning(f"Geocoding failed for: {location_text}")
@@ -311,7 +398,12 @@ class DimensionalExtractor:
         dim_name: str,
         dim_config
     ) -> List[CategoricalDimensionEntity]:
-        """Process categorical dimensions (e.g., event_type, disease)."""
+        """
+        Process categorical dimensions (e.g., event_type, disease).
+
+        Validates that extracted categories match predefined allowed values
+        from dimension config, with normalization and fuzzy matching.
+        """
         entities = []
 
         for mention in mentions:
@@ -323,6 +415,24 @@ class DimensionalExtractor:
                 confidence=mention.get("confidence", 1.0)
             )
             entities.append(entity)
+
+        # Validate categories against allowed values if validator enabled
+        if self.categorical_validator and entities:
+            # Convert to dict for validation
+            entity_dicts = [e.model_dump() for e in entities]
+
+            # Validate
+            validated_dicts = self.categorical_validator.validate_entities(
+                entity_dicts,
+                dim_config,
+                dim_name
+            )
+
+            # Convert back to Pydantic models
+            entities = [
+                CategoricalDimensionEntity(**validated_dict)
+                for validated_dict in validated_dicts
+            ]
 
         return entities
 
@@ -357,3 +467,29 @@ class DimensionalExtractor:
                 "confidence": mention.get("confidence", 1.0)
             })
         return entities
+
+    def update_context_memory(self, entities: Dict[str, List[Dict]]):
+        """
+        Update extraction context with processed/reflected entities.
+
+        Use this method after reflection to update context with filtered entities.
+        This ensures context memory only contains high-quality extractions.
+
+        Args:
+            entities: Dictionary of {dimension_name: [entity_dicts]}
+
+        Example:
+            # Extract without context update
+            result = extractor.extract(text, update_context=False)
+
+            # Apply reflection
+            reflected_entities = reflector.reflect_on_extractions(text, result.entities)
+
+            # Update context with reflected entities
+            extractor.update_context_memory(reflected_entities)
+        """
+        if self.extraction_context:
+            self.extraction_context.update_memory(entities)
+            logger.debug(f"✓ Updated extraction context with {sum(len(v) for v in entities.values())} entities")
+        else:
+            logger.warning("Cannot update context: extraction_context is not initialized")

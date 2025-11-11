@@ -21,7 +21,7 @@ llm:
 
   # Generation parameters
   temperature: 0.0  # Deterministic output (0.0 = greedy, higher = more random)
-  max_tokens: 4096  # Maximum tokens to generate per request
+  max_tokens: 8192  # Maximum tokens to generate per request (increased for thinking models)
 
   # Advanced sampling parameters
   seed: null  # Random seed for reproducibility (null = random)
