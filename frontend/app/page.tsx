@@ -174,79 +174,29 @@ export default function Home() {
           {/* Overview Stats */}
           <DashboardStats data={successfulExtractions} />
 
-          {/* Analytics Panels */}
-          <Box>
+          {/* Analytics Panels - Temporarily disabled to debug infinite re-render */}
+          {/* <Box>
             <Heading as="h2" size="lg" mb={4}>
               Advanced Analytics
             </Heading>
             <ErrorBoundary>
               <AnalyticsPanels events={spatioTemporalEvents} />
             </ErrorBoundary>
-          </Box>
+          </Box> */}
 
           {/* Tabbed Visualizations */}
           <Box bg="white" p={6} borderRadius="lg" shadow="md">
             <Tabs colorScheme="blue" variant="enclosed">
               <TabList>
-                <Tab>Interactive Map</Tab>
-                <Tab>Story Timeline</Tab>
-                <Tab>Entity Network</Tab>
                 <Tab>Basic Timeline</Tab>
                 <Tab>Dimension Breakdown</Tab>
+                {/* Temporarily disabled advanced visualizations */}
+                {/* <Tab>Interactive Map</Tab>
+                <Tab>Story Timeline</Tab>
+                <Tab>Entity Network</Tab> */}
               </TabList>
 
               <TabPanels>
-                {/* Interactive Map */}
-                <TabPanel>
-                  <VStack align="stretch" spacing={4}>
-                    <Text fontSize="sm" color="gray.600">
-                      Spatiotemporal event clustering with story arc visualization
-                    </Text>
-                    <ErrorBoundary>
-                      <InteractiveMap
-                        events={spatioTemporalEvents}
-                        height="600px"
-                        showClusters={true}
-                        showStoryArcs={true}
-                        enableAnimation={true}
-                      />
-                    </ErrorBoundary>
-                  </VStack>
-                </TabPanel>
-
-                {/* Story Timeline */}
-                <TabPanel>
-                  <VStack align="stretch" spacing={4}>
-                    <Text fontSize="sm" color="gray.600">
-                      Multi-track timeline with burst detection and story arcs
-                    </Text>
-                    <ErrorBoundary>
-                      <StoryTimeline
-                        events={spatioTemporalEvents}
-                        height={500}
-                        showBursts={true}
-                        showStoryArcs={true}
-                      />
-                    </ErrorBoundary>
-                  </VStack>
-                </TabPanel>
-
-                {/* Entity Network */}
-                <TabPanel>
-                  <VStack align="stretch" spacing={4}>
-                    <Text fontSize="sm" color="gray.600">
-                      Entity co-occurrence network graph
-                    </Text>
-                    <ErrorBoundary>
-                      <EntityNetwork
-                        events={spatioTemporalEvents}
-                        height="600px"
-                        minCoOccurrence={2}
-                      />
-                    </ErrorBoundary>
-                  </VStack>
-                </TabPanel>
-
                 {/* Basic Timeline */}
                 <TabPanel>
                   <VStack align="stretch" spacing={4}>
@@ -270,6 +220,57 @@ export default function Home() {
                     </ErrorBoundary>
                   </VStack>
                 </TabPanel>
+
+                {/* Interactive Map - Temporarily disabled */}
+                {/* <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Spatiotemporal event clustering with story arc visualization
+                    </Text>
+                    <ErrorBoundary>
+                      <InteractiveMap
+                        events={spatioTemporalEvents}
+                        height="600px"
+                        showClusters={true}
+                        showStoryArcs={true}
+                        enableAnimation={true}
+                      />
+                    </ErrorBoundary>
+                  </VStack>
+                </TabPanel> */}
+
+                {/* Story Timeline - Temporarily disabled */}
+                {/* <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Multi-track timeline with burst detection and story arcs
+                    </Text>
+                    <ErrorBoundary>
+                      <StoryTimeline
+                        events={spatioTemporalEvents}
+                        height={500}
+                        showBursts={true}
+                        showStoryArcs={true}
+                      />
+                    </ErrorBoundary>
+                  </VStack>
+                </TabPanel> */}
+
+                {/* Entity Network - Temporarily disabled */}
+                {/* <TabPanel>
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontSize="sm" color="gray.600">
+                      Entity co-occurrence network graph
+                    </Text>
+                    <ErrorBoundary>
+                      <EntityNetwork
+                        events={spatioTemporalEvents}
+                        height="600px"
+                        minCoOccurrence={2}
+                      />
+                    </ErrorBoundary>
+                  </VStack>
+                </TabPanel> */}
               </TabPanels>
             </Tabs>
           </Box>
