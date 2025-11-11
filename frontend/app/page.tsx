@@ -89,19 +89,22 @@ export default function Home() {
   )
 
   // Transform extraction data into SpatioTemporalEvent format for analytics
-  // Use JSON stringification for stable reference to prevent infinite re-renders
+  // Only recalculate when data changes (not when array reference changes)
   const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
+    if (!data || data.length === 0) return []
+
+    const successful = data.filter((item) => item.extraction.success)
     const events: SpatioTemporalEvent[] = []
 
-    successfulExtractions.forEach((item) => {
+    successful.forEach((item) => {
       const { extraction, document_id, document_title } = item
       const { temporal_entities, spatial_entities, document_metadata } = extraction
 
       // Process spatial entities
-      spatial_entities?.forEach((entity: any) => {
+      spatial_entities?.forEach((entity: any, idx: number) => {
         if (entity.latitude && entity.longitude) {
           events.push({
-            id: `${document_id}-spatial-${entity.text}`,
+            id: `${document_id}-spatial-${idx}`,
             text: entity.text,
             latitude: entity.latitude,
             longitude: entity.longitude,
@@ -117,9 +120,9 @@ export default function Home() {
       })
 
       // Process temporal entities
-      temporal_entities?.forEach((entity: any) => {
+      temporal_entities?.forEach((entity: any, idx: number) => {
         events.push({
-          id: `${document_id}-temporal-${entity.text}`,
+          id: `${document_id}-temporal-${idx}`,
           text: entity.text,
           timestamp: entity.normalized,
           normalized_date: entity.normalized,
@@ -137,9 +140,9 @@ export default function Home() {
           if (dimName === 'temporal' || dimName === 'spatial') return
           if (!Array.isArray(dimEntities)) return
 
-          dimEntities.forEach((entity: any) => {
+          dimEntities.forEach((entity: any, idx: number) => {
             events.push({
-              id: `${document_id}-${dimName}-${entity.text}`,
+              id: `${document_id}-${dimName}-${idx}`,
               text: entity.text,
               category: entity.category || dimName,
               document_id,
@@ -153,7 +156,7 @@ export default function Home() {
     })
 
     return events
-  }, [JSON.stringify(successfulExtractions.map(e => e.chunk_id))])
+  }, [data])
 
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
