@@ -31,8 +31,35 @@ interface AnalyticsPanelsProps {
 }
 
 export function AnalyticsPanels({ events }: AnalyticsPanelsProps) {
-  // Compute analytics
+  // Compute analytics with safety checks
   const { bursts, stories, clusters, qualityMetrics, dimensionStats } = useMemo(() => {
+    // Safety check - return empty state if no events
+    if (!events || events.length === 0) {
+      return {
+        bursts: [],
+        stories: [],
+        clusters: [],
+        qualityMetrics: {
+          relevance: 0,
+          accuracy: 0,
+          completeness: 0,
+          consistency: 0,
+          totalEvents: 0,
+          withScores: 0,
+          avgConfidence: 0,
+        },
+        dimensionStats: {
+          totalEvents: 0,
+          temporalEvents: 0,
+          spatialEvents: 0,
+          categories: [],
+          topSources: [],
+          temporalCoverage: '0',
+          spatialCoverage: '0',
+        },
+      }
+    }
+
     const temporalEvents = events.filter((e) => e.timestamp || e.normalized_date)
     const spatialEvents = events.filter((e) => e.latitude && e.longitude)
 

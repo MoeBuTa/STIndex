@@ -89,6 +89,7 @@ export default function Home() {
   )
 
   // Transform extraction data into SpatioTemporalEvent format for analytics
+  // Use JSON stringification for stable reference to prevent infinite re-renders
   const spatioTemporalEvents = useMemo<SpatioTemporalEvent[]>(() => {
     const events: SpatioTemporalEvent[] = []
 
@@ -152,7 +153,7 @@ export default function Home() {
     })
 
     return events
-  }, [successfulExtractions])
+  }, [JSON.stringify(successfulExtractions.map(e => e.chunk_id))])
 
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
