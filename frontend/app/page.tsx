@@ -239,16 +239,18 @@ export default function Home() {
                 </TabPanel>
 
                 {/* Interactive Map */}
-                <TabPanel>
-                  <VStack align="stretch" spacing={4}>
-                    <Text fontSize="sm" color="gray.600">
-                      Spatiotemporal event clustering with story arc visualization
-                    </Text>
+                <TabPanel p={0}>
+                  <VStack align="stretch" spacing={2} h="100%">
+                    <Box px={6} pt={4}>
+                      <Text fontSize="sm" color="gray.600">
+                        Spatiotemporal event clustering with story arc visualization
+                      </Text>
+                    </Box>
                     <ErrorBoundary>
                       <InteractiveMap
                         events={spatioTemporalEvents}
                         storyArcs={storyArcs}
-                        height="600px"
+                        height="750px"
                         showClusters={true}
                         showStoryArcs={true}
                         enableAnimation={true}
