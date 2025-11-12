@@ -260,7 +260,7 @@ export function EntityNetwork({
               const color = categoryColors.get(category) || '#718096'
               const displayName = category
                 .split('_')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ')
 
               return (
