@@ -3,6 +3,1878 @@
     {
       "cluster_id": "spatiotemporal_0",
       "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 47.470662749999995,
+        "longitude": -122.06931605,
+        "datetime": "2025-06-25 00:00:00",
+        "time_range": {
+          "start": "2025-06-25T00:00:00",
+          "end": "2025-06-25T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_1",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_1",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 48.0074736,
+        "longitude": -121.7304882,
+        "datetime": "2025-06-25 00:00:00",
+        "time_range": {
+          "start": "2025-06-25T00:00:00",
+          "end": "2025-06-25T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 48.0074736,
+          "max_lat": 48.0074736,
+          "min_lon": -121.7304882,
+          "max_lon": -121.7304882
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_1",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_2",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-08-25 00:00:00",
+        "time_range": {
+          "start": "2025-08-25T00:00:00",
+          "end": "2025-08-25T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_3",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-10-28 00:00:00",
+        "time_range": {
+          "start": "2025-10-28T00:00:00",
+          "end": "2025-10-28T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_4",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-01-10 00:00:00",
+        "time_range": {
+          "start": "2025-01-10T00:00:00",
+          "end": "2025-01-10T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_5",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-04-06 00:00:00",
+        "time_range": {
+          "start": "2025-04-06T00:00:00",
+          "end": "2025-04-06T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_6",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-04-30 00:00:00",
+        "time_range": {
+          "start": "2025-04-30T00:00:00",
+          "end": "2025-04-30T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_7",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 47.465104466666666,
+        "longitude": -122.13835066666667,
+        "datetime": "2025-08-12 00:00:00",
+        "time_range": {
+          "start": "2025-08-12T00:00:00",
+          "end": "2025-08-12T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_8",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 47.4601384,
+        "longitude": -122.17799405,
+        "datetime": "2025-10-13 00:00:00",
+        "time_range": {
+          "start": "2025-10-13T00:00:00",
+          "end": "2025-10-13T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4452402,
+          "max_lat": 47.4873376,
+          "min_lon": -122.2969242,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_2",
+        "wa_doh_measles_2025_chunk_3"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_9",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -24.7761086,
+        "longitude": 134.755,
+        "datetime": "2025-11-10 00:00:00",
+        "time_range": {
+          "start": "2025-11-10T00:00:00",
+          "end": "2025-11-10T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -24.7761086,
+          "max_lat": -24.7761086,
+          "min_lon": 134.755,
+          "max_lon": 134.755
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "australia_influenza_stats_chunk_0",
+        "australia_influenza_stats_chunk_0"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_10",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -41.5000831,
+        "longitude": 172.8344077,
+        "datetime": "2025-11-10 00:00:00",
+        "time_range": {
+          "start": "2025-11-10T00:00:00",
+          "end": "2025-11-10T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -41.5000831,
+          "max_lat": -41.5000831,
+          "min_lon": 172.8344077,
+          "max_lon": 172.8344077
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "australia_influenza_stats_chunk_0",
+        "australia_influenza_stats_chunk_0"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_11",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -30.5343665,
+        "longitude": 135.6301212,
+        "datetime": "2025-11-01 00:00:00",
+        "time_range": {
+          "start": "2025-11-01T00:00:00",
+          "end": "2025-11-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -30.5343665,
+          "max_lat": -30.5343665,
+          "min_lon": 135.6301212,
+          "max_lon": 135.6301212
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "australia_influenza_stats_chunk_2",
+        "australia_influenza_stats_chunk_3"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_12",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -36.93178695,
+        "longitude": 174.8068791,
+        "datetime": "2025-10-26 00:00:00",
+        "time_range": {
+          "start": "2025-10-26T00:00:00",
+          "end": "2025-10-26T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -37.0114789,
+          "max_lat": -36.852095,
+          "min_lon": 174.7631803,
+          "max_lon": 174.8505779
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "australia_influenza_stats_chunk_5",
+        "australia_influenza_stats_chunk_6"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_13",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.7837304,
+          "max_lat": 39.7837304,
+          "min_lon": -100.445882,
+          "max_lon": -100.445882
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_2",
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_14",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2024-01-01 00:00:00",
+        "time_range": {
+          "start": "2024-01-01T00:00:00",
+          "end": "2024-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_15",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 36.7014631,
+        "longitude": -118.755997,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 36.7014631,
+          "max_lat": 36.7014631,
+          "min_lon": -118.755997,
+          "max_lon": -118.755997
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_16",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.7251776,
+        "longitude": -105.607716,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.7251776,
+          "max_lat": 38.7251776,
+          "min_lon": -105.607716,
+          "max_lon": -105.607716
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_17",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_18",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 27.7567667,
+        "longitude": -81.4639835,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 27.7567667,
+          "max_lat": 27.7567667,
+          "min_lon": -81.4639835,
+          "max_lon": -81.4639835
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_19",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 19.5938015,
+        "longitude": -155.4283701,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 19.5938015,
+          "max_lat": 19.5938015,
+          "min_lon": -155.4283701,
+          "max_lon": -155.4283701
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_20",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 43.6447642,
+        "longitude": -114.015407,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 43.6447642,
+          "max_lat": 43.6447642,
+          "min_lon": -114.015407,
+          "max_lon": -114.015407
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_21",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.0796606,
+        "longitude": -89.4337288,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.0796606,
+          "max_lat": 40.0796606,
+          "min_lon": -89.4337288,
+          "max_lon": -89.4337288
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_22",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 37.5726028,
+        "longitude": -85.1551411,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 37.5726028,
+          "max_lat": 37.5726028,
+          "min_lon": -85.1551411,
+          "max_lon": -85.1551411
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_23",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 39.5162401,
+        "longitude": -76.9382069,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.5162401,
+          "max_lat": 39.5162401,
+          "min_lon": -76.9382069,
+          "max_lon": -76.9382069
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_24",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.7604815,
+        "longitude": -92.5617875,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.7604815,
+          "max_lat": 38.7604815,
+          "min_lon": -92.5617875,
+          "max_lon": -92.5617875
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_25",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.0757384,
+        "longitude": -74.4041622,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.0757384,
+          "max_lat": 40.0757384,
+          "min_lon": -74.4041622,
+          "max_lon": -74.4041622
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_26",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.7127281,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -74.0060152
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_27",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.2253569,
+        "longitude": -82.6881395,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.2253569,
+          "max_lat": 40.2253569,
+          "min_lon": -82.6881395,
+          "max_lon": -82.6881395
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_28",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 43.9792797,
+        "longitude": -120.737257,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 43.9792797,
+          "max_lat": 43.9792797,
+          "min_lon": -120.737257,
+          "max_lon": -120.737257
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_29",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.9699889,
+        "longitude": -77.7278831,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.9699889,
+          "max_lat": 40.9699889,
+          "min_lon": -77.7278831,
+          "max_lon": -77.7278831
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_30",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 31.2638905,
+        "longitude": -98.5456116,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 31.2638905,
+          "max_lat": 31.2638905,
+          "min_lon": -98.5456116,
+          "max_lon": -98.5456116
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_31",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 39.4225192,
+        "longitude": -111.714358,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.4225192,
+          "max_lat": 39.4225192,
+          "min_lon": -111.714358,
+          "max_lon": -111.714358
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_32",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 37.1232245,
+        "longitude": -78.4927721,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 37.1232245,
+          "max_lat": 37.1232245,
+          "min_lon": -78.4927721,
+          "max_lon": -78.4927721
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_33",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 44.4308975,
+        "longitude": -89.6884637,
+        "datetime": "2023-01-01 00:00:00",
+        "time_range": {
+          "start": "2023-01-01T00:00:00",
+          "end": "2023-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 44.4308975,
+          "max_lat": 44.4308975,
+          "min_lon": -89.6884637,
+          "max_lon": -89.6884637
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_7",
+        "cdc_measles_outbreaks_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_34",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.2253569,
+        "longitude": -82.6881395,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.2253569,
+          "max_lat": 40.2253569,
+          "min_lon": -82.6881395,
+          "max_lon": -82.6881395
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_35",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.7127281,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -74.0060152
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_36",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_37",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 31.2638905,
+        "longitude": -98.5456116,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 31.2638905,
+          "max_lat": 31.2638905,
+          "min_lon": -98.5456116,
+          "max_lon": -98.5456116
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_38",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 39.4225192,
+        "longitude": -111.714358,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.4225192,
+          "max_lat": 39.4225192,
+          "min_lon": -111.714358,
+          "max_lon": -111.714358
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_39",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 37.1232245,
+        "longitude": -78.4927721,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 37.1232245,
+          "max_lat": 37.1232245,
+          "min_lon": -78.4927721,
+          "max_lon": -78.4927721
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_40",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 44.4308975,
+        "longitude": -89.6884637,
+        "datetime": "2022-01-01 00:00:00",
+        "time_range": {
+          "start": "2022-01-01T00:00:00",
+          "end": "2022-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 44.4308975,
+          "max_lat": 44.4308975,
+          "min_lon": -89.6884637,
+          "max_lon": -89.6884637
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_41",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2021-01-01 00:00:00",
+        "time_range": {
+          "start": "2021-01-01T00:00:00",
+          "end": "2021-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_42",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2020-01-01 00:00:00",
+        "time_range": {
+          "start": "2020-01-01T00:00:00",
+          "end": "2020-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_43",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.7127281,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -74.0060152
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_44",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_45",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2021-09-01 00:00:00",
+        "time_range": {
+          "start": "2021-09-01T00:00:00",
+          "end": "2021-09-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_8",
+        "cdc_measles_outbreaks_chunk_8"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_46",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.7837304,
+          "max_lat": 39.7837304,
+          "min_lon": -100.445882,
+          "max_lon": -100.445882
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_47",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 45.7669047,
+        "longitude": -122.4940866,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 45.7669047,
+          "max_lat": 45.7669047,
+          "min_lon": -122.4940866,
+          "max_lon": -122.4940866
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_48",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 40.0757384,
+        "longitude": -74.4041622,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.0757384,
+          "max_lat": 40.0757384,
+          "min_lon": -74.4041622,
+          "max_lon": -74.4041622
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_49",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 34.395342,
+        "longitude": -111.76327499999998,
+        "datetime": "2019-01-01 00:00:00",
+        "time_range": {
+          "start": "2019-01-01T00:00:00",
+          "end": "2019-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 34.395342,
+          "max_lat": 34.395342,
+          "min_lon": -111.763275,
+          "max_lon": -111.763275
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_9"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_50",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "datetime": "2016-05-01 00:00:00",
+        "time_range": {
+          "start": "2016-05-01T00:00:00",
+          "end": "2016-05-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.7837304,
+          "max_lat": 39.7837304,
+          "min_lon": -100.445882,
+          "max_lon": -100.445882
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_51",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 40.6926856,
+        "longitude": -73.9872505,
+        "datetime": "2016-05-01 00:00:00",
+        "time_range": {
+          "start": "2016-05-01T00:00:00",
+          "end": "2016-05-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_52",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 34.395342,
+        "longitude": -111.763275,
+        "datetime": "2016-05-01 00:00:00",
+        "time_range": {
+          "start": "2016-05-01T00:00:00",
+          "end": "2016-05-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 34.395342,
+          "max_lat": 34.395342,
+          "min_lon": -111.763275,
+          "max_lon": -111.763275
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_9",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_53",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2016-04-01 00:00:00",
+        "time_range": {
+          "start": "2016-04-01T00:00:00",
+          "end": "2016-04-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_54",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2015-01-04 00:00:00",
+        "time_range": {
+          "start": "2015-01-04T00:00:00",
+          "end": "2015-01-04T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_55",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2014-12-01 00:00:00",
+        "time_range": {
+          "start": "2014-12-01T00:00:00",
+          "end": "2014-12-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_56",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2012-12-01 00:00:00",
+        "time_range": {
+          "start": "2012-12-01T00:00:00",
+          "end": "2012-12-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_57",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 39.7837304,
+          "max_lat": 39.7837304,
+          "min_lon": -100.445882,
+          "max_lon": -100.445882
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_58",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 34.395342,
+        "longitude": -111.763275,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 34.395342,
+          "max_lat": 34.395342,
+          "min_lon": -111.763275,
+          "max_lon": -111.763275
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_59",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 35.1782557,
+        "longitude": -89.8739775,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 35.1782557,
+          "max_lat": 35.1782557,
+          "min_lon": -89.8739775,
+          "max_lon": -89.8739775
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_60",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 36.7014631,
+        "longitude": -118.755997,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 36.7014631,
+          "max_lat": 36.7014631,
+          "min_lon": -118.755997,
+          "max_lon": -118.755997
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_61",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 28.495156,
+        "longitude": -81.3111658,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 28.495156,
+          "max_lat": 28.495156,
+          "min_lon": -81.3111658,
+          "max_lon": -81.3111658
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_62",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 47.4873376,
+        "longitude": -121.8622122,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 47.4873376,
+          "max_lat": 47.4873376,
+          "min_lon": -121.8622122,
+          "max_lon": -121.8622122
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_63",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_64",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2014-01-01 00:00:00",
+        "time_range": {
+          "start": "2014-01-01T00:00:00",
+          "end": "2014-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_65",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2013-01-01 00:00:00",
+        "time_range": {
+          "start": "2013-01-01T00:00:00",
+          "end": "2013-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_66",
+      "cluster_type": "spatiotemporal",
+      "size": 4,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2013-03-01 00:00:00",
+        "time_range": {
+          "start": "2013-03-01T00:00:00",
+          "end": "2013-03-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_11",
+        "cdc_measles_outbreaks_chunk_11"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_67",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "datetime": "2013-03-01 00:00:00",
+        "time_range": {
+          "start": "2013-03-01T00:00:00",
+          "end": "2013-03-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 38.8950368,
+          "max_lat": 38.8950368,
+          "min_lon": -77.0365427,
+          "max_lon": -77.0365427
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_10",
+        "cdc_measles_outbreaks_chunk_11"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_68",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2013-04-01 00:00:00",
+        "time_range": {
+          "start": "2013-04-01T00:00:00",
+          "end": "2013-04-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_11",
+        "cdc_measles_outbreaks_chunk_11"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_69",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2013-09-13 00:00:00",
+        "time_range": {
+          "start": "2013-09-13T00:00:00",
+          "end": "2013-09-13T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_11",
+        "cdc_measles_outbreaks_chunk_11"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_70",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 40.682664349999996,
+        "longitude": -73.97786815,
+        "datetime": "2025-11-10 00:00:00",
+        "time_range": {
+          "start": "2025-11-10T00:00:00",
+          "end": "2025-11-10T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 40.6526006,
+          "max_lat": 40.7127281,
+          "min_lon": -74.0060152,
+          "max_lon": -73.9497211
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "cdc_measles_outbreaks_chunk_11",
+        "cdc_measles_outbreaks_chunk_11"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_71",
+      "cluster_type": "spatiotemporal",
       "size": 2,
       "centroid": {
         "latitude": 1.2063956,
@@ -27,7 +1899,7 @@
       ]
     },
     {
-      "cluster_id": "spatiotemporal_1",
+      "cluster_id": "spatiotemporal_72",
       "cluster_type": "spatiotemporal",
       "size": 2,
       "centroid": {
@@ -53,7 +1925,7 @@
       ]
     },
     {
-      "cluster_id": "spatiotemporal_2",
+      "cluster_id": "spatiotemporal_73",
       "cluster_type": "spatiotemporal",
       "size": 2,
       "centroid": {
@@ -79,7 +1951,7 @@
       ]
     },
     {
-      "cluster_id": "spatiotemporal_3",
+      "cluster_id": "spatiotemporal_74",
       "cluster_type": "spatiotemporal",
       "size": 2,
       "centroid": {
@@ -105,22 +1977,22 @@
       ]
     },
     {
-      "cluster_id": "spatiotemporal_4",
+      "cluster_id": "spatiotemporal_75",
       "cluster_type": "spatiotemporal",
       "size": 2,
       "centroid": {
-        "latitude": 4.8652169,
-        "longitude": 31.5981904,
+        "latitude": 33.7680065,
+        "longitude": 66.2385139,
         "datetime": "2024-12-31 00:00:00",
         "time_range": {
           "start": "2024-12-31T00:00:00",
           "end": "2024-12-31T00:00:00"
         },
         "bbox": {
-          "min_lat": 4.8652169,
-          "max_lat": 4.8652169,
-          "min_lon": 31.5981904,
-          "max_lon": 31.5981904
+          "min_lat": 33.7680065,
+          "max_lat": 33.7680065,
+          "min_lon": 66.2385139,
+          "max_lon": 66.2385139
         }
       },
       "category_value": null,
@@ -131,9 +2003,191 @@
       ]
     },
     {
-      "cluster_id": "spatiotemporal_5",
+      "cluster_id": "spatiotemporal_76",
       "cluster_type": "spatiotemporal",
-      "size": 4,
+      "size": 2,
+      "centroid": {
+        "latitude": -11.8775768,
+        "longitude": 17.5691241,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -11.8775768,
+          "max_lat": -11.8775768,
+          "min_lon": 17.5691241,
+          "max_lon": 17.5691241
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_77",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 7.0323598,
+        "longitude": 19.9981227,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 7.0323598,
+          "max_lat": 7.0323598,
+          "min_lon": 19.9981227,
+          "max_lon": 19.9981227
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_78",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 9.6000359,
+        "longitude": 7.9999721,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 9.6000359,
+          "max_lat": 9.6000359,
+          "min_lon": 7.9999721,
+          "max_lon": 7.9999721
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_79",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 30.3308401,
+        "longitude": 71.247499,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 30.3308401,
+          "max_lat": 30.3308401,
+          "min_lon": 71.247499,
+          "max_lon": 71.247499
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_80",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": -5.6816069,
+        "longitude": 144.2489081,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": -5.6816069,
+          "max_lat": -5.6816069,
+          "min_lon": 144.2489081,
+          "max_lon": 144.2489081
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_81",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 8.3676771,
+        "longitude": 49.083416,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 8.3676771,
+          "max_lat": 8.3676771,
+          "min_lon": 49.083416,
+          "max_lon": 49.083416
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_82",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 14.5844444,
+        "longitude": 29.4917691,
+        "datetime": "2024-12-31 00:00:00",
+        "time_range": {
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 14.5844444,
+          "max_lat": 14.5844444,
+          "min_lon": 29.4917691,
+          "max_lon": 29.4917691
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_83",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
       "centroid": {
         "latitude": 7.8699431,
         "longitude": 29.6667897,
@@ -153,344 +2207,814 @@
       "dimension": null,
       "event_ids": [
         "who_immunization_coverage_chunk_7",
-        "who_immunization_coverage_chunk_7",
-        "who_immunization_coverage_chunk_7",
         "who_immunization_coverage_chunk_7"
       ]
     },
     {
-      "cluster_id": "spatiotemporal_6",
+      "cluster_id": "spatiotemporal_84",
       "cluster_type": "spatiotemporal",
-      "size": 3,
+      "size": 2,
       "centroid": {
-        "latitude": -36.5986096,
-        "longitude": 144.6780052,
-        "datetime": "2025-01-01 00:00:00",
+        "latitude": 16.3471243,
+        "longitude": 47.8915271,
+        "datetime": "2024-12-31 00:00:00",
         "time_range": {
-          "start": "2025-01-01T00:00:00",
-          "end": "2025-01-01T00:00:00"
+          "start": "2024-12-31T00:00:00",
+          "end": "2024-12-31T00:00:00"
         },
         "bbox": {
-          "min_lat": -36.5986096,
-          "max_lat": -36.5986096,
-          "min_lon": 144.6780052,
-          "max_lon": 144.6780052
+          "min_lat": 16.3471243,
+          "max_lat": 16.3471243,
+          "min_lon": 47.8915271,
+          "max_lon": 47.8915271
         }
       },
       "category_value": null,
       "dimension": null,
       "event_ids": [
-        "vic_health_measles_chunk_18",
-        "vic_health_measles_chunk_19",
-        "vic_health_measles_chunk_25"
+        "who_immunization_coverage_chunk_7",
+        "who_immunization_coverage_chunk_7"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_85",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 0.3144681,
+        "longitude": 32.604667,
+        "datetime": "2033-01-01 00:00:00",
+        "time_range": {
+          "start": "2033-01-01T00:00:00",
+          "end": "2033-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 0.3144681,
+          "max_lat": 0.3144681,
+          "min_lon": 32.604667,
+          "max_lon": 32.604667
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_10",
+        "who_immunization_coverage_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_86",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 0.3144681,
+        "longitude": 32.604667,
+        "datetime": "2030-01-01 00:00:00",
+        "time_range": {
+          "start": "2030-01-01T00:00:00",
+          "end": "2030-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 0.3144681,
+          "max_lat": 0.3144681,
+          "min_lon": 32.604667,
+          "max_lon": 32.604667
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_10",
+        "who_immunization_coverage_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_87",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 0.3144681,
+        "longitude": 32.604667,
+        "datetime": "2025-07-15 00:00:00",
+        "time_range": {
+          "start": "2025-07-15T00:00:00",
+          "end": "2025-07-15T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 0.3144681,
+          "max_lat": 0.3144681,
+          "min_lon": 32.604667,
+          "max_lon": 32.604667
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_immunization_coverage_chunk_10",
+        "who_immunization_coverage_chunk_10"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_88",
+      "cluster_type": "spatiotemporal",
+      "size": 2,
+      "centroid": {
+        "latitude": 24.4538352,
+        "longitude": 54.3774014,
+        "datetime": "2024-04-07 00:00:00",
+        "time_range": {
+          "start": "2024-04-07T00:00:00",
+          "end": "2024-04-07T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 24.4538352,
+          "max_lat": 24.4538352,
+          "min_lon": 54.3774014,
+          "max_lon": 54.3774014
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_vaccines_immunization_chunk_5",
+        "who_vaccines_immunization_chunk_6"
+      ]
+    },
+    {
+      "cluster_id": "spatiotemporal_89",
+      "cluster_type": "spatiotemporal",
+      "size": 3,
+      "centroid": {
+        "latitude": 37.85183,
+        "longitude": -1.4278642,
+        "datetime": "2024-01-01 00:00:00",
+        "time_range": {
+          "start": "2024-01-01T00:00:00",
+          "end": "2024-01-01T00:00:00"
+        },
+        "bbox": {
+          "min_lat": 37.85183,
+          "max_lat": 37.85183,
+          "min_lon": -1.4278642,
+          "max_lon": -1.4278642
+        }
+      },
+      "category_value": null,
+      "dimension": null,
+      "event_ids": [
+        "who_dengue_chunk_4",
+        "who_dengue_chunk_4",
+        "who_dengue_chunk_5"
       ]
     }
   ],
   "burst_periods": [
     {
-      "start": "1965-01-01T00:00:00",
-      "end": "1965-01-02T00:00:00",
-      "event_count": 1,
-      "burst_intensity": 10.759723104952144
-    },
-    {
-      "start": "1966-01-01T00:00:00",
-      "end": "1966-01-02T00:00:00",
-      "event_count": 3,
-      "burst_intensity": 32.34827596202759
-    },
-    {
       "start": "1988-01-01T00:00:00",
       "end": "1988-01-02T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "1994-01-01T00:00:00",
       "end": "1994-01-02T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "1999-12-31T00:00:00",
       "end": "2000-01-01T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2000-01-01T00:00:00",
       "end": "2000-01-02T00:00:00",
-      "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "event_count": 6,
+      "burst_intensity": 25.899538598765606
+    },
+    {
+      "start": "2001-01-01T00:00:00",
+      "end": "2001-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2002-06-01T00:00:00",
       "end": "2002-06-02T00:00:00",
       "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "burst_intensity": 8.598271066371332
     },
     {
-      "start": "2009-01-01T00:00:00",
-      "end": "2009-01-02T00:00:00",
+      "start": "2010-01-01T00:00:00",
+      "end": "2010-01-02T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2012-12-01T00:00:00",
+      "end": "2012-12-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2013-01-01T00:00:00",
+      "end": "2013-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2013-03-01T00:00:00",
+      "end": "2013-03-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2013-04-01T00:00:00",
+      "end": "2013-04-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2013-09-13T00:00:00",
+      "end": "2013-09-14T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2014-01-01T00:00:00",
       "end": "2014-01-02T00:00:00",
-      "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "event_count": 3,
+      "burst_intensity": 12.9235879494699
     },
     {
       "start": "2014-03-27T00:00:00",
       "end": "2014-03-28T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2014-12-01T00:00:00",
+      "end": "2014-12-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2015-01-04T00:00:00",
+      "end": "2015-01-05T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2016-04-01T00:00:00",
+      "end": "2016-04-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2016-05-01T00:00:00",
+      "end": "2016-05-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2017-01-01T00:00:00",
+      "end": "2017-01-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2017-04-01T00:00:00",
+      "end": "2017-04-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2019-01-01T00:00:00",
       "end": "2019-01-02T00:00:00",
-      "event_count": 4,
-      "burst_intensity": 43.14255239056532
+      "event_count": 12,
+      "burst_intensity": 51.85143989735702
     },
     {
       "start": "2019-03-27T00:00:00",
       "end": "2019-03-28T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2019-09-01T00:00:00",
+      "end": "2019-09-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2020-01-01T00:00:00",
       "end": "2020-01-02T00:00:00",
-      "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "event_count": 7,
+      "burst_intensity": 30.224855481864175
+    },
+    {
+      "start": "2020-08-01T00:00:00",
+      "end": "2020-08-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2021-01-01T00:00:00",
+      "end": "2021-01-02T00:00:00",
+      "event_count": 5,
+      "burst_intensity": 21.574221715667036
+    },
+    {
+      "start": "2021-09-01T00:00:00",
+      "end": "2021-09-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2022-01-01T00:00:00",
+      "end": "2022-01-02T00:00:00",
+      "event_count": 7,
+      "burst_intensity": 30.224855481864175
     },
     {
       "start": "2023-01-01T00:00:00",
       "end": "2023-01-02T00:00:00",
-      "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "event_count": 13,
+      "burst_intensity": 56.17675678045559
     },
     {
       "start": "2023-08-09T00:00:00",
       "end": "2023-08-10T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
-      "start": "2023-12-31T00:00:00",
-      "end": "2024-01-01T00:00:00",
-      "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "start": "2023-09-01T00:00:00",
+      "end": "2023-09-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2023-09-25T00:00:00",
+      "end": "2023-09-26T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2023-12-21T00:00:00",
+      "end": "2023-12-22T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-01-01T00:00:00",
       "end": "2024-01-02T00:00:00",
-      "event_count": 7,
-      "burst_intensity": 75.5253816761785
+      "event_count": 11,
+      "burst_intensity": 47.52612301425845
+    },
+    {
+      "start": "2024-02-09T00:00:00",
+      "end": "2024-02-10T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-04-07T00:00:00",
       "end": "2024-04-08T00:00:00",
-      "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
     },
     {
       "start": "2024-05-06T00:00:00",
       "end": "2024-05-07T00:00:00",
       "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2024-08-01T00:00:00",
+      "end": "2024-08-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-09-25T00:00:00",
       "end": "2024-09-26T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-09-26T00:00:00",
       "end": "2024-09-27T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-10-03T00:00:00",
       "end": "2024-10-04T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2024-11-14T00:00:00",
+      "end": "2024-11-15T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-12-11T00:00:00",
       "end": "2024-12-12T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2024-12-31T00:00:00",
       "end": "2025-01-01T00:00:00",
-      "event_count": 6,
-      "burst_intensity": 64.73110524764077
+      "event_count": 8,
+      "burst_intensity": 34.55017236496275
     },
     {
       "start": "2025-01-01T00:00:00",
       "end": "2025-01-02T00:00:00",
-      "event_count": 5,
-      "burst_intensity": 53.93682881910305
+      "event_count": 4,
+      "burst_intensity": 17.248904832568467
+    },
+    {
+      "start": "2025-01-10T00:00:00",
+      "end": "2025-01-11T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-01-28T00:00:00",
+      "end": "2025-01-29T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-02-26T00:00:00",
+      "end": "2025-02-27T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-02-28T00:00:00",
       "end": "2025-03-01T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-03-17T00:00:00",
+      "end": "2025-03-18T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-03-25T00:00:00",
       "end": "2025-03-26T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-01T00:00:00",
+      "end": "2025-04-02T00:00:00",
+      "event_count": 3,
+      "burst_intensity": 12.9235879494699
+    },
+    {
+      "start": "2025-04-02T00:00:00",
+      "end": "2025-04-03T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-04T00:00:00",
+      "end": "2025-04-05T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-06T00:00:00",
+      "end": "2025-04-07T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-04-14T00:00:00",
       "end": "2025-04-15T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-20T00:00:00",
+      "end": "2025-04-21T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-24T00:00:00",
+      "end": "2025-04-25T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-25T00:00:00",
+      "end": "2025-04-26T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-04-30T00:00:00",
+      "end": "2025-05-01T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-05-01T00:00:00",
       "end": "2025-05-02T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-05-14T00:00:00",
+      "end": "2025-05-15T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-05-20T00:00:00",
+      "end": "2025-05-21T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-05-22T00:00:00",
       "end": "2025-05-23T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-05-29T00:00:00",
       "end": "2025-05-30T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-06-18T00:00:00",
+      "end": "2025-06-19T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-06-20T00:00:00",
+      "end": "2025-06-21T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-06-25T00:00:00",
+      "end": "2025-06-26T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-07-02T00:00:00",
+      "end": "2025-07-03T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-07-10T00:00:00",
       "end": "2025-07-11T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-07-15T00:00:00",
       "end": "2025-07-16T00:00:00",
-      "event_count": 3,
-      "burst_intensity": 32.34827596202759
+      "event_count": 4,
+      "burst_intensity": 17.248904832568467
+    },
+    {
+      "start": "2025-07-23T00:00:00",
+      "end": "2025-07-24T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-07-28T00:00:00",
       "end": "2025-07-29T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-08-12T00:00:00",
+      "end": "2025-08-13T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-08-21T00:00:00",
       "end": "2025-08-22T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-08-25T00:00:00",
+      "end": "2025-08-26T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-09-01T00:00:00",
+      "end": "2025-09-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-09-03T00:00:00",
       "end": "2025-09-04T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-09-04T00:00:00",
+      "end": "2025-09-05T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-09-22T00:00:00",
       "end": "2025-09-23T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-09-26T00:00:00",
       "end": "2025-09-27T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-09-30T00:00:00",
       "end": "2025-10-01T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-10-02T00:00:00",
       "end": "2025-10-03T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-10-13T00:00:00",
+      "end": "2025-10-14T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-10-15T00:00:00",
+      "end": "2025-10-16T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-10-24T00:00:00",
+      "end": "2025-10-25T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-10-26T00:00:00",
+      "end": "2025-10-27T00:00:00",
+      "event_count": 3,
+      "burst_intensity": 12.9235879494699
+    },
+    {
+      "start": "2025-10-27T00:00:00",
+      "end": "2025-10-28T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-10-28T00:00:00",
+      "end": "2025-10-29T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-10-30T00:00:00",
+      "end": "2025-10-31T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-11-01T00:00:00",
+      "end": "2025-11-02T00:00:00",
+      "event_count": 3,
+      "burst_intensity": 12.9235879494699
+    },
+    {
+      "start": "2025-11-02T00:00:00",
+      "end": "2025-11-03T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2025-11-03T00:00:00",
       "end": "2025-11-04T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2025-11-04T00:00:00",
+      "end": "2025-11-05T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
+    },
+    {
+      "start": "2025-11-05T00:00:00",
+      "end": "2025-11-06T00:00:00",
+      "event_count": 2,
+      "burst_intensity": 8.598271066371332
     },
     {
       "start": "2025-11-06T00:00:00",
       "end": "2025-11-07T00:00:00",
-      "event_count": 2,
-      "burst_intensity": 21.553999533489872
+      "event_count": 3,
+      "burst_intensity": 12.9235879494699
     },
     {
-      "start": "2025-11-07T00:00:00",
-      "end": "2025-11-08T00:00:00",
+      "start": "2025-11-10T00:00:00",
+      "end": "2025-11-11T00:00:00",
+      "event_count": 4,
+      "burst_intensity": 17.248904832568467
+    },
+    {
+      "start": "2025-11-13T00:00:00",
+      "end": "2025-11-14T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2026-02-23T00:00:00",
       "end": "2026-02-24T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2026-03-09T00:00:00",
       "end": "2026-03-10T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2026-09-21T00:00:00",
       "end": "2026-09-22T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2026-10-05T00:00:00",
       "end": "2026-10-06T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
     },
     {
       "start": "2030-01-01T00:00:00",
       "end": "2030-01-02T00:00:00",
       "event_count": 1,
-      "burst_intensity": 10.759723104952144
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2030-12-31T00:00:00",
+      "end": "2031-01-01T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
+    },
+    {
+      "start": "2033-01-01T00:00:00",
+      "end": "2033-01-02T00:00:00",
+      "event_count": 1,
+      "burst_intensity": 4.272954183272762
     }
   ],
   "statistics": {
-    "total_events": 79,
-    "total_clusters": 7,
-    "total_bursts": 48,
+    "total_events": 105,
+    "total_clusters": 90,
+    "total_bursts": 105,
     "dimension_counts": {
-      "temporal": 118,
-      "event_type": 125,
-      "disease": 137,
-      "spatial": 53,
-      "venue_type": 41
+      "temporal": 260,
+      "spatial": 147,
+      "event_type": 83,
+      "disease": 166,
+      "venue_type": 40
     },
     "cluster_sizes": {
       "min": 2,
       "max": 4,
-      "mean": 2.4285714285714284,
+      "mean": 2.3,
       "median": 2.0
     },
     "clustering_params": {
