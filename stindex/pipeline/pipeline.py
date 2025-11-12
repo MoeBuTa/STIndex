@@ -475,6 +475,8 @@ class STIndexPipeline:
                             "chunk_index": chunk.chunk_index,
                             "document_id": chunk.document_id,
                             "document_title": chunk.document_title,
+                            "source": chunk.document_metadata.get("source"),
+                            "text": chunk.text,
                             "chunk_params": {
                                 "total_chunks": chunk.total_chunks,
                                 "word_count": chunk.word_count,
@@ -581,6 +583,8 @@ class STIndexPipeline:
                         "chunk_index": chunk.chunk_index,
                         "document_id": chunk.document_id,
                         "document_title": chunk.document_title,
+                        "source": chunk.document_metadata.get("source"),
+                        "text": chunk.text,
                         "chunk_params": {
                             "total_chunks": chunk.total_chunks,
                             "word_count": chunk.word_count,

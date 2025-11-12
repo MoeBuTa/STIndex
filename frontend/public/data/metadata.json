@@ -1,0 +1,8 @@
+{
+  "model_name": "gpt-4o-mini",
+  "clustering_mode": "spatiotemporal",
+  "dimensions_analyzed": "all",
+  "export_timestamp": "2025-11-12T17:30:43.316443",
+  "file_count": 4,
+  "extraction_count": 116
+}

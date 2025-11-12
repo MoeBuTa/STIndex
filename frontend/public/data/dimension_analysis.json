@@ -1,0 +1,2409 @@
+{
+  "temporal": {
+    "total_mentions": 201,
+    "unique_dates": 105,
+    "date_range": {
+      "start": "1988-01-01T00:00:00",
+      "end": "2033-01-01T00:00:00",
+      "span_days": 16437
+    },
+    "distribution": {
+      "by_year": {
+        "2025": 79,
+        "2024": 30,
+        "2023": 17,
+        "2019": 14,
+        "2020": 8,
+        "2022": 7,
+        "2021": 6,
+        "2014": 6,
+        "2013": 6,
+        "2000": 6,
+        "2026": 4,
+        "2017": 3,
+        "2016": 3,
+        "2030": 2,
+        "2002": 2,
+        "2001": 1,
+        "2010": 1,
+        "2033": 1,
+        "2015": 1,
+        "1999": 1,
+        "1988": 1,
+        "1994": 1,
+        "2012": 1
+      },
+      "by_month": {
+        "1": 82,
+        "11": 18,
+        "4": 16,
+        "10": 15,
+        "9": 14,
+        "12": 14,
+        "5": 10,
+        "7": 8,
+        "3": 7,
+        "6": 7,
+        "8": 6,
+        "2": 4
+      },
+      "by_day_of_week": {
+        "1": 40,
+        "0": 35,
+        "2": 34,
+        "6": 27,
+        "5": 23,
+        "4": 21,
+        "3": 21
+      }
+    },
+    "temporal_types": {
+      "unknown": 201
+    },
+    "by_source": {},
+    "timeline": {
+      "1988-01-01": 1,
+      "1994-01-01": 1,
+      "1999-12-31": 1,
+      "2000-01-01": 6,
+      "2001-01-01": 1,
+      "2002-06-01": 2,
+      "2010-01-01": 1,
+      "2012-12-01": 1,
+      "2013-01-01": 2,
+      "2013-03-01": 2,
+      "2013-04-01": 1,
+      "2013-09-13": 1,
+      "2014-01-01": 4,
+      "2014-03-27": 1,
+      "2014-12-01": 1,
+      "2015-01-04": 1,
+      "2016-04-01": 1,
+      "2016-05-01": 2,
+      "2017-01-01": 2,
+      "2017-04-01": 1,
+      "2019-01-01": 12,
+      "2019-03-27": 1,
+      "2019-09-01": 1,
+      "2020-01-01": 7,
+      "2020-08-01": 1,
+      "2021-01-01": 5,
+      "2021-09-01": 1,
+      "2022-01-01": 7,
+      "2023-01-01": 13,
+      "2023-08-09": 1,
+      "2023-09-01": 1,
+      "2023-09-25": 1,
+      "2023-12-21": 1,
+      "2024-01-01": 11,
+      "2024-02-09": 1,
+      "2024-04-07": 2,
+      "2024-05-06": 2,
+      "2024-08-01": 1,
+      "2024-09-25": 1,
+      "2024-09-26": 1,
+      "2024-10-03": 1,
+      "2024-11-14": 1,
+      "2024-12-11": 1,
+      "2024-12-31": 8,
+      "2025-01-01": 4,
+      "2025-01-10": 1,
+      "2025-01-28": 1,
+      "2025-02-26": 1,
+      "2025-02-28": 1,
+      "2025-03-17": 1,
+      "2025-03-25": 1,
+      "2025-04-01": 3,
+      "2025-04-02": 1,
+      "2025-04-04": 1,
+      "2025-04-06": 1,
+      "2025-04-14": 1,
+      "2025-04-20": 1,
+      "2025-04-24": 1,
+      "2025-04-25": 1,
+      "2025-04-30": 1,
+      "2025-05-01": 2,
+      "2025-05-14": 1,
+      "2025-05-20": 1,
+      "2025-05-22": 1,
+      "2025-05-29": 1,
+      "2025-06-18": 2,
+      "2025-06-20": 1,
+      "2025-06-25": 2,
+      "2025-07-02": 1,
+      "2025-07-10": 1,
+      "2025-07-15": 4,
+      "2025-07-23": 1,
+      "2025-07-28": 1,
+      "2025-08-12": 1,
+      "2025-08-21": 1,
+      "2025-08-25": 1,
+      "2025-09-01": 1,
+      "2025-09-03": 1,
+      "2025-09-04": 1,
+      "2025-09-22": 1,
+      "2025-09-26": 1,
+      "2025-09-30": 1,
+      "2025-10-02": 1,
+      "2025-10-13": 2,
+      "2025-10-15": 1,
+      "2025-10-24": 1,
+      "2025-10-26": 3,
+      "2025-10-27": 1,
+      "2025-10-28": 2,
+      "2025-10-30": 2,
+      "2025-11-01": 3,
+      "2025-11-02": 1,
+      "2025-11-03": 1,
+      "2025-11-04": 2,
+      "2025-11-05": 2,
+      "2025-11-06": 3,
+      "2025-11-10": 4,
+      "2025-11-13": 1,
+      "2026-02-23": 1,
+      "2026-03-09": 1,
+      "2026-09-21": 1,
+      "2026-10-05": 1,
+      "2030-01-01": 1,
+      "2030-12-31": 1,
+      "2033-01-01": 1
+    }
+  },
+  "spatial": {
+    "total_mentions": 147,
+    "unique_locations": 86,
+    "geocoding_success_rate": 1.0,
+    "bounding_box": {
+      "min_lat": -42.035067,
+      "max_lat": 52.8998903,
+      "min_lon": -155.4283701,
+      "max_lon": 174.8505779
+    },
+    "centroid": {
+      "latitude": 15.33673805782313,
+      "longitude": 4.445261436054427
+    },
+    "top_locations": {
+      "Victoria": 11,
+      "United States": 7,
+      "Australia": 5,
+      "District of Columbia": 4,
+      "New York City": 4,
+      "Washington": 3,
+      "King County": 3,
+      "New Zealand": 3,
+      "U.S.": 3,
+      "Afghanistan": 3,
+      "Pakistan": 3,
+      "Snohomish County": 2,
+      "SeaTac Airport": 2,
+      "South Australia": 2,
+      "NSW Health": 2,
+      "California": 2,
+      "New Jersey": 2,
+      "Ohio": 2,
+      "Texas": 2,
+      "Utah": 2
+    },
+    "location_types": {
+      "region": 41,
+      "county": 3,
+      "landmark": 2,
+      "city": 15,
+      "country": 54,
+      "other": 4,
+      "state": 28
+    },
+    "all_locations": [
+      {
+        "text": "Washington State",
+        "latitude": 47.2868352,
+        "longitude": -120.212613,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Washington",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "King County",
+        "latitude": 47.4873376,
+        "longitude": -121.8622122,
+        "location_type": "county",
+        "source": null
+      },
+      {
+        "text": "Snohomish County",
+        "latitude": 48.0074736,
+        "longitude": -121.7304882,
+        "location_type": "county",
+        "source": null
+      },
+      {
+        "text": "Whatcom County",
+        "latitude": 48.8107819,
+        "longitude": -121.8828175,
+        "location_type": "county",
+        "source": null
+      },
+      {
+        "text": "King County",
+        "latitude": 47.4873376,
+        "longitude": -121.8622122,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Spokane County",
+        "latitude": 47.5354964,
+        "longitude": -117.4074674,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "SeaTac Airport",
+        "latitude": 47.4452402,
+        "longitude": -122.2969242,
+        "location_type": "landmark",
+        "source": null
+      },
+      {
+        "text": "Tukwila",
+        "latitude": 47.4627356,
+        "longitude": -122.2559156,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Snohomish County",
+        "latitude": 48.0074736,
+        "longitude": -121.7304882,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "SeaTac Airport",
+        "latitude": 47.4452402,
+        "longitude": -122.2969242,
+        "location_type": "landmark",
+        "source": null
+      },
+      {
+        "text": "Australia",
+        "latitude": -24.7761086,
+        "longitude": 134.755,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "New Zealand",
+        "latitude": -41.5000831,
+        "longitude": 172.8344077,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Australian Capital Territory",
+        "latitude": -35.4883502,
+        "longitude": 149.0026942,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "New South Wales",
+        "latitude": -31.8759835,
+        "longitude": 147.2869493,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Queensland",
+        "latitude": -22.1646782,
+        "longitude": 144.5844903,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "South Australia",
+        "latitude": -30.5343665,
+        "longitude": 135.6301212,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "NSW Health",
+        "latitude": -33.8836966,
+        "longitude": 151.0418787,
+        "location_type": "other",
+        "source": null
+      },
+      {
+        "text": "South Australia",
+        "latitude": -30.5343665,
+        "longitude": 135.6301212,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Tasmania",
+        "latitude": -42.035067,
+        "longitude": 146.6366887,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Western Australia",
+        "latitude": -25.2303005,
+        "longitude": 121.0187246,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "NSW Health",
+        "latitude": -33.8836966,
+        "longitude": 151.0418787,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "New Zealand",
+        "latitude": -41.5000831,
+        "longitude": 172.8344077,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "New Zealand",
+        "latitude": -41.5000831,
+        "longitude": 172.8344077,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Auckland",
+        "latitude": -36.852095,
+        "longitude": 174.7631803,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Auckland region",
+        "latitude": -37.0114789,
+        "longitude": 174.8505779,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 36.1979526,
+        "longitude": -94.5268355,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "U.S.",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "U.S.",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 36.1979526,
+        "longitude": -94.5268355,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 36.1979526,
+        "longitude": -94.5268355,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 36.1979526,
+        "longitude": -94.5268355,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "U.S.",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "California",
+        "latitude": 36.7014631,
+        "longitude": -118.755997,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Colorado",
+        "latitude": 38.7251776,
+        "longitude": -105.607716,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "District of Columbia",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Florida",
+        "latitude": 27.7567667,
+        "longitude": -81.4639835,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Hawaii",
+        "latitude": 19.5938015,
+        "longitude": -155.4283701,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Idaho",
+        "latitude": 43.6447642,
+        "longitude": -114.015407,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Illinois",
+        "latitude": 40.0796606,
+        "longitude": -89.4337288,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Kentucky",
+        "latitude": 37.5726028,
+        "longitude": -85.1551411,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Maryland",
+        "latitude": 39.5162401,
+        "longitude": -76.9382069,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Missouri",
+        "latitude": 38.7604815,
+        "longitude": -92.5617875,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "New Jersey",
+        "latitude": 40.0757384,
+        "longitude": -74.4041622,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "New York City",
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Ohio",
+        "latitude": 40.2253569,
+        "longitude": -82.6881395,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Oregon",
+        "latitude": 43.9792797,
+        "longitude": -120.737257,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Pennsylvania",
+        "latitude": 40.9699889,
+        "longitude": -77.7278831,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Texas",
+        "latitude": 31.2638905,
+        "longitude": -98.5456116,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Utah",
+        "latitude": 39.4225192,
+        "longitude": -111.714358,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Virginia",
+        "latitude": 37.1232245,
+        "longitude": -78.4927721,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Washington",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Wisconsin",
+        "latitude": 44.4308975,
+        "longitude": -89.6884637,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Ohio",
+        "latitude": 40.2253569,
+        "longitude": -82.6881395,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "New York City",
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "District of Columbia",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Texas",
+        "latitude": 31.2638905,
+        "longitude": -98.5456116,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Utah",
+        "latitude": 39.4225192,
+        "longitude": -111.714358,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Virginia",
+        "latitude": 37.1232245,
+        "longitude": -78.4927721,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Washington",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Wisconsin",
+        "latitude": 44.4308975,
+        "longitude": -89.6884637,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Clark County",
+        "latitude": 45.7669047,
+        "longitude": -122.4940866,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "New York",
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "New Jersey",
+        "latitude": 40.0757384,
+        "longitude": -74.4041622,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Arizona",
+        "latitude": 34.395342,
+        "longitude": -111.763275,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "United States",
+        "latitude": 39.7837304,
+        "longitude": -100.445882,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Arizona",
+        "latitude": 34.395342,
+        "longitude": -111.763275,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Shelby County",
+        "latitude": 35.1782557,
+        "longitude": -89.8739775,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "California",
+        "latitude": 36.7014631,
+        "longitude": -118.755997,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "Orange County",
+        "latitude": 28.495156,
+        "longitude": -81.3111658,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "King County",
+        "latitude": 47.4873376,
+        "longitude": -121.8622122,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Brooklyn",
+        "latitude": 40.6526006,
+        "longitude": -73.9497211,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "New York City",
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "District of Columbia",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Brooklyn, New York",
+        "latitude": 40.6526006,
+        "longitude": -73.9497211,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "North Carolina",
+        "latitude": 35.6729639,
+        "longitude": -79.0392919,
+        "location_type": "state",
+        "source": null
+      },
+      {
+        "text": "New York City",
+        "latitude": 40.7127281,
+        "longitude": -74.0060152,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "District of Columbia",
+        "latitude": 38.8950368,
+        "longitude": -77.0365427,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "South-East Asia",
+        "latitude": 52.8998903,
+        "longitude": -0.6134487,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Sri Lanka",
+        "latitude": 6.9474195,
+        "longitude": 79.8625184,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "WHO European Region",
+        "latitude": 50.8465354,
+        "longitude": 4.3681897,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "sub-Saharan Africa",
+        "latitude": 1.2063956,
+        "longitude": 34.2079667,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Ghana",
+        "latitude": 5.6143275,
+        "longitude": -0.2749407,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Kenya",
+        "latitude": -1.2136405,
+        "longitude": 36.8793053,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Malawi",
+        "latitude": -13.9999971,
+        "longitude": 33.5561295,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "WHO Western Pacific Region",
+        "latitude": 14.5815714,
+        "longitude": 120.9843891,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Afghanistan",
+        "latitude": 34.686023,
+        "longitude": 69.13693,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Pakistan",
+        "latitude": 31.5330071,
+        "longitude": 74.3785299,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Afghanistan",
+        "latitude": 33.7680065,
+        "longitude": 66.2385139,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Angola",
+        "latitude": -11.8775768,
+        "longitude": 17.5691241,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Central African Republic",
+        "latitude": 7.0323598,
+        "longitude": 19.9981227,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Nigeria",
+        "latitude": 9.6000359,
+        "longitude": 7.9999721,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Pakistan",
+        "latitude": 30.3308401,
+        "longitude": 71.247499,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Papua New Guinea",
+        "latitude": -5.6816069,
+        "longitude": 144.2489081,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Somalia",
+        "latitude": 8.3676771,
+        "longitude": 49.083416,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Sudan",
+        "latitude": 14.5844444,
+        "longitude": 29.4917691,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "South Sudan",
+        "latitude": 7.8699431,
+        "longitude": 29.6667897,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Yemen",
+        "latitude": 16.3471243,
+        "longitude": 47.8915271,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Somalia",
+        "latitude": 9.8333333,
+        "longitude": 49.1666667,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Sudan",
+        "latitude": 15.5311781,
+        "longitude": 32.5666937,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "South Sudan",
+        "latitude": 4.8555599,
+        "longitude": 31.5927333,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Yemen",
+        "latitude": 14.541307,
+        "longitude": 49.125838,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Afghanistan",
+        "latitude": 34.686023,
+        "longitude": 69.13693,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Democratic Republic of the Congo",
+        "latitude": -11.464617,
+        "longitude": 27.3753685,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Ethiopia",
+        "latitude": 12.594637,
+        "longitude": 37.44796,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "India",
+        "latitude": 34.1707445,
+        "longitude": 77.5775835,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Indonesia",
+        "latitude": -6.1989029,
+        "longitude": 106.656465,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Nigeria",
+        "latitude": 6.455637,
+        "longitude": 3.3832234,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Pakistan",
+        "latitude": 31.5330071,
+        "longitude": 74.3785299,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Philippines",
+        "latitude": 9.6021766,
+        "longitude": 122.4670994,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "low- and middle-income countries",
+        "latitude": 0.3144681,
+        "longitude": 32.604667,
+        "location_type": "other",
+        "source": null
+      },
+      {
+        "text": "low- and high-income settings",
+        "latitude": 0.3144681,
+        "longitude": 32.604667,
+        "location_type": "other",
+        "source": null
+      },
+      {
+        "text": "Abu Dhabi, United Arab Emirates",
+        "latitude": 24.4538352,
+        "longitude": 54.3774014,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "South Africa",
+        "latitude": -28.8166236,
+        "longitude": 24.991639,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Abu Dhabi, United Arab Emirates",
+        "latitude": 24.4538352,
+        "longitude": 54.3774014,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Department of Health",
+        "latitude": 51.4979606,
+        "longitude": -0.1330758,
+        "location_type": "other",
+        "source": null
+      },
+      {
+        "text": "Australia",
+        "latitude": -24.7761086,
+        "longitude": 134.755,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Australia",
+        "latitude": -24.7761086,
+        "longitude": 134.755,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Australia",
+        "latitude": -26.2905052,
+        "longitude": 151.9561503,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Australia",
+        "latitude": -24.7761086,
+        "longitude": 134.755,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Melbourne",
+        "latitude": -37.8142454,
+        "longitude": 144.9631732,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Victoria",
+        "latitude": -36.5986096,
+        "longitude": 144.6780052,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Melbourne, VIC 3000",
+        "latitude": -37.8142454,
+        "longitude": 144.9631732,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Hargeisa",
+        "latitude": 9.561733,
+        "longitude": 44.061803,
+        "location_type": "city",
+        "source": null
+      },
+      {
+        "text": "Indonesia",
+        "latitude": -0.3434837,
+        "longitude": 111.4167711,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "India",
+        "latitude": 20.9169289,
+        "longitude": 74.8058555,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "South-East Asia",
+        "latitude": 52.8998903,
+        "longitude": -0.6134487,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Region of the Americas",
+        "latitude": 37.85183,
+        "longitude": -1.4278642,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "Region of the Americas",
+        "latitude": 37.85183,
+        "longitude": -1.4278642,
+        "location_type": "region",
+        "source": null
+      },
+      {
+        "text": "France",
+        "latitude": 46.603354,
+        "longitude": 1.8883335,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Italy",
+        "latitude": 42.6384261,
+        "longitude": 12.674297,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Spain",
+        "latitude": 39.3260685,
+        "longitude": -4.8379791,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Mayotte",
+        "latitude": -12.823048,
+        "longitude": 45.1520755,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Réunion",
+        "latitude": -21.1309332,
+        "longitude": 55.5265771,
+        "location_type": "country",
+        "source": null
+      },
+      {
+        "text": "Réunion",
+        "latitude": -21.1309332,
+        "longitude": 55.5265771,
+        "location_type": "region",
+        "source": null
+      }
+    ]
+  },
+  "event_type": {
+    "dimension_type": "categorical",
+    "total_mentions": 83,
+    "unique_categories": 7,
+    "category_distribution": {
+      "outbreak_alert": 26,
+      "case_report": 17,
+      "surveillance_update": 15,
+      "other": 12,
+      "vaccination_clinic": 6,
+      "risk_warning": 4,
+      "exposure_site": 3
+    },
+    "top_texts": {
+      "measles outbreaks": 3,
+      "media release with potential exposure locations": 2,
+      "measles outbreak": 2,
+      "Measles Outbreak at a United States Immigration and Customs Enforcement Facility": 2,
+      "Measles Cases in Washington State 2025": 1,
+      "measles cases and potential exposure locations": 1,
+      "media release for lab confirmed case": 1,
+      "media release about second case": 1,
+      "Measles media release with potential exposure locations": 1,
+      "influenza surveillance data": 1,
+      "weekly reporting for 2025 has ended": 1,
+      "annual summary report for 2025 will be published in early 2026": 1,
+      "Influenza is at a moderate level of activity.": 1,
+      "Count of influenza notifications": 1,
+      "Influenza activity remains moderate": 1,
+      "Total influenza cases (YTD)": 1,
+      "Influenza and Influenza-like Illnesses (ILI) Summary": 1,
+      "influenza notifications and hospitalisations": 1,
+      "Two respiratory illness outbreaks were reported": 1,
+      "SARI hospitalisation rate": 1
+    },
+    "by_source": {
+      "None": {
+        "case_report": 17,
+        "surveillance_update": 15,
+        "exposure_site": 3,
+        "outbreak_alert": 26,
+        "vaccination_clinic": 6,
+        "other": 12,
+        "risk_warning": 4
+      }
+    }
+  },
+  "disease": {
+    "dimension_type": "categorical",
+    "total_mentions": 166,
+    "unique_categories": 9,
+    "category_distribution": {
+      "other": 67,
+      "measles": 53,
+      "influenza": 21,
+      "dengue": 12,
+      "covid19": 5,
+      "hepatitis": 3,
+      "pertussis": 3,
+      "meningococcal": 1,
+      "gastroenteritis": 1
+    },
+    "top_texts": {
+      "measles": 48,
+      "influenza": 16,
+      "dengue": 10,
+      "polio": 7,
+      "Measles": 5,
+      "rubella": 5,
+      "COVID-19": 3,
+      "mumps": 3,
+      "tetanus": 3,
+      "yellow fever": 3,
+      "Influenza (seasonal)": 3,
+      "Malaria": 3,
+      "malaria": 2,
+      "rotavirus": 2,
+      "diphtheria": 2,
+      "Cholera": 2,
+      "Yellow fever": 2,
+      "Hepatitis": 2,
+      "Dengue": 2,
+      "Influenza": 1
+    },
+    "by_source": {
+      "None": {
+        "measles": 53,
+        "influenza": 21,
+        "other": 67,
+        "covid19": 5,
+        "hepatitis": 3,
+        "meningococcal": 1,
+        "gastroenteritis": 1,
+        "pertussis": 3,
+        "dengue": 12
+      }
+    }
+  },
+  "venue_type": {
+    "dimension_type": "categorical",
+    "total_mentions": 40,
+    "unique_categories": 10,
+    "category_distribution": {
+      "other": 15,
+      "school": 10,
+      "hospital_emergency": 4,
+      "aged_care": 2,
+      "community": 2,
+      "childcare": 2,
+      "public_transport": 2,
+      "clinic_specialist": 1,
+      "workplace": 1,
+      "hospital_inpatient": 1
+    },
+    "top_texts": {
+      "United States Immigration and Customs Enforcement Facility": 2,
+      "Providence Sacred Heart Emergency Department": 1,
+      "Pediatric Oncology and Hematology Clinic": 1,
+      "aged residential care facilities": 1,
+      "Shelby County": 1,
+      "California": 1,
+      "Orange County": 1,
+      "King County": 1,
+      "Brooklyn": 1,
+      "primary school and children’s service centres": 1,
+      "National Immunisation Program": 1,
+      "Victorian Government funded program": 1,
+      "GPs, community pharmacies, Aboriginal Health Services and local councils": 1,
+      "healthcare institutions": 1,
+      "medical practices": 1,
+      "emergency departments": 1,
+      "hospital": 1,
+      "boarding schools": 1,
+      "military barracks": 1,
+      "family day care": 1
+    },
+    "by_source": {
+      "None": {
+        "hospital_emergency": 4,
+        "clinic_specialist": 1,
+        "aged_care": 2,
+        "other": 15,
+        "school": 10,
+        "community": 2,
+        "childcare": 2,
+        "public_transport": 2,
+        "workplace": 1,
+        "hospital_inpatient": 1
+      }
+    }
+  },
+  "cross_dimensional": {
+    "temporal_x_spatial": {
+      "total_pairs": 499,
+      "top_co_occurrences": [
+        {
+          "temporal": "May–June 2016",
+          "spatial": "Arizona",
+          "count": 2
+        },
+        {
+          "temporal": "May–June 2016",
+          "spatial": "United States",
+          "count": 2
+        },
+        {
+          "temporal": "March–June 2013",
+          "spatial": "New York City",
+          "count": 2
+        },
+        {
+          "temporal": "March–June 2013",
+          "spatial": "District of Columbia",
+          "count": 2
+        },
+        {
+          "temporal": "Update for the week ending at 1 November 2025",
+          "spatial": "South Australia",
+          "count": 2
+        },
+        {
+          "temporal": "April 7 to 9, 2024",
+          "spatial": "Abu Dhabi, United Arab Emirates",
+          "count": 2
+        },
+        {
+          "temporal": "by the end of 2024",
+          "spatial": "Pakistan",
+          "count": 2
+        },
+        {
+          "temporal": "by the end of 2024",
+          "spatial": "Afghanistan",
+          "count": 2
+        },
+        {
+          "temporal": "in 2024",
+          "spatial": "Region of the Americas",
+          "count": 2
+        },
+        {
+          "temporal": "June 25, 2025",
+          "spatial": "King County",
+          "count": 2
+        },
+        {
+          "temporal": "June 25, 2025",
+          "spatial": "Snohomish County",
+          "count": 2
+        },
+        {
+          "temporal": "October 13, 2025",
+          "spatial": "SeaTac Airport",
+          "count": 2
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Wisconsin",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Ohio",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Utah",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Texas",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "New York City",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Washington",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "Virginia",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "spatial": "District of Columbia",
+          "count": 1
+        }
+      ]
+    },
+    "temporal_x_event_type": {
+      "total_pairs": 197,
+      "top_co_occurrences": [
+        {
+          "temporal": "May–June 2016",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "temporal": "March–June 2013",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "temporal": "Update for the week ending at 1 November 2025",
+          "event_type": "surveillance_update",
+          "count": 2
+        },
+        {
+          "temporal": "4 days after the onset of rash",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "temporal": "in 2019",
+          "event_type": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in 2024",
+          "event_type": "surveillance_update",
+          "count": 2
+        },
+        {
+          "temporal": "in 2000",
+          "event_type": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in June 2002",
+          "event_type": "other",
+          "count": 2
+        },
+        {
+          "temporal": "Nov. 10, 2025",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "temporal": "within 144 hours of the contact",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "temporal": "June 25, 2025",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "temporal": "October 13, 2025",
+          "event_type": "exposure_site",
+          "count": 2
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "event_type": "case_report",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2022",
+          "event_type": "outbreak_alert",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2019",
+          "event_type": "case_report",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2019",
+          "event_type": "outbreak_alert",
+          "count": 1
+        },
+        {
+          "temporal": "2022–2023",
+          "event_type": "case_report",
+          "count": 1
+        },
+        {
+          "temporal": "2022–2023",
+          "event_type": "outbreak_alert",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2020",
+          "event_type": "case_report",
+          "count": 1
+        },
+        {
+          "temporal": "From January 1 to December 31, 2020",
+          "event_type": "outbreak_alert",
+          "count": 1
+        }
+      ]
+    },
+    "temporal_x_disease": {
+      "total_pairs": 286,
+      "top_co_occurrences": [
+        {
+          "temporal": "in 2023",
+          "disease": "measles",
+          "count": 4
+        },
+        {
+          "temporal": "by the end of 2024",
+          "disease": "other",
+          "count": 4
+        },
+        {
+          "temporal": "in 2019",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "temporal": "in 2019",
+          "disease": "other",
+          "count": 3
+        },
+        {
+          "temporal": "May–June 2016",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "March–June 2013",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "Update for the week ending at 1 November 2025",
+          "disease": "influenza",
+          "count": 2
+        },
+        {
+          "temporal": "last for 2–7 days",
+          "disease": "dengue",
+          "count": 2
+        },
+        {
+          "temporal": "between 2000–2023",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "well below the 2019 level of 86%",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "in 2023",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in 2022",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "6 November 2025",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "temporal": "4 days after the onset of rash",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "6 May 2024",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in 2024",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "temporal": "in 2024",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in 2024",
+          "disease": "dengue",
+          "count": 2
+        },
+        {
+          "temporal": "in 2000",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "temporal": "in June 2002",
+          "disease": "other",
+          "count": 2
+        }
+      ]
+    },
+    "temporal_x_venue_type": {
+      "total_pairs": 45,
+      "top_co_occurrences": [
+        {
+          "temporal": "May–June 2016",
+          "venue_type": "other",
+          "count": 2
+        },
+        {
+          "temporal": "January 1-August 24, 2013",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "January 4–April 2, 2015",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "December 2012–January 2013",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "December 2014–February 2015",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "2014",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "January 1–May 23, 2014",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "March–June 2013",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "January 1–April 18, 2014",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "April–May 2016",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "26 October 2025",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "temporal": "January 1-April 26, 2019",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "January 1-October 1, 2019",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "January 1–October 1, 2019",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "April–May 2017",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "2 April 2025",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "27 March 2019",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "temporal": "6 days (144 hours) after exposure",
+          "venue_type": "school",
+          "count": 1
+        },
+        {
+          "temporal": "3 days (72 hours) after exposure",
+          "venue_type": "school",
+          "count": 1
+        },
+        {
+          "temporal": "14 days after the onset of rash",
+          "venue_type": "school",
+          "count": 1
+        }
+      ]
+    },
+    "spatial_x_event_type": {
+      "total_pairs": 127,
+      "top_co_occurrences": [
+        {
+          "spatial": "United States",
+          "event_type": "outbreak_alert",
+          "count": 6
+        },
+        {
+          "spatial": "New York City",
+          "event_type": "outbreak_alert",
+          "count": 4
+        },
+        {
+          "spatial": "District of Columbia",
+          "event_type": "outbreak_alert",
+          "count": 4
+        },
+        {
+          "spatial": "United States",
+          "event_type": "case_report",
+          "count": 3
+        },
+        {
+          "spatial": "Washington",
+          "event_type": "case_report",
+          "count": 3
+        },
+        {
+          "spatial": "U.S.",
+          "event_type": "outbreak_alert",
+          "count": 3
+        },
+        {
+          "spatial": "Wisconsin",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Wisconsin",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "Ohio",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Ohio",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "Utah",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Utah",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "Texas",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Texas",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "New York City",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Washington",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "Virginia",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "Virginia",
+          "event_type": "outbreak_alert",
+          "count": 2
+        },
+        {
+          "spatial": "District of Columbia",
+          "event_type": "case_report",
+          "count": 2
+        },
+        {
+          "spatial": "California",
+          "event_type": "outbreak_alert",
+          "count": 2
+        }
+      ]
+    },
+    "spatial_x_disease": {
+      "total_pairs": 105,
+      "top_co_occurrences": [
+        {
+          "spatial": "United States",
+          "disease": "measles",
+          "count": 7
+        },
+        {
+          "spatial": "New York City",
+          "disease": "measles",
+          "count": 4
+        },
+        {
+          "spatial": "District of Columbia",
+          "disease": "measles",
+          "count": 4
+        },
+        {
+          "spatial": "Australia",
+          "disease": "measles",
+          "count": 4
+        },
+        {
+          "spatial": "Washington",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "spatial": "King County",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "spatial": "Victoria",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "spatial": "U.S.",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "spatial": "Pakistan",
+          "disease": "other",
+          "count": 3
+        },
+        {
+          "spatial": "Afghanistan",
+          "disease": "other",
+          "count": 3
+        },
+        {
+          "spatial": "New Zealand",
+          "disease": "influenza",
+          "count": 3
+        },
+        {
+          "spatial": "Wisconsin",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "Ohio",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "Utah",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "Texas",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "Virginia",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "California",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "Arizona",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "spatial": "South Australia",
+          "disease": "influenza",
+          "count": 2
+        },
+        {
+          "spatial": "New Jersey",
+          "disease": "measles",
+          "count": 2
+        }
+      ]
+    },
+    "spatial_x_venue_type": {
+      "total_pairs": 30,
+      "top_co_occurrences": [
+        {
+          "spatial": "Arizona",
+          "venue_type": "other",
+          "count": 2
+        },
+        {
+          "spatial": "United States",
+          "venue_type": "other",
+          "count": 2
+        },
+        {
+          "spatial": "California",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Brooklyn",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Orange County",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Shelby County",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "New York City",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "King County",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "King County",
+          "venue_type": "hospital_emergency",
+          "count": 1
+        },
+        {
+          "spatial": "King County",
+          "venue_type": "clinic_specialist",
+          "count": 1
+        },
+        {
+          "spatial": "District of Columbia",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Victoria",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Australia",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Australia",
+          "venue_type": "community",
+          "count": 1
+        },
+        {
+          "spatial": "New Zealand",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "spatial": "Auckland",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "spatial": "Clark County",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "New York",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "New Jersey",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "spatial": "Hargeisa",
+          "venue_type": "other",
+          "count": 1
+        }
+      ]
+    },
+    "event_type_x_disease": {
+      "total_pairs": 21,
+      "top_co_occurrences": [
+        {
+          "event_type": "outbreak_alert",
+          "disease": "measles",
+          "count": 16
+        },
+        {
+          "event_type": "case_report",
+          "disease": "measles",
+          "count": 12
+        },
+        {
+          "event_type": "surveillance_update",
+          "disease": "influenza",
+          "count": 6
+        },
+        {
+          "event_type": "other",
+          "disease": "other",
+          "count": 6
+        },
+        {
+          "event_type": "other",
+          "disease": "measles",
+          "count": 4
+        },
+        {
+          "event_type": "vaccination_clinic",
+          "disease": "other",
+          "count": 4
+        },
+        {
+          "event_type": "surveillance_update",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "event_type": "exposure_site",
+          "disease": "measles",
+          "count": 3
+        },
+        {
+          "event_type": "case_report",
+          "disease": "dengue",
+          "count": 2
+        },
+        {
+          "event_type": "outbreak_alert",
+          "disease": "other",
+          "count": 2
+        },
+        {
+          "event_type": "vaccination_clinic",
+          "disease": "measles",
+          "count": 2
+        },
+        {
+          "event_type": "outbreak_alert",
+          "disease": "influenza",
+          "count": 1
+        },
+        {
+          "event_type": "surveillance_update",
+          "disease": "covid19",
+          "count": 1
+        },
+        {
+          "event_type": "surveillance_update",
+          "disease": "other",
+          "count": 1
+        },
+        {
+          "event_type": "surveillance_update",
+          "disease": "dengue",
+          "count": 1
+        },
+        {
+          "event_type": "other",
+          "disease": "meningococcal",
+          "count": 1
+        },
+        {
+          "event_type": "other",
+          "disease": "hepatitis",
+          "count": 1
+        },
+        {
+          "event_type": "other",
+          "disease": "dengue",
+          "count": 1
+        },
+        {
+          "event_type": "vaccination_clinic",
+          "disease": "gastroenteritis",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "disease": "other",
+          "count": 1
+        }
+      ]
+    },
+    "event_type_x_venue_type": {
+      "total_pairs": 18,
+      "top_co_occurrences": [
+        {
+          "event_type": "outbreak_alert",
+          "venue_type": "other",
+          "count": 2
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "other",
+          "count": 2
+        },
+        {
+          "event_type": "other",
+          "venue_type": "community",
+          "count": 2
+        },
+        {
+          "event_type": "outbreak_alert",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "event_type": "outbreak_alert",
+          "venue_type": "school",
+          "count": 1
+        },
+        {
+          "event_type": "outbreak_alert",
+          "venue_type": "hospital_inpatient",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "school",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "public_transport",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "hospital_emergency",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "childcare",
+          "count": 1
+        },
+        {
+          "event_type": "risk_warning",
+          "venue_type": "workplace",
+          "count": 1
+        },
+        {
+          "event_type": "surveillance_update",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "event_type": "vaccination_clinic",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "event_type": "case_report",
+          "venue_type": "school",
+          "count": 1
+        },
+        {
+          "event_type": "case_report",
+          "venue_type": "hospital_emergency",
+          "count": 1
+        },
+        {
+          "event_type": "case_report",
+          "venue_type": "clinic_specialist",
+          "count": 1
+        },
+        {
+          "event_type": "exposure_site",
+          "venue_type": "hospital_emergency",
+          "count": 1
+        },
+        {
+          "event_type": "exposure_site",
+          "venue_type": "clinic_specialist",
+          "count": 1
+        }
+      ]
+    },
+    "disease_x_venue_type": {
+      "total_pairs": 10,
+      "top_co_occurrences": [
+        {
+          "disease": "measles",
+          "venue_type": "other",
+          "count": 4
+        },
+        {
+          "disease": "measles",
+          "venue_type": "school",
+          "count": 2
+        },
+        {
+          "disease": "measles",
+          "venue_type": "community",
+          "count": 1
+        },
+        {
+          "disease": "measles",
+          "venue_type": "hospital_emergency",
+          "count": 1
+        },
+        {
+          "disease": "measles",
+          "venue_type": "clinic_specialist",
+          "count": 1
+        },
+        {
+          "disease": "measles",
+          "venue_type": "hospital_inpatient",
+          "count": 1
+        },
+        {
+          "disease": "other",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "disease": "other",
+          "venue_type": "other",
+          "count": 1
+        },
+        {
+          "disease": "influenza",
+          "venue_type": "aged_care",
+          "count": 1
+        },
+        {
+          "disease": "dengue",
+          "venue_type": "community",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "global": {
+    "total_chunks": 116,
+    "successful_extractions": 116,
+    "failed_extractions": 0,
+    "success_rate": 1.0,
+    "entities_by_dimension": {
+      "temporal": 260,
+      "spatial": 147,
+      "event_type": 83,
+      "disease": 166,
+      "venue_type": 40
+    },
+    "total_entities": 696,
+    "chunks_by_source": {
+      "unknown": 116
+    }
+  }
+}
