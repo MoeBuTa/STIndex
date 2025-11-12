@@ -681,45 +681,7 @@ export function AnalyticsPanels({ events, backendClusters }: AnalyticsPanelsProp
         </VStack>
       </Box>
 
-      {/* Row 3, Col 1-2: Category Distribution (full width) */}
-      <Box bg="white" p={6} borderRadius="lg" shadow="md" gridColumn={{ base: 'span 1', lg: 'span 2' }}>
-        <VStack align="stretch" spacing={4}>
-          <HStack>
-            <MdEvent size={24} color="#d69e2e" />
-            <Text fontSize="lg" fontWeight="bold">
-              Category Distribution
-            </Text>
-            <Badge colorScheme="yellow">{categoryDistribution.length} types</Badge>
-          </HStack>
-          <Divider />
 
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-            {categoryDistribution.map((cat) => (
-              <Box key={cat.name}>
-                <HStack justify="space-between" mb={1}>
-                  <Text fontSize="sm" fontWeight="medium">
-                    {cat.name}
-                  </Text>
-                  <HStack spacing={2}>
-                    <Text fontSize="xs" color="gray.600">
-                      {cat.count}
-                    </Text>
-                    <Text fontSize="xs" fontWeight="bold" color="blue.600">
-                      {cat.percentage.toFixed(1)}%
-                    </Text>
-                  </HStack>
-                </HStack>
-                <Progress
-                  value={cat.percentage}
-                  colorScheme="blue"
-                  size="sm"
-                  borderRadius="full"
-                />
-              </Box>
-            ))}
-          </SimpleGrid>
-        </VStack>
-      </Box>
     </SimpleGrid>
   )
 }

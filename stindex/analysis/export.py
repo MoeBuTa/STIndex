@@ -193,8 +193,20 @@ class AnalysisDataExporter:
         dimension_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Serialize dimension analysis for JSON export."""
-        # Already in JSON-friendly format, just clean up any numpy types
-        return json.loads(json.dumps(dimension_analysis, default=str))
+        # Convert any non-serializable keys (like datetime objects) to strings
+        def convert_keys(obj):
+            if isinstance(obj, dict):
+                return {str(k): convert_keys(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_keys(item) for item in obj]
+            else:
+                return obj
+
+        # Convert keys recursively
+        converted = convert_keys(dimension_analysis)
+
+        # Now serialize to JSON and back to ensure all values are also serializable
+        return json.loads(json.dumps(converted, default=str))
 
     def _flatten_events(
         self,
