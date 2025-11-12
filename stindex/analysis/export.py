@@ -4,7 +4,6 @@ Export analysis results to static JSON files for frontend consumption.
 Generates JSON files that can be loaded directly by frontend without backend API:
 - extraction_results.json: All extraction results with all dimensions from config
 - clusters.json: Spatiotemporal clusters
-- story_arcs.json: Detected story arcs
 - dimension_analysis.json: Statistical analysis for all dimensions
 - metadata.json: Configuration and timestamps
 
@@ -35,7 +34,6 @@ class AnalysisDataExporter:
         exporter.export_all(
             extraction_results=results,
             clusters=clusters,
-            story_arcs=story_arcs,
             dimension_analysis=analysis,
             metadata={'case_study': 'public_health', 'model': 'Qwen3-8B'}
         )
@@ -44,7 +42,6 @@ class AnalysisDataExporter:
         # frontend_data/
         # ├── extraction_results.json
         # ├── clusters.json
-        # ├── story_arcs.json
         # ├── dimension_analysis.json
         # ├── events.json (flattened for map/timeline)
         # └── metadata.json
@@ -64,7 +61,6 @@ class AnalysisDataExporter:
         self,
         extraction_results: List[Dict[str, Any]],
         clusters: Optional[Dict[str, Any]] = None,
-        story_arcs: Optional[List[Dict[str, Any]]] = None,
         dimension_analysis: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Dict[str, str]:
@@ -74,7 +70,6 @@ class AnalysisDataExporter:
         Args:
             extraction_results: Extraction results from pipeline
             clusters: Cluster analysis results
-            story_arcs: Story arc detection results
             dimension_analysis: Dimension analysis results
             metadata: Additional metadata (case study info, config, etc.)
 
@@ -101,15 +96,7 @@ class AnalysisDataExporter:
             )
             exported_files['clusters'] = filepath
 
-        # 3. Export story arcs
-        if story_arcs:
-            filepath = self._export_json(
-                'story_arcs.json',
-                self._serialize_story_arcs(story_arcs)
-            )
-            exported_files['story_arcs'] = filepath
-
-        # 4. Export dimension analysis
+        # 3. Export dimension analysis
         if dimension_analysis:
             filepath = self._export_json(
                 'dimension_analysis.json',
@@ -117,13 +104,13 @@ class AnalysisDataExporter:
             )
             exported_files['dimension_analysis'] = filepath
 
-        # 5. Export flattened events (for map/timeline)
+        # 4. Export flattened events (for map/timeline)
         if extraction_results:
             events = self._flatten_events(extraction_results)
             filepath = self._export_json('events.json', events)
             exported_files['events'] = filepath
 
-        # 6. Export metadata
+        # 5. Export metadata
         metadata = metadata or {}
         metadata['export_timestamp'] = datetime.now().isoformat()
         metadata['file_count'] = len(exported_files)
@@ -198,33 +185,6 @@ class AnalysisDataExporter:
                 ]
             }
             serialized['clusters'].append(serialized_cluster)
-
-        return serialized
-
-    def _serialize_story_arcs(
-        self,
-        story_arcs: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Serialize story arcs for JSON export."""
-        serialized = []
-
-        for story in story_arcs:
-            serialized_story = {
-                'story_id': story.get('story_id'),
-                'length': story.get('length'),
-                'progression_type': story.get('progression_type'),
-                'confidence': story.get('confidence'),
-                'temporal_span': story.get('temporal_span'),
-                'spatial_span': story.get('spatial_span'),
-                'narrative_summary': story.get('narrative_summary'),
-                'key_dimensions': story.get('key_dimensions'),
-                # Store event references
-                'event_ids': [
-                    e.get('chunk_id', '')
-                    for e in story.get('events', [])
-                ]
-            }
-            serialized.append(serialized_story)
 
         return serialized
 

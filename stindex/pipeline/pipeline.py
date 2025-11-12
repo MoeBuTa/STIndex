@@ -5,7 +5,7 @@ Supports multiple execution modes:
 1. Full pipeline: preprocessing → extraction → analysis → export
 2. Preprocessing only: scraping → parsing → chunking
 3. Extraction only: dimensional extraction from chunks
-4. Analysis only: clustering → story detection → dimension analysis → export
+4. Analysis only: clustering → dimension analysis → export
 """
 
 import json
@@ -17,7 +17,6 @@ from loguru import logger
 from stindex.analysis import (
     DimensionAnalyzer,
     EventClusterAnalyzer,
-    StoryArcDetector,
     AnalysisDataExporter,
 )
 from stindex.extraction.context_manager import ExtractionContext
@@ -659,11 +658,34 @@ class STIndexPipeline:
             with open(results, 'r') as f:
                 results = json.load(f)
 
-        # Set output directory
-        analysis_dir = Path(output_dir) if output_dir else (self.output_dir / "analysis")
+        # Extract model name from results for directory naming
+        model_name = "unknown_model"
+        for result in results:
+            extraction = result.get('extraction', {})
+            if extraction.get('success'):
+                extraction_config = extraction.get('extraction_config', {})
+                if isinstance(extraction_config, dict):
+                    # Try model_name first (current format), then model (legacy)
+                    model_name = extraction_config.get('model_name') or extraction_config.get('model', 'unknown_model')
+                else:
+                    # Handle ExtractionConfig object
+                    model_name = getattr(extraction_config, 'model_name', None) or getattr(extraction_config, 'model', 'unknown_model')
+                break
+
+        # Clean model name for filesystem (replace / with _)
+        clean_model_name = model_name.replace('/', '_')
+
+        # Set output directory with model-specific subdirectory
+        if output_dir:
+            analysis_dir = Path(output_dir)
+        else:
+            # Create model-specific analysis directory
+            analysis_dir = self.output_dir / "analysis" / clean_model_name
+
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"\nAnalyzing {len(results)} extraction results...")
+        logger.info(f"Model: {model_name}")
         logger.info(f"Output directory: {analysis_dir}")
 
         try:
@@ -680,37 +702,24 @@ class STIndexPipeline:
                 clustering_mode=clustering_mode
             )
 
-            # 2. Story arc detection
-            logger.info("\n[2/4] Story Arc Detection...")
-            story_detector = StoryArcDetector(
-                max_temporal_gap_days=7,
-                min_entity_overlap=0.3,
-                min_arc_length=2
-            )
-            story_arcs = story_detector.detect_story_arcs(
-                clusters=cluster_results.get('clusters', []),
-                events=cluster_results.get('events', []),
-                dimensions=dimensions
-            )
-
-            # 3. Dimension analysis
-            logger.info("\n[3/4] Dimension Analysis...")
+            # 2. Dimension analysis
+            logger.info("\n[2/3] Dimension Analysis...")
             dim_analyzer = DimensionAnalyzer()
             dimension_analysis = dim_analyzer.analyze(
                 extraction_results=results,
                 dimensions=dimensions
             )
 
-            # 4. Export data
-            logger.info("\n[4/4] Exporting Data...")
+            # 3. Export data
+            logger.info("\n[3/3] Exporting Data...")
             exporter = AnalysisDataExporter(output_dir=str(analysis_dir))
 
             exported_files = exporter.export_all(
                 extraction_results=results,
                 clusters=cluster_results,
-                story_arcs=story_arcs,
                 dimension_analysis=dimension_analysis,
                 metadata={
+                    'model_name': model_name,
                     'clustering_mode': clustering_mode,
                     'dimensions_analyzed': dimensions or 'all'
                 }
@@ -723,14 +732,14 @@ class STIndexPipeline:
                 exported_files['geojson'] = geojson_path
 
             logger.info(f"\n✓ Analysis complete!")
+            logger.info(f"  Model: {model_name}")
             logger.info(f"  Clusters: {len(cluster_results.get('clusters', []))}")
-            logger.info(f"  Story arcs: {len(story_arcs)}")
             logger.info(f"  Dimensions: {len(dimension_analysis) - 2}")  # Exclude global & cross_dimensional
             logger.info(f"  Exported files: {len(exported_files)}")
+            logger.info(f"  Location: {analysis_dir}")
 
             return {
                 'clusters': cluster_results,
-                'story_arcs': story_arcs,
                 'dimension_analysis': dimension_analysis,
                 'exported_files': exported_files
             }

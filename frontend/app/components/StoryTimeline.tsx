@@ -19,45 +19,39 @@ import {
 } from '@chakra-ui/react'
 import { SpatioTemporalEvent, BurstPeriod } from '../lib/analytics'
 
-interface BackendStoryArc {
-  story_id: string
-  length: number
-  confidence: number
-  temporal_span: {
-    start: string
-    end: string
-    duration_days: number
-  }
-}
-
 interface BackendBurstPeriod {
-  start_time: string
-  end_time: string
+  start: string
+  end: string
   event_count: number
-  intensity: number
+  burst_intensity: number
 }
 
 interface StoryTimelineProps {
   events: SpatioTemporalEvent[]
-  storyArcs: BackendStoryArc[]
   burstPeriods?: BackendBurstPeriod[]
   height?: number
   showBursts?: boolean
-  showStoryArcs?: boolean
+  width?: number  // Optional width for horizontal scrolling
 }
 
 export function StoryTimeline({
   events,
-  storyArcs,
   burstPeriods = [],
   height = 400,
   showBursts = true,
-  showStoryArcs = true,
+  width = 1200,
 }: StoryTimelineProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [selectedEvent, setSelectedEvent] = useState<SpatioTemporalEvent | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
   const { isOpen, onOpen, onClose } = useDisclosure()
+
+  // Ensure client-side only rendering for D3
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Filter events with temporal data
   const temporalEvents = useMemo(() => {
@@ -70,41 +64,24 @@ export function StoryTimeline({
 
     return burstPeriods.map((bp, idx) => ({
       id: `burst-${idx}`,
-      start: bp.start_time,
-      end: bp.end_time,
-      peakTime: bp.start_time, // Use start time as peak
-      intensity: bp.intensity,
+      start: bp.start,
+      end: bp.end,
+      peakTime: bp.start, // Use start time as peak
+      intensity: bp.burst_intensity,
       eventCount: bp.event_count,
       events: [], // Not needed for visualization
     }))
   }, [burstPeriods, showBursts])
 
   useEffect(() => {
-    if (!svgRef.current || temporalEvents.length === 0) return
+    if (!isMounted || !svgRef.current || temporalEvents.length === 0) return
 
     // Clear previous content
     d3.select(svgRef.current).selectAll('*').remove()
 
-    const margin = {
-      top: 40,
-      right: 30,
-      bottom: showStoryArcs && storyArcs.length > 0 ? 80 + (storyArcs.length * 15) : 60,
-      left: 60
-    }
-    const width = svgRef.current.clientWidth - margin.left - margin.right
-    const innerHeight = height - margin.top - margin.bottom
-
-    const svg = d3
-      .select(svgRef.current)
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height)
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
-
-    // Parse dates and prepare data
+    // Group events by category for multi-track
     const parseDate = (dateStr: string | undefined) => {
       if (!dateStr) return null
-      // Handle ISO 8601 durations
       if (dateStr.startsWith('P')) return null
       try {
         return new Date(dateStr)
@@ -122,20 +99,42 @@ export function StoryTimeline({
 
     if (validEvents.length === 0) return
 
-    // Group events by category for multi-track
     const categories = Array.from(new Set(validEvents.map((e) => e.category || 'unknown')))
-    const trackHeight = innerHeight / Math.max(categories.length, 1)
+
+    // Calculate dynamic dimensions
+    const minTrackHeight = 40 // Minimum height per category
+    const dynamicHeight = Math.max(height, categories.length * minTrackHeight + 100)
+
+    const margin = {
+      top: 40,
+      right: 30,
+      bottom: 60,
+      left: 150  // Increased for longer category labels
+    }
+
+    const svgWidth = Math.max(width, 1200) // Ensure minimum width for scrolling
+    const plotWidth = svgWidth - margin.left - margin.right
+    const plotHeight = dynamicHeight - margin.top - margin.bottom
+
+    const svg = d3
+      .select(svgRef.current)
+      .attr('width', svgWidth)
+      .attr('height', dynamicHeight)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
+
+    const trackHeight = plotHeight / Math.max(categories.length, 1)
 
     // Create scales
     const xScale = d3
       .scaleTime()
       .domain(d3.extent(validEvents, (d) => d.date) as [Date, Date])
-      .range([0, width])
+      .range([0, plotWidth])
 
     const categoryScale = d3
       .scaleBand()
       .domain(categories)
-      .range([0, innerHeight])
+      .range([0, plotHeight])
       .padding(0.2)
 
     const colorScale = d3
@@ -144,17 +143,27 @@ export function StoryTimeline({
       .range(d3.schemeCategory10)
 
     // Add x-axis
-    const xAxis = d3.axisBottom(xScale).ticks(6)
+    const xAxis = d3.axisBottom(xScale).ticks(8)
     svg
       .append('g')
-      .attr('transform', `translate(0,${innerHeight})`)
+      .attr('transform', `translate(0,${plotHeight})`)
       .call(xAxis)
       .selectAll('text')
-      .style('font-size', '12px')
+      .style('font-size', '11px')
+      .attr('transform', 'rotate(-45)')
+      .style('text-anchor', 'end')
 
     // Add y-axis (categories)
     const yAxis = d3.axisLeft(categoryScale)
-    svg.append('g').call(yAxis).selectAll('text').style('font-size', '12px')
+    svg
+      .append('g')
+      .call(yAxis)
+      .selectAll('text')
+      .style('font-size', '11px')
+      .style('text-overflow', 'ellipsis')
+      .style('overflow', 'hidden')
+      .style('white-space', 'nowrap')
+      .style('max-width', `${margin.left - 20}px`)
 
     // Draw burst periods
     if (showBursts && bursts.length > 0) {
@@ -168,7 +177,7 @@ export function StoryTimeline({
           .attr('x', xScale(startDate))
           .attr('y', 0)
           .attr('width', xScale(endDate) - xScale(startDate))
-          .attr('height', innerHeight)
+          .attr('height', plotHeight)
           .attr('fill', '#ff6b6b')
           .attr('opacity', 0.1)
           .attr('stroke', '#ff6b6b')
@@ -184,62 +193,6 @@ export function StoryTimeline({
           .attr('font-size', '10px')
           .attr('fill', '#ff6b6b')
           .text(`Burst: ${burst.eventCount} events`)
-      })
-    }
-
-    // Draw story arcs
-    if (showStoryArcs && storyArcs.length > 0) {
-      storyArcs.forEach((story, idx) => {
-        if (!story.temporal_span?.start || !story.temporal_span?.end) return
-
-        const storyPoints = [
-          new Date(story.temporal_span.start),
-          new Date(story.temporal_span.end)
-        ].filter((d) => d && !isNaN(d.getTime()))
-
-        if (storyPoints.length < 2) return
-
-        const startX = xScale(storyPoints[0])
-        const endX = xScale(storyPoints[1])
-        const arcY = innerHeight + 20 + (idx * 15) // Position below the timeline
-
-        // Draw arc line
-        svg
-          .append('line')
-          .attr('x1', startX)
-          .attr('y1', arcY)
-          .attr('x2', endX)
-          .attr('y2', arcY)
-          .attr('stroke', '#3182ce')
-          .attr('stroke-width', 3)
-          .attr('opacity', 0.7)
-
-        // Draw start marker
-        svg
-          .append('circle')
-          .attr('cx', startX)
-          .attr('cy', arcY)
-          .attr('r', 5)
-          .attr('fill', '#3182ce')
-
-        // Draw end marker
-        svg
-          .append('circle')
-          .attr('cx', endX)
-          .attr('cy', arcY)
-          .attr('r', 5)
-          .attr('fill', '#3182ce')
-
-        // Add story label with details
-        const labelText = `Story ${idx + 1} (${story.length} clusters, ${story.temporal_span.duration_days}d, ${(story.confidence * 100).toFixed(0)}%)`
-        svg
-          .append('text')
-          .attr('x', startX)
-          .attr('y', arcY - 8)
-          .attr('font-size', '10px')
-          .attr('fill', '#3182ce')
-          .attr('font-weight', 'bold')
-          .text(labelText)
       })
     }
 
@@ -298,14 +251,24 @@ export function StoryTimeline({
     // Add title
     svg
       .append('text')
-      .attr('x', width / 2)
+      .attr('x', plotWidth / 2)
       .attr('y', -20)
       .attr('text-anchor', 'middle')
       .attr('font-size', '14px')
       .attr('font-weight', 'bold')
-      .text('Temporal Event Timeline')
+      .text('Multi-Track Event Timeline')
 
-  }, [temporalEvents, bursts, storyArcs, height, showBursts, showStoryArcs])
+  }, [isMounted, temporalEvents, bursts, height, width, showBursts])
+
+  if (!isMounted) {
+    return (
+      <Box p={6} bg="gray.50" borderRadius="md" height={`${height}px`}>
+        <VStack justify="center" h="full">
+          <Text color="gray.500">Loading timeline...</Text>
+        </VStack>
+      </Box>
+    )
+  }
 
   if (temporalEvents.length === 0) {
     return (
@@ -319,7 +282,36 @@ export function StoryTimeline({
 
   return (
     <Box position="relative">
-      <svg ref={svgRef} style={{ width: '100%', height: `${height}px` }} />
+      {/* Scrollable container for timeline */}
+      <Box
+        ref={containerRef}
+        overflowX="auto"
+        overflowY="auto"
+        maxHeight={`${height + 100}px`}
+        border="1px solid"
+        borderColor="gray.200"
+        borderRadius="md"
+        bg="white"
+        sx={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            bg: 'gray.100',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            bg: 'gray.400',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            bg: 'gray.500',
+          },
+        }}
+      >
+        <svg ref={svgRef} style={{ display: 'block' }} />
+      </Box>
+
       <div
         ref={tooltipRef}
         style={{
@@ -497,33 +489,9 @@ export function StoryTimeline({
         </ModalContent>
       </Modal>
 
-      {/* Legend */}
-      <Box mt={4}>
-        <HStack spacing={4} flexWrap="wrap">
-          {showBursts && bursts.length > 0 && (
-            <HStack spacing={2}>
-              <Box w="20px" h="10px" bg="red.200" border="1px dashed" borderColor="red.500" />
-              <Text fontSize="xs">Burst Period</Text>
-            </HStack>
-          )}
-          {showStoryArcs && storyArcs.length > 0 && (
-            <HStack spacing={2}>
-              <Box w="20px" h="3px" bg="blue.500" />
-              <Text fontSize="xs">Story Arc (progression across time)</Text>
-            </HStack>
-          )}
-        </HStack>
-      </Box>
-
       {/* Statistics */}
       <Box mt={4}>
-        <VStack align="start" spacing={1}>
-          <HStack spacing={4}>
-            <Badge colorScheme="blue">{temporalEvents.length} events</Badge>
-            {showBursts && <Badge colorScheme="red">{bursts.length} bursts</Badge>}
-            {showStoryArcs && <Badge colorScheme="purple">{storyArcs.length} stories</Badge>}
-          </HStack>
-        </VStack>
+        <Badge colorScheme="blue">{temporalEvents.length} events</Badge>
       </Box>
     </Box>
   )

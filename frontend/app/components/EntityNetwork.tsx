@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import ReactFlow, {
   Node,
   Edge,
@@ -25,18 +25,41 @@ export function EntityNetwork({
   height = '600px',
   minCoOccurrence = 2,
 }: EntityNetworkProps) {
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Ensure client-side only rendering
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   // Calculate co-occurrence network
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
+  const { nodes: initialNodes, edges: initialEdges, categoryStats, categoryColors } = useMemo(() => {
     if (events.length === 0) {
-      return { nodes: [], edges: [] }
+      return { nodes: [], edges: [], categoryStats: new Map(), categoryColors: new Map() }
     }
 
     const coOccurrence = calculateCoOccurrence(events)
 
-    // Create nodes from entities
+    // Create nodes from entities and track categories
     const entityCounts = new Map<string, number>()
+    const entityCategories = new Map<string, Map<string, number>>() // Track all categories per entity
+    const categoryStats = new Map<string, number>() // Track category usage
+
     events.forEach((e) => {
-      entityCounts.set(e.text, (entityCounts.get(e.text) || 0) + 1)
+      const entityText = e.text
+      const category = e.category || 'unknown'
+
+      // Count entity occurrences
+      entityCounts.set(entityText, (entityCounts.get(entityText) || 0) + 1)
+
+      // Track categories for this entity
+      if (!entityCategories.has(entityText)) {
+        entityCategories.set(entityText, new Map())
+      }
+      const catMap = entityCategories.get(entityText)!
+      catMap.set(category, (catMap.get(category) || 0) + 1)
+
+      // Track overall category stats
+      categoryStats.set(category, (categoryStats.get(category) || 0) + 1)
     })
 
     // Get top entities by frequency
@@ -45,24 +68,43 @@ export function EntityNetwork({
       .slice(0, 20)
       .map(([text]) => text)
 
+    // Create dynamic color mapping for all categories
+    const allCategories = Array.from(categoryStats.keys()).sort()
+    const colorPalette = [
+      '#e53e3e', // red.500
+      '#dd6b20', // orange.500
+      '#3182ce', // blue.500
+      '#805ad5', // purple.500
+      '#38a169', // green.500
+      '#d69e2e', // yellow.600
+      '#319795', // teal.500
+      '#d53f8c', // pink.500
+      '#0bc5ea', // cyan.500
+      '#ed8936', // orange.400
+    ]
+
+    const categoryColors = new Map<string, string>()
+    allCategories.forEach((category, idx) => {
+      if (category === 'unknown') {
+        categoryColors.set(category, '#718096') // gray.600
+      } else {
+        categoryColors.set(category, colorPalette[idx % colorPalette.length])
+      }
+    })
+
     const nodes: Node[] = topEntities.map((entity, idx) => {
       const count = entityCounts.get(entity) || 0
-      const event = events.find((e) => e.text === entity)
-      const category = event?.category || 'unknown'
+
+      // Get most common category for this entity
+      const categories = entityCategories.get(entity)!
+      const mostCommonCategory = Array.from(categories.entries())
+        .sort((a, b) => b[1] - a[1])[0][0]
 
       // Calculate node size based on frequency
       const nodeSize = Math.max(30 + count * 5, 40)
 
-      // Color by category
-      const colorMap: Record<string, string> = {
-        outbreak_report: '#e53e3e',
-        risk_warning: '#dd6b20',
-        surveillance_update: '#3182ce',
-        case_report: '#805ad5',
-        measles: '#38a169',
-        unknown: '#718096',
-      }
-      const color = colorMap[category] || colorMap['unknown']
+      // Get color from dynamic color map
+      const color = categoryColors.get(mostCommonCategory) || '#718096'
 
       return {
         id: entity,
@@ -73,6 +115,8 @@ export function EntityNetwork({
         },
         data: {
           label: entity.length > 20 ? entity.substring(0, 20) + '...' : entity,
+          category: mostCommonCategory,
+          count: count,
         },
         style: {
           background: color,
@@ -126,7 +170,7 @@ export function EntityNetwork({
       })
     })
 
-    return { nodes, edges }
+    return { nodes, edges, categoryStats, categoryColors }
   }, [events, minCoOccurrence])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -136,6 +180,16 @@ export function EntityNetwork({
     console.log('Clicked node:', node)
     // Could add popup or detail view here
   }, [])
+
+  if (!isMounted) {
+    return (
+      <Box p={6} bg="gray.50" borderRadius="md" height={height}>
+        <VStack justify="center" h="full">
+          <Text color="gray.500">Loading network...</Text>
+        </VStack>
+      </Box>
+    )
+  }
 
   if (events.length === 0) {
     return (
@@ -183,7 +237,7 @@ export function EntityNetwork({
         </ReactFlow>
       </Box>
 
-      {/* Legend */}
+      {/* Legend - Top 10 Types */}
       <Box
         position="absolute"
         top={4}
@@ -193,31 +247,39 @@ export function EntityNetwork({
         borderRadius="md"
         shadow="md"
         zIndex={10}
+        maxW="250px"
       >
         <VStack align="start" spacing={2}>
           <Text fontSize="sm" fontWeight="bold">
-            Entity Types
+            Top Entity Types
           </Text>
-          <HStack spacing={2}>
-            <Box w="12px" h="12px" borderRadius="full" bg="red.500" />
-            <Text fontSize="xs">Outbreak</Text>
-          </HStack>
-          <HStack spacing={2}>
-            <Box w="12px" h="12px" borderRadius="full" bg="orange.500" />
-            <Text fontSize="xs">Risk Warning</Text>
-          </HStack>
-          <HStack spacing={2}>
-            <Box w="12px" h="12px" borderRadius="full" bg="blue.500" />
-            <Text fontSize="xs">Surveillance</Text>
-          </HStack>
-          <HStack spacing={2}>
-            <Box w="12px" h="12px" borderRadius="full" bg="purple.500" />
-            <Text fontSize="xs">Case Report</Text>
-          </HStack>
-          <HStack spacing={2}>
-            <Box w="12px" h="12px" borderRadius="full" bg="green.500" />
-            <Text fontSize="xs">Disease</Text>
-          </HStack>
+          {Array.from(categoryStats.entries())
+            .sort((a, b) => b[1] - a[1]) // Sort by frequency
+            .slice(0, 10) // Show only top 10
+            .map(([category, count]) => {
+              const color = categoryColors.get(category) || '#718096'
+              const displayName = category
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+
+              return (
+                <HStack key={category} spacing={2} w="full" justify="space-between">
+                  <HStack spacing={2}>
+                    <Box w="12px" h="12px" borderRadius="full" bg={color} />
+                    <Text fontSize="xs" noOfLines={1}>{displayName}</Text>
+                  </HStack>
+                  <Badge fontSize="xs" colorScheme="gray">
+                    {count}
+                  </Badge>
+                </HStack>
+              )
+            })}
+          {categoryStats.size > 10 && (
+            <Text fontSize="xs" color="gray.500" fontStyle="italic">
+              +{categoryStats.size - 10} more types
+            </Text>
+          )}
         </VStack>
       </Box>
 

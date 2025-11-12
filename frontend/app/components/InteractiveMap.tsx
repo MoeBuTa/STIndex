@@ -6,12 +6,6 @@ import { Box, Badge, Text, VStack, HStack, Button, Slider, SliderTrack, SliderFi
 import { EventCluster, SpatioTemporalEvent } from '../lib/analytics'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-interface BackendStoryArc {
-  story_id: string
-  length: number
-  confidence: number
-}
-
 interface BackendCluster {
   cluster_id: string
   cluster_type: string
@@ -38,21 +32,17 @@ interface BackendClusters {
 
 interface InteractiveMapProps {
   events: SpatioTemporalEvent[]
-  storyArcs: BackendStoryArc[]
   backendClusters?: BackendClusters | null
   height?: string
   showClusters?: boolean
-  showStoryArcs?: boolean
   enableAnimation?: boolean
 }
 
 export function InteractiveMap({
   events,
-  storyArcs,
   backendClusters,
   height = '600px',
   showClusters = true,
-  showStoryArcs = true,
   enableAnimation = true,
 }: InteractiveMapProps) {
   const [viewport, setViewport] = useState({
@@ -435,12 +425,6 @@ export function InteractiveMap({
               <Text fontSize="xs">Cluster</Text>
             </HStack>
           )}
-          {showStoryArcs && (
-            <HStack spacing={2}>
-              <Box w="20px" h="2px" bg="blue.500" />
-              <Text fontSize="xs">Story Arc</Text>
-            </HStack>
-          )}
         </VStack>
       </Box>
 
@@ -452,7 +436,6 @@ export function InteractiveMap({
           </Text>
           <Text fontSize="xs">Events: {filteredEvents.length}</Text>
           {showClusters && <Text fontSize="xs">Clusters: {clusters.length}</Text>}
-          {showStoryArcs && <Text fontSize="xs">Stories: {storyArcs.length}</Text>}
         </VStack>
       </Box>
     </Box>

@@ -261,12 +261,10 @@ def run_full_pipeline():
     if analysis_data:
         logger.info(f"\n  📈 Analysis Summary:")
         clusters = analysis_data.get('clusters', {})
-        story_arcs = analysis_data.get('story_arcs', [])
         dim_analysis = analysis_data.get('dimension_analysis', {})
         exported_files = analysis_data.get('exported_files', {})
 
         logger.info(f"    - Clusters detected: {len(clusters.get('clusters', []))}")
-        logger.info(f"    - Story arcs found: {len(story_arcs)}")
         logger.info(f"    - Dimensions analyzed: {len([k for k in dim_analysis.keys() if k not in ['global', 'cross_dimensional']])}")
         logger.info(f"    - Data files exported: {len(exported_files)}")
 
