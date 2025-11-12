@@ -57,8 +57,14 @@ echo "  Max Model Len: $MAX_LEN"
 echo "  Result Path: $RESULT_PATH"
 echo ""
 
-# Create result directory
-mkdir -p "$PROJECT_ROOT/$RESULT_PATH"
+# Create result directory (handle case where it exists as a file)
+if [ -n "$RESULT_PATH" ] && [ "$RESULT_PATH" != "None" ] && [ "$RESULT_PATH" != "null" ]; then
+    if [ -f "$PROJECT_ROOT/$RESULT_PATH" ]; then
+        echo "Warning: $RESULT_PATH exists as a file, backing up to ${RESULT_PATH}_backup.jsonl"
+        mv "$PROJECT_ROOT/$RESULT_PATH" "$PROJECT_ROOT/${RESULT_PATH}_backup.jsonl"
+    fi
+    mkdir -p "$PROJECT_ROOT/$RESULT_PATH"
+fi
 
 # Build command
 CMD="swift deploy \
@@ -67,8 +73,12 @@ CMD="swift deploy \
     --infer_backend vllm \
     --use_hf \
     --vllm_tensor_parallel_size $TENSOR_PARALLEL \
-    --vllm_gpu_memory_utilization $GPU_MEM \
-    --result_path $RESULT_PATH"
+    --vllm_gpu_memory_utilization $GPU_MEM"
+
+# Add result_path only if it's set and not null
+if [ -n "$RESULT_PATH" ] && [ "$RESULT_PATH" != "None" ] && [ "$RESULT_PATH" != "null" ]; then
+    CMD="$CMD --result_path $RESULT_PATH"
+fi
 
 # Add optional parameters
 if [ -n "$MAX_LEN" ]; then

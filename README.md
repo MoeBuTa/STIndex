@@ -192,7 +192,15 @@ scripts/                    # Helper scripts
 
 ## Recent Updates
 
-### v0.6.0 (January 2025): Data Warehouse
+### Interactive Visualization Dashboard
+- **Frontend Dashboard**: Next.js-based interactive web dashboard for exploration
+- **Interactive Map**: Mapbox-powered map with heatmaps, clustering, and temporal filtering
+- **Analytics Panels**: Real-time quality metrics, burst detection, and dimensional analytics
+- **Multi-Track Timeline**: D3.js timeline with category tracks and burst highlighting
+- **Entity Network**: ReactFlow network graph showing entity co-occurrence relationships
+- **Backend Analytics**: Server-side clustering and burst detection with DBSCAN
+
+### Data Warehouse
 - **Dimensional Data Warehouse**: Hybrid snowflake/star schema with PostgreSQL
 - **Vector Embeddings**: pgvector integration for semantic search
 - **Spatial Queries**: PostGIS support for geographic analysis
@@ -200,14 +208,14 @@ scripts/                    # Helper scripts
 - **Hierarchical Labels**: Multi-level temporal and spatial labels for fast filtering
 - **Pipeline Integration**: Optional warehouse loading in `STIndexPipeline`
 
-### v0.5.0 (December 2024): Context-Aware Extraction
+### Context-Aware Extraction
 - **Extraction Context**: Maintains context across document chunks for consistency
 - **Two-Pass Reflection**: LLM-based quality scoring to reduce false positives
 - **Context Engineering**: Implements cinstr, ctools, cmem, cstate patterns
 - **Ambiguity Resolution**: Handles relative temporal expressions and spatial disambiguation
 - **Configuration Refactor**: Reorganized configs by module (preprocessing, extraction, visualization)
 
-### v0.4.0 (November 2024): Complete Pipeline & Visualization
+### Complete Pipeline & Visualization
 - **Generic Preprocessing Module**: Web scraping, document parsing, intelligent chunking
 - **End-to-End Pipeline**: Full workflow from URLs/files/text to visualizations
 - **Comprehensive Visualization**: Interactive maps, statistical plots, HTML reports
@@ -215,12 +223,12 @@ scripts/                    # Helper scripts
 - **Unified Input Model**: Support for URLs, files, and text with single API
 - **Case Study Simplification**: Generic modules replace case-specific code
 
-### v0.3.0 (October 2024): Multi-Dimensional Extraction
+### Multi-Dimensional Extraction
 - **Dimensional Framework**: Extract custom domain-specific dimensions
 - **YAML Configuration**: Define dimensions via configuration files
 - **Flexible Schema**: Support for temporal, spatial, categorical, and custom dimensions
 
-### v0.2.0 (October 2024): Architecture Refactor
+### Architecture Refactor
 - **Smart JSON Extraction**: Handles thinking models that generate reasoning before/after JSON
 - **Raw Output Recording**: Always captures LLM output for debugging failed extractions
 - **Evaluation Fixes**: Proper temporal/spatial matching with configurable modes

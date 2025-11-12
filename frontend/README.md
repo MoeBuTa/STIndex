@@ -38,18 +38,23 @@ Comprehensive analytics for understanding data quality and patterns:
 - Shows dominant locations and categories within bursts
 - Configurable sliding window algorithm
 
-#### Story Arc Analysis
-- Displays narrative progressions across time and space
-- Shows cluster counts and temporal spans
-- Confidence scores for story arc quality
-- Tracks spatial movement and temporal evolution
+#### Temporal Analytics
+- Time span analysis (earliest to latest events)
+- Cluster distribution metrics
+- Average events per cluster calculations
+
+#### Spatial Analytics
+- Unique location tracking
+- Geocoding success rates
+- Geographic spread analysis
+- Location type distribution
 
 #### Dimension Statistics
 - Breakdown by entity categories
 - Top data sources identification
 - Custom dimension-specific insights
 
-### 4. Five Visualization Modes
+### 4. Visualization Modes
 
 #### 4.1 Basic Timeline
 - **D3-based temporal visualization** with multi-track display
@@ -67,40 +72,37 @@ Comprehensive analytics for understanding data quality and patterns:
 
 #### 4.3 Interactive Map
 - **Mapbox-based geographic visualization**
-- Spatial clustering of events with backend-provided clusters
-- Story arc overlays showing narrative progressions
+- Heatmap layer showing event density
+- Spatial clustering with backend-provided cluster data
 - Time filter slider (0-100%) for temporal navigation
+- Interactive markers for individual events and clusters
 - Cluster details: centroid, size, dominant category, time range
 - Interactive viewport controls (pan, zoom, rotate)
-- Real-time cluster transformation
+- Real-time cluster transformation and filtering
 
-#### 4.4 Story Timeline
+#### 4.4 Event Timeline
 - **D3-powered multi-track timeline** showing:
   - Event points color-coded by category
-  - Burst periods (highlighted red regions)
-  - Story arcs (blue lines) showing temporal progressions
+  - Multiple category tracks for organized display
+  - Horizontal and vertical scrolling for large datasets
 - **Interactive event modals** with detailed information:
   - Quality scores (relevance, accuracy, completeness, consistency)
   - Source documents and URLs
   - Confidence metrics
   - Entity text and categories
-- Event count badges and comprehensive legend
-- Zoom and timeline navigation
+- Hover tooltips with event previews
+- Dynamic track sizing based on number of categories
 
 #### 4.5 Entity Network
 - **ReactFlow-based node-link diagram**
 - Co-occurrence network graph showing entity relationships
 - Nodes sized by entity frequency (top 20 entities)
-- Color-coded by category:
-  - Red: outbreak_report
-  - Orange: risk_warning
-  - Blue: surveillance_update
-  - Purple: case_report
-  - Green: measles
-  - Gray: unknown
+- Dynamic color-coding by category (supports 10+ category types)
 - Edges weighted by co-occurrence count within documents
 - Interactive drag-and-drop visualization
-- Force-directed layout
+- Minimap for navigation
+- Legend showing top 10 entity types with counts
+- Configurable minimum co-occurrence threshold
 
 ### 5. Advanced Algorithms
 
@@ -186,9 +188,9 @@ Multi-dimensional quality assessment system:
 
 ## Data Structure
 
-The application processes three main data sources:
+The application processes two main data sources:
 
-### 1. Extraction Results
+### 1. Extraction Results (`extraction_results.json`)
 Contains extracted entities with:
 - **Document metadata**: ID, title, source URL
 - **Temporal entities**: Dates, times, durations with normalization
@@ -196,15 +198,7 @@ Contains extracted entities with:
 - **Custom dimensions**: Event types, diseases, venues, etc.
 - **Reflection scores**: Quality metrics for each entity
 
-### 2. Story Arcs
-Narrative progression data including:
-- Story ID and length (cluster count)
-- Progression type classification
-- Confidence scores
-- Temporal span (start, end, duration)
-- Spatial span (locations with coordinates)
-
-### 3. Clusters
+### 2. Clusters (`clusters.json`)
 Spatiotemporal clustering results with:
 - Cluster ID, type, and size
 - Centroid coordinates and datetime
@@ -243,10 +237,8 @@ npm start
 ### Data Setup
 
 Place your data files in `/public/data/`:
-- `extraction_results.json` - Main extracted entities
-- `story_arcs.json` - Narrative progression data
-- `clusters.json` - Spatiotemporal clustering results
-- `events.json` - Alternative event format
+- `extraction_results.json` - Main extracted entities (required)
+- `clusters.json` - Spatiotemporal clustering results with burst periods (required)
 
 ## Use Cases
 
@@ -254,10 +246,10 @@ STIndex is particularly suited for:
 
 - **Epidemiological Surveillance**: Disease outbreak tracking and pattern detection
 - **Event Detection**: Identifying and analyzing temporal event patterns
-- **Narrative Analysis**: Understanding story progressions across time and space
 - **Geographic Analysis**: Spatial pattern recognition and clustering
 - **Multi-dimensional Data Exploration**: Custom dimension analysis (event types, categories, etc.)
-- **Data Quality Assessment**: Extraction quality monitoring and improvement
+- **Data Quality Assessment**: Extraction quality monitoring with reflection scores
+- **Entity Relationship Analysis**: Understanding co-occurrence patterns between entities
 
 ## Project Structure
 

@@ -9,43 +9,84 @@ PID_FILE="$PROJECT_ROOT/logs/.hf_server.pid"
 
 echo "Stopping HuggingFace deployment server..."
 
+# Function to kill all swift deploy and VLLM processes
+kill_all_swift_processes() {
+    echo "Killing all swift deploy and VLLM processes..."
+
+    # Find all swift deploy process PIDs
+    SWIFT_PIDS=$(ps aux | grep -E "swift/cli/deploy\.py|swift deploy" | grep -v grep | awk '{print $2}' || true)
+
+    # Find all VLLM worker process PIDs
+    VLLM_PIDS=$(ps aux | grep -E "VLLM::Worker|vllm\.worker" | grep -v grep | awk '{print $2}' || true)
+
+    # Combine all PIDs
+    ALL_PIDS="$SWIFT_PIDS $VLLM_PIDS"
+    ALL_PIDS=$(echo $ALL_PIDS | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+    if [ -z "$ALL_PIDS" ] || [ "$ALL_PIDS" = " " ]; then
+        echo "No swift deploy or VLLM processes found"
+        return 0
+    fi
+
+    echo "Found processes: $ALL_PIDS"
+
+    # Try graceful kill first
+    for PID in $ALL_PIDS; do
+        if [ -n "$PID" ]; then
+            echo "Stopping process $PID..."
+            kill "$PID" 2>/dev/null || true
+        fi
+    done
+
+    # Wait for processes to terminate (max 10 seconds)
+    WAIT_COUNT=0
+    while [ $WAIT_COUNT -lt 10 ]; do
+        SWIFT_REMAINING=$(ps aux | grep -E "swift/cli/deploy\.py|swift deploy" | grep -v grep | awk '{print $2}' || true)
+        VLLM_REMAINING=$(ps aux | grep -E "VLLM::Worker|vllm\.worker" | grep -v grep | awk '{print $2}' || true)
+        REMAINING="$SWIFT_REMAINING $VLLM_REMAINING"
+        REMAINING=$(echo $REMAINING | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+        if [ -z "$REMAINING" ] || [ "$REMAINING" = " " ]; then
+            echo "All processes stopped gracefully"
+            return 0
+        fi
+        sleep 1
+        WAIT_COUNT=$((WAIT_COUNT + 1))
+    done
+
+    # Force kill any remaining processes
+    SWIFT_REMAINING=$(ps aux | grep -E "swift/cli/deploy\.py|swift deploy" | grep -v grep | awk '{print $2}' || true)
+    VLLM_REMAINING=$(ps aux | grep -E "VLLM::Worker|vllm\.worker" | grep -v grep | awk '{print $2}' || true)
+    REMAINING="$SWIFT_REMAINING $VLLM_REMAINING"
+    REMAINING=$(echo $REMAINING | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+    if [ -n "$REMAINING" ] && [ "$REMAINING" != " " ]; then
+        echo "Force killing remaining processes: $REMAINING"
+        for PID in $REMAINING; do
+            if [ -n "$PID" ]; then
+                kill -9 "$PID" 2>/dev/null || true
+            fi
+        done
+        sleep 1
+    fi
+
+    echo "All swift deploy and VLLM processes terminated"
+}
+
 # Check if PID file exists
 if [ ! -f "$PID_FILE" ]; then
     echo "No PID file found at $PID_FILE"
-    echo "Trying to kill any swift deploy processes..."
-    pkill -f "swift deploy" || true
+    kill_all_swift_processes
     echo "Done."
     exit 0
 fi
 
 # Read PID from file
 SERVER_PID=$(cat "$PID_FILE")
+echo "PID file contains: $SERVER_PID"
 
-# Check if process is running
-if ! ps -p "$SERVER_PID" > /dev/null 2>&1; then
-    echo "Server with PID $SERVER_PID is not running"
-    rm -f "$PID_FILE"
-    echo "Cleaned up stale PID file"
-    exit 0
-fi
-
-# Kill the process
-echo "Stopping server with PID: $SERVER_PID"
-kill "$SERVER_PID"
-
-# Wait for process to terminate (max 10 seconds)
-WAIT_COUNT=0
-while ps -p "$SERVER_PID" > /dev/null 2>&1 && [ $WAIT_COUNT -lt 10 ]; do
-    sleep 1
-    WAIT_COUNT=$((WAIT_COUNT + 1))
-done
-
-# Force kill if still running
-if ps -p "$SERVER_PID" > /dev/null 2>&1; then
-    echo "Process did not terminate gracefully, force killing..."
-    kill -9 "$SERVER_PID" || true
-    sleep 1
-fi
+# Kill all swift deploy processes (not just the parent)
+kill_all_swift_processes
 
 # Clean up PID file
 rm -f "$PID_FILE"

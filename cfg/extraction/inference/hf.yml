@@ -50,7 +50,8 @@ deployment:
   log_interval: 20   # Log every N batches
 
   # Result path for inference logs (JSONL files with requests/responses)
-  result_path: "data/output/result"  # MS-SWIFT saves inference logs here
+  # Set to null to disable result logging (avoids file path issues)
+  result_path: null  # Disable MS-SWIFT inference logging
 
   # Optional: Fine-tuned model checkpoint
   ckpt_dir: null     # Path to checkpoint directory (null = use base model)
@@ -70,7 +71,7 @@ deployment:
     gpu_memory_utilization: 0.7  # Fraction of GPU memory to use (0.0-1.0)
 
     # Model settings
-    max_model_len: 8192  # Maximum sequence length (tokens)
+    max_model_len: 32768  # Maximum sequence length (tokens) - increased for reflection with thinking models
     dtype: auto          # Data type: auto, float16, bfloat16, float32
 
     # Security
