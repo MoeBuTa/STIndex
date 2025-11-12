@@ -225,11 +225,11 @@ export function StoryTimeline({
               .style('top', `${mouseEvent.pageY - 10}px`)
               .html(
                 `
-                <div style="font-size: 12px;">
-                  <strong>${event.text}</strong><br/>
-                  <span style="color: #666;">${event.date.toLocaleDateString()}</span><br/>
-                  ${event.category ? `<span style="color: ${colorScale(event.category)};">${event.category}</span><br/>` : ''}
-                  <span style="color: #3182ce; font-size: 10px;">Click for details</span>
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">${event.text}</div>
+                  <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-bottom: 4px;">${event.date.toLocaleDateString()}</div>
+                  ${event.category ? `<div style="color: #60a5fa; font-size: 12px; margin-bottom: 6px;">${event.category}</div>` : ''}
+                  <div style="color: #60a5fa; font-size: 11px; margin-top: 8px; font-style: italic;">Click for details</div>
                 </div>
               `
               )
@@ -243,6 +243,13 @@ export function StoryTimeline({
           }
         })
         .on('click', function () {
+          // Hide tooltip when clicking to open modal
+          if (tooltipRef.current) {
+            d3.select(tooltipRef.current).style('opacity', 0)
+          }
+          // Reset circle size
+          d3.select(this).attr('r', 4).attr('opacity', 0.8)
+
           setSelectedEvent(event)
           onOpen()
         })
@@ -315,15 +322,19 @@ export function StoryTimeline({
       <div
         ref={tooltipRef}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           opacity: 0,
-          background: 'white',
-          padding: '8px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          background: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
           pointerEvents: 'none',
-          zIndex: 1000,
-          transition: 'opacity 0.2s',
+          zIndex: 9999,
+          maxWidth: '300px',
+          fontSize: '13px',
+          lineHeight: '1.4',
+          transition: 'opacity 0.15s ease-in-out',
         }}
       />
 
