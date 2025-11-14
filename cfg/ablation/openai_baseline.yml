@@ -1,0 +1,46 @@
+# OpenAI + Baseline Configuration
+# Ablation study: Context-aware DISABLED ❌
+
+llm:
+  llm_provider: openai
+  model_name: gpt-4o-mini
+  temperature: 0.0
+  max_tokens: 2048
+
+# Context-Aware Extraction: DISABLED ❌
+context_aware:
+  enabled: false
+
+# Extraction Configuration (same as context version)
+extraction:
+  enable_cache: true
+  auto_save: true
+  min_confidence: 0.5
+
+# Two-Pass Reflection (same as context version)
+reflection:
+  enabled: true
+
+# Spatial Post-Processing (same as context version)
+spatial:
+  enable_osm_context: true
+  osm_radius_km: 100
+  osm_max_results: 10
+
+# Temporal Post-Processing (same as context version)
+temporal:
+  enable_relative_resolution: true
+  timezone: "UTC"
+
+# Categorical Post-Processing (same as context version)
+categorical:
+  enable_validation: true
+  strict_mode: false
+  allow_fuzzy_match: true
+  fuzzy_threshold: 0.8
+
+# Geocoding Configuration (same as context version)
+geocoding:
+  geocoder: nominatim
+  user_agent: "stindex-spatiotemporal-extraction/1.0"
+  rate_limit_period: 1.0
