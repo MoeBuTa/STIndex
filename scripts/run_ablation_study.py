@@ -33,13 +33,25 @@ CONDITIONS = [
         "name": "OpenAI Baseline (No Context)",
         "config": "cfg/ablation/openai_baseline.yml",
         "output_dir": "openai_baseline",
-        "short_name": "baseline"
+        "short_name": "openai_baseline"
     },
     {
         "name": "OpenAI Context-Aware",
         "config": "cfg/ablation/openai_context.yml",
         "output_dir": "openai_context",
-        "short_name": "context"
+        "short_name": "openai_context"
+    },
+    {
+        "name": "Qwen3-8B Baseline (No Context)",
+        "config": "cfg/ablation/qwen3_baseline.yml",
+        "output_dir": "qwen3_baseline",
+        "short_name": "qwen3_baseline"
+    },
+    {
+        "name": "Qwen3-8B Context-Aware",
+        "config": "cfg/ablation/qwen3_context.yml",
+        "output_dir": "qwen3_context",
+        "short_name": "qwen3_context"
     },
 ]
 

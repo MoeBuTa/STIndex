@@ -1,0 +1,47 @@
+# Qwen3-8B + Baseline Configuration
+# Ablation study: Context-aware DISABLED ❌
+
+llm:
+  llm_provider: hf
+  model_name: Qwen3-8B
+  base_url: "http://localhost:8001"
+  temperature: 0.0
+  max_tokens: 8192
+
+# Context-Aware Extraction: DISABLED ❌
+context_aware:
+  enabled: false
+
+# Extraction Configuration (same as OpenAI baseline)
+extraction:
+  enable_cache: true
+  auto_save: true
+  min_confidence: 0.5
+
+# Two-Pass Reflection (same as OpenAI baseline)
+reflection:
+  enabled: true
+
+# Spatial Post-Processing (same as OpenAI baseline)
+spatial:
+  enable_osm_context: true
+  osm_radius_km: 100
+  osm_max_results: 10
+
+# Temporal Post-Processing (same as OpenAI baseline)
+temporal:
+  enable_relative_resolution: true
+  timezone: "UTC"
+
+# Categorical Post-Processing (same as OpenAI baseline)
+categorical:
+  enable_validation: true
+  strict_mode: false
+  allow_fuzzy_match: true
+  fuzzy_threshold: 0.8
+
+# Geocoding Configuration (same as OpenAI baseline)
+geocoding:
+  geocoder: nominatim
+  user_agent: "stindex-spatiotemporal-extraction/1.0"
+  rate_limit_period: 1.0
