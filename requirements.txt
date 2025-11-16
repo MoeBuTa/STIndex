@@ -15,12 +15,14 @@ pendulum>=3.0.0
 # Spatial processing
 geopy>=2.4.0
 folium>=0.20.0  # Required for map visualization
+geopandas>=0.14.0
 
 # Data processing
 pandas>=2.0.0
 numpy>=1.26.0,<2.0  # Pin to 1.x for vLLM/transformers compatibility
 unstructured[local-inference]>=0.10.0
 beautifulsoup4>=4.12.0
+nltk>=3.8.0  # Required by unstructured
 
 # CLI and output
 rich>=13.0.0
@@ -49,6 +51,11 @@ addict>=2.4.0  # Required by ms-swift/modelscope
 
 # MCP (Model Context Protocol)
 mcp>=1.2.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
 
 # Development tools
 pytest>=7.4.0

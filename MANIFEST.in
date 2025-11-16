@@ -1,0 +1,19 @@
+include README.md
+include LICENSE
+include requirements.txt
+include setup.py
+include pyproject.toml
+
+# Include all configuration files
+recursive-include cfg *.yml
+recursive-include cfg *.yaml
+
+# Include scripts
+recursive-include scripts *.sh
+recursive-include scripts *.py
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude .DS_Store
+global-exclude *.swp

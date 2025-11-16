@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stindex"
-version = "0.1.0"
+version = "1.0.0"
 description = "Spatiotemporal Index Extraction from Unstructured Text"
 readme = "README.md"
 authors = [
-    {name = "STIndex Team", email = "stindex@example.com"}
+    {name = "Wenxiao Zhang", email = "wenxiao.zhang@research.uwa.edu.au"}
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -41,7 +41,10 @@ stindex = "stindex.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["stindex*"]
+include = ["stindex*", "cfg*", "scripts*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yml", "*.yaml", "*.sh"]
 
 [tool.black]
 line-length = 100

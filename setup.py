@@ -34,35 +34,14 @@ def read_requirements():
 
 INSTALL_REQUIRES = read_requirements()
 
-# Extra dependencies for case studies
-EXTRAS_REQUIRE = {
-    'case_studies': [
-        'beautifulsoup4>=4.12.0',
-        'unstructured[local-inference]>=0.10.0',
-        'nltk>=3.8.0',  # Required by unstructured
-        'folium>=0.20.0',  # Updated to match requirements.txt
-        'geopandas>=0.14.0',
-        'matplotlib>=3.7.0',
-        'seaborn>=0.12.0',
-        'plotly>=5.17.0',
-    ],
-    'dev': [
-        'pytest>=7.4.0',
-        'pytest-cov>=4.1.0',
-        'black>=23.7.0',
-        'flake8>=6.1.0',
-        'mypy>=1.5.0',
-    ],
-}
-
 setup(
     name="stindex",
-    version="0.1.0",
+    version="1.0.0",
     description="Spatiotemporal Index Extraction from Unstructured Text",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",
-    author="STIndex Team",
-    author_email="stindex@example.com",
+    author="Wenxiao Zhang",
+    author_email="wenxiao.zhang@research.uwa.edu.au",
     url="https://github.com/MoeBuTa/STIndex",
     project_urls={
         "Documentation": "https://github.com/MoeBuTa/STIndex#readme",
@@ -72,7 +51,6 @@ setup(
     packages=find_packages(include=['stindex', 'stindex.*']),
     python_requires=">=3.9",
     install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRE,
     entry_points={
         'console_scripts': [
             'stindex=stindex.cli:main',

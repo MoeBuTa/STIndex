@@ -7,7 +7,7 @@ STIndex is a multi-dimensional information extraction system that uses LLMs to e
 ### Installation
 
 ```bash
-pip install -e .
+pip install stindex
 ```
 
 ### Basic Extraction
