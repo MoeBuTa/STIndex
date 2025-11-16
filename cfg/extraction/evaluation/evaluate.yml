@@ -7,7 +7,7 @@ dataset:
   # Options:
   #   - context_aware_eval.json: Original 100 entries (20 documents)
   #   - context_aware_eval_extended.json: Extended 500 entries (100 documents)
-  path: "data/evaluation/context_aware_eval_extended.json"
+  path: "eval_data/doc_500.json"
 
   # Sample limit (null = process all)
   # Set to a number to limit chunks for testing (e.g., 50)
