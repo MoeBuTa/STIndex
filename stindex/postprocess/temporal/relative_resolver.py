@@ -112,7 +112,7 @@ class RelativeTemporalResolver:
             r'^\d{4}-\d{2}-\d{2}$',  # YYYY-MM-DD
             r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',  # YYYY-MM-DDTHH:MM:SS
             r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',  # Interval
-            r'^P\d+[YMWD]',  # Duration
+            r'^P(\d+[YMWD])*(T(\d+[HMS])+)?$',  # Duration (date-based: P1Y2M3D, time-based: PT2H30M, combined: P1DT2H30M)
         ]
 
         for pattern in iso_patterns:

@@ -1,76 +1,72 @@
-# STIndex Evaluation Configuration
-# Configuration for running evaluations on datasets
+# STIndex Context-Aware Evaluation Configuration
+# This config is used for the context-aware evaluation system
+
+# Dataset Configuration
+dataset:
+  # Path to evaluation dataset
+  # Options:
+  #   - context_aware_eval.json: Original 100 entries (20 documents)
+  #   - context_aware_eval_extended.json: Extended 500 entries (100 documents)
+  path: "data/evaluation/context_aware_eval_extended.json"
+
+  # Sample limit (null = process all)
+  # Set to a number to limit chunks for testing (e.g., 50)
+  sample_limit: null
 
 # LLM Configuration
 llm:
   # LLM Provider Selection
   # Options: hf, openai, anthropic
+  # Detailed settings are loaded from:
+  #   - hf: cfg/extraction/inference/hf.yml
+  #   - openai: cfg/extraction/inference/openai.yml
+  #   - anthropic: cfg/extraction/inference/anthropic.yml
   llm_provider: hf
 
-# Evaluation Configuration
-evaluation:
-  # Input dataset path (relative to project root or absolute)
-  dataset_path: "data/input/eval_dataset_100.json"
+# Context-Aware Extraction Configuration
+context_aware:
+  # Enable context-aware extraction (maintains memory across chunks)
+  enabled: true
 
-  # Output directory for results (relative to project root or absolute)
-  output_dir: "data/output/evaluations"
+  # Maximum number of prior references to keep in memory (sliding window)
+  max_memory_refs: 10
 
-  # Sample limit (null for all samples)
-  sample_limit: null
+  # Disable OSM nearby locations for evaluation (to avoid rate limits)
+  enable_nearby_locations: false
 
-  # Resume from last checkpoint (looks for incomplete CSV in output_dir)
-  resume: true
+  # Nearby locations radius in kilometers
+  nearby_radius_km: 100
 
-  # Batch processing mode
-  # - false: Process items one-by-one (default, safer, works with all providers)
-  # - true: Process items in batches using LLM batch API (faster with multi-GPU)
-  batch_mode: true
+  # Context types to track
+  track_temporal_refs: true     # Track prior temporal extractions
+  track_spatial_refs: true      # Track prior spatial extractions
+  track_event_refs: true        # Track prior event extractions
 
-  # Batch size for batch_mode=true (how many items to send to LLM at once)
-  # Recommended: 10-50 for multi-GPU, lower for single GPU
-  batch_size: 10
+# Spatial Post-Processing Configuration
+spatial:
+  # Disable OpenStreetMap context provider for evaluation (to avoid rate limits)
+  # This feature makes API calls to Overpass API which has strict rate limits
+  # When enabled with multi-threading, it can cause 429 errors
+  enable_osm_context: false
+  osm_radius_km: 100
+  osm_max_results: 10
 
-  # Save intermediate results every N samples (for fault tolerance)
-  checkpoint_interval: 10
+# Temporal Post-Processing Configuration
+temporal:
+  # Enable relative temporal resolution (e.g., "Monday" → "2025-10-27")
+  enable_relative_resolution: true
+  timezone: "UTC"
 
-  # Match mode for spatial entities: "exact" or "fuzzy" (default: fuzzy)
-  # - "exact": Exact match of location text
-  # - "fuzzy": Substring or word overlap >= 50% (RECOMMENDED)
-  # Note: Temporal matching always uses "value_exact" mode (compares ISO 8601 values)
-  spatial_match_mode: "fuzzy"
+# Categorical Post-Processing Configuration
+categorical:
+  # Enable categorical validation against predefined allowed values
+  enable_validation: true
+  strict_mode: false
+  allow_fuzzy_match: true
+  fuzzy_threshold: 0.8
 
-  # Geocoding distance threshold for accuracy calculation (in km)
-  geocoding_threshold_km: 25
-
-# Output Configuration
-output:
-  # CSV column order and naming (predictions next to ground truth for easy comparison)
-  csv_columns:
-    - id
-    - input_text
-    # Temporal results
-    - temporal_predicted
-    - temporal_ground_truth
-    - temporal_precision
-    - temporal_recall
-    - temporal_f1
-    - temporal_normalization_accuracy
-    # Spatial results
-    - spatial_predicted
-    - spatial_ground_truth
-    - spatial_precision
-    - spatial_recall
-    - spatial_f1
-    - spatial_geocoding_success_rate
-    - spatial_mean_distance_error_km
-    - spatial_accuracy_within_25km
-    # Processing metadata
-    - processing_time_seconds
-    - error
-    - llm_raw_output
-
-  # Save detailed metrics summary JSON alongside CSV
-  save_summary: true
-
-  # Save final aggregated metrics
-  save_aggregated_metrics: true
+# Geocoding Configuration
+geocoding:
+  geocoder: nominatim
+  user_agent: "stindex-evaluation/1.0"
+  rate_limit_period: 1.0

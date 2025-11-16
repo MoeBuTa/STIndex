@@ -31,15 +31,23 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
     the provider-specific config (hf.yml, openai.yml, or anthropic.yml).
 
     Args:
-        config_path: Path to config file (e.g., 'extract', 'cfg/extraction/inference/extract.yml')
+        config_path: Path to config file (e.g., 'extract', 'evaluate', 'cfg/extraction/inference/extract.yml')
                     Defaults to 'extract' (cfg/extraction/inference/extract.yml)
 
     Returns:
         Dictionary containing merged configuration
     """
-    # If config_path doesn't end with .yml, add it and look in CFG_EXTRACTION_INFERENCE_DIR
+    # If config_path doesn't end with .yml, add it and look in appropriate directory
     if not config_path.endswith(('.yml', '.yaml')):
+        # Try inference directory first
         config_file = Path(CFG_EXTRACTION_INFERENCE_DIR) / f"{config_path}.yml"
+
+        # If not found, try evaluation directory
+        if not config_file.exists():
+            from stindex.utils.constants import CFG_EXTRACTION_EVALUATION_DIR
+            eval_config_file = Path(CFG_EXTRACTION_EVALUATION_DIR) / f"{config_path}.yml"
+            if eval_config_file.exists():
+                config_file = eval_config_file
     else:
         config_file = Path(config_path)
 

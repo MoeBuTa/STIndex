@@ -52,7 +52,7 @@ dimensions:
         required: true
         validation: "iso8601"
 
-      - name: temporal_type
+      - name: normalization_type
         type: enum
         values: ["date", "time", "datetime", "duration", "interval"]
         required: true
@@ -67,7 +67,7 @@ dimensions:
         output:
           text: "March 15, 2022"
           normalized: "2022-03-15"
-          temporal_type: "date"
+          normalization_type: "date"
 
   # -----------------------------
   # Spatial Dimension (Default)

@@ -54,7 +54,7 @@ reflection:
 spatial:
   # Enable OpenStreetMap context provider for nearby location information
   # Uses Overpass API to fetch nearby POIs (based on GeoLLM research: 3.3x improvement)
-  enable_osm_context: true
+  enable_osm_context: false
 
   # OSM context radius in kilometers
   osm_radius_km: 100

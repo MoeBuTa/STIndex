@@ -5,12 +5,18 @@ Queries Overpass API for nearby geographic features to improve
 location disambiguation accuracy (GeoLLM paper: 3.3x improvement).
 """
 
+import json
 import math
+import threading
+import time
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import requests
 from geopy.distance import geodesic
 from loguru import logger
+
+from stindex.utils.constants import PROJECT_DIR
 
 
 class OSMContextProvider:
@@ -29,7 +35,10 @@ class OSMContextProvider:
         self,
         overpass_url: str = "https://overpass-api.de/api/interpreter",
         timeout: int = 30,
-        max_results: int = 10
+        max_results: int = 10,
+        rate_limit: float = 1.0,
+        cache_enabled: bool = True,
+        cache_dir: Optional[Path] = None
     ):
         """
         Initialize OSM context provider.
@@ -38,10 +47,99 @@ class OSMContextProvider:
             overpass_url: Overpass API endpoint URL
             timeout: Request timeout in seconds
             max_results: Maximum number of nearby locations to return
+            rate_limit: Minimum seconds between API requests (default: 1.0)
+            cache_enabled: Enable file-based caching (default: True)
+            cache_dir: Cache directory path (default: data/cache/osm_context)
         """
         self.overpass_url = overpass_url
         self.timeout = timeout
         self.max_results = max_results
+
+        # Rate limiting
+        self.rate_limit = rate_limit
+        self._last_request_time = 0
+        self._rate_limit_lock = threading.Lock()
+
+        # Caching
+        self.cache_enabled = cache_enabled
+        if cache_dir:
+            self.cache_dir = Path(cache_dir)
+        else:
+            self.cache_dir = Path(PROJECT_DIR) / "data/cache/osm_context"
+
+        if self.cache_enabled:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"OSM context cache enabled: {self.cache_dir}")
+
+    def _get_cache_key(self, location: Tuple[float, float], radius_km: float) -> str:
+        """
+        Generate cache key for a location query.
+
+        Args:
+            location: (lat, lon) tuple
+            radius_km: Search radius
+
+        Returns:
+            Cache key string
+        """
+        lat, lon = location
+        # Round to 4 decimal places (~11m precision) for cache key
+        return f"{lat:.4f}_{lon:.4f}_{radius_km}"
+
+    def _load_from_cache(self, cache_key: str) -> Optional[List[Dict]]:
+        """
+        Load nearby locations from cache.
+
+        Args:
+            cache_key: Cache key
+
+        Returns:
+            Cached nearby locations or None if not found
+        """
+        if not self.cache_enabled:
+            return None
+
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        if cache_file.exists():
+            try:
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                logger.debug(f"OSM context cache hit: {cache_key}")
+                return data
+            except Exception as e:
+                logger.debug(f"Failed to load from cache: {e}")
+                return None
+
+        return None
+
+    def _save_to_cache(self, cache_key: str, nearby_locations: List[Dict]):
+        """
+        Save nearby locations to cache.
+
+        Args:
+            cache_key: Cache key
+            nearby_locations: List of nearby locations
+        """
+        if not self.cache_enabled:
+            return
+
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        try:
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(nearby_locations, f, indent=2)
+            logger.debug(f"OSM context saved to cache: {cache_key}")
+        except Exception as e:
+            logger.debug(f"Failed to save to cache: {e}")
+
+    def _wait_for_rate_limit(self):
+        """Thread-safe rate limiting for API requests."""
+        with self._rate_limit_lock:
+            elapsed = time.time() - self._last_request_time
+            if elapsed < self.rate_limit:
+                wait_time = self.rate_limit - elapsed
+                logger.debug(f"Rate limiting: waiting {wait_time:.2f}s")
+                time.sleep(wait_time)
+            self._last_request_time = time.time()
 
     def get_nearby_locations(
         self,
@@ -69,6 +167,15 @@ class OSMContextProvider:
             ]
         """
         lat, lon = location
+
+        # Check cache first
+        cache_key = self._get_cache_key(location, radius_km)
+        cached_result = self._load_from_cache(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        # Apply rate limiting before API request
+        self._wait_for_rate_limit()
 
         # Convert km to meters for Overpass API
         radius_m = int(radius_km * 1000)
@@ -161,6 +268,10 @@ class OSMContextProvider:
         nearby = nearby[:self.max_results]
 
         logger.debug(f"Found {len(nearby)} nearby locations within {radius_km}km")
+
+        # Save to cache
+        self._save_to_cache(cache_key, nearby)
+
         return nearby
 
     def _calculate_bearing(

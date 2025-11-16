@@ -132,7 +132,7 @@ REMINDER: Return ONLY valid JSON, nothing else."""
             temporal_template = """   - Normalize to ISO 8601 format:
      * Dates: YYYY-MM-DD
      * Datetimes: YYYY-MM-DDTHH:MM:SS
-     * Durations: P1D, P2M, P3Y
+     * Durations: P1D (days), P2M (months), P3Y (years), PT2H (hours), PT30M (minutes), PT45S (seconds)
      * Intervals: start/end (e.g., 2025-10-27T11:00:00/2025-10-27T19:00:00)"""
             instruction_parts.append(temporal_template)
 
