@@ -15,6 +15,9 @@ STIndex is a multi-dimensional information extraction system that uses LLMs to e
 
 ```bash
 pip install stindex
+
+# Install spaCy language model (required for NER)
+python -m spacy download en_core_web_sm
 ```
 
 ### Basic Extraction

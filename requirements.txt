@@ -6,7 +6,8 @@ pydantic>=2.0.0,<2.12  # Constrained for gradio compatibility
 
 # NLP and text processing
 spacy>=3.7.0
-en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+# Note: Install spaCy model separately after installation:
+# python -m spacy download en_core_web_sm
 
 # Temporal processing
 dateparser>=1.2.0
