@@ -1,6 +1,13 @@
 # STIndex - Spatiotemporal Information Extraction
 
+[![PyPI version](https://badge.fury.io/py/stindex.svg)](https://badge.fury.io/py/stindex)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Demo Dashboard](https://img.shields.io/badge/Demo-Dashboard-green.svg)](https://stindex.ai4wa.com/)
+
 STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features end-to-end pipeline with preprocessing, extraction, and visualization.
+
+**🌐 [Try the Demo Dashboard](https://stindex.ai4wa.com/)**
 
 ## Quick Start
 
