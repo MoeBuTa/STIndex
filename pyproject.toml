@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stindex"
-version = "1.0.0"
+version = "1.0.1"
 description = "Spatiotemporal Index Extraction from Unstructured Text"
 readme = "README.md"
 authors = [
@@ -45,6 +45,10 @@ include = ["stindex*", "cfg*", "scripts*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yml", "*.yaml", "*.sh"]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
 
 [tool.black]
 line-length = 100
