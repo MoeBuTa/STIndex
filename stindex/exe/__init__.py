@@ -6,7 +6,7 @@ separated from the CLI interface definition.
 """
 
 from .extract import execute_extract
-from .evaluate_context_aware import execute_context_aware_evaluation
+from .evaluate import execute_context_aware_evaluation
 from .utils import get_output_dir, save_result, display_json
 
 

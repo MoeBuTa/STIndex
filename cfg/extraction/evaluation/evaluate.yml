@@ -21,7 +21,7 @@ llm:
   #   - hf: cfg/extraction/inference/hf.yml
   #   - openai: cfg/extraction/inference/openai.yml
   #   - anthropic: cfg/extraction/inference/anthropic.yml
-  llm_provider: hf
+  llm_provider: openai
 
 # Context-Aware Extraction Configuration
 context_aware:
