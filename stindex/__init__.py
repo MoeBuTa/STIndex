@@ -7,7 +7,7 @@ Uses native LLM providers for clean, type-safe interactions.
 v0.5.0: Unified on DimensionalExtractor for multi-dimensional extraction.
 """
 
-__version__ = "0.5.0"
+__version__ = "1.0.2"
 __author__ = "STIndex Team"
 __license__ = "MIT"
 
@@ -20,8 +20,6 @@ from stindex.preprocess import DocumentChunk, InputDocument, Preprocessor
 # Pipeline API
 from stindex.pipeline import STIndexPipeline
 
-# Visualization API
-from stindex.visualization import STIndexVisualizer
 
 # Response models (legacy)
 from stindex.llm.response.models import (
@@ -47,6 +45,10 @@ from stindex.llm.response.dimension_models import (
     NormalizedDimensionMention,
 )
 
+# Retrieval API
+from stindex.retrieval.hybrid_retriever import HybridRetriever, RetrievalResult, RetrievalResponse
+from stindex.retrieval.dimensional_filter import DimensionalFilter, TemporalFilter, SpatialFilter
+
 __all__ = [
     # Main API
     "DimensionalExtractor",  # Multi-dimensional extractor
@@ -56,8 +58,6 @@ __all__ = [
     "DocumentChunk",  # Document chunk model
     # Pipeline API
     "STIndexPipeline",  # End-to-end pipeline orchestrator
-    # Visualization API
-    "STIndexVisualizer",  # Visualization orchestrator
     # Legacy Models
     "ExtractionResult",
     "SpatioTemporalResult",
@@ -76,6 +76,13 @@ __all__ = [
     "GeocodedDimensionEntity",
     "CategoricalDimensionMention",
     "CategoricalDimensionEntity",
+    # Retrieval API
+    "HybridRetriever",
+    "RetrievalResult",
+    "RetrievalResponse",
+    "DimensionalFilter",
+    "TemporalFilter",
+    "SpatialFilter",
 ]
 
 

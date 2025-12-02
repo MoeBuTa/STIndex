@@ -17,10 +17,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 
 from stindex.llm.response.dimension_models import (
-    NormalizedDimensionEntity,
-    GeocodedDimensionEntity,
-    CategoricalDimensionEntity,
-    StructuredDimensionEntity,
     MultiDimensionalResult,
 )
 

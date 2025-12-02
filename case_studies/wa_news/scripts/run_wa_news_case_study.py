@@ -174,7 +174,7 @@ def create_wa_news_sources():
 
 
 def run_full_pipeline():
-    """Run complete pipeline: preprocessing → extraction → visualization."""
+    """Run complete pipeline: preprocessing → extraction."""
 
     logger.info("=" * 80)
     logger.info("Western Australia News Case Study")
@@ -197,7 +197,6 @@ def run_full_pipeline():
     logger.info(f"  - Dimension config: {config_path}")
     logger.info(f"  - Output directory: {output_dir}")
     logger.info(f"  - Preprocessing: Loaded from cfg/preprocess/*.yml")
-    logger.info(f"  - Visualization: Loaded from cfg/visualization.yml")
 
     pipeline = STIndexPipeline(
         dimension_config=str(config_path),
@@ -213,7 +212,6 @@ def run_full_pipeline():
     results = pipeline.run_pipeline(
         input_docs=sources,
         save_results=True,
-        visualize=True
     )
 
     # Summary
@@ -245,7 +243,6 @@ def run_full_pipeline():
     logger.info(f"\n📁 Output Files:")
     logger.info(f"  - Chunks: {output_dir / 'chunks' / 'preprocessed_chunks.json'}")
     logger.info(f"  - Results: {output_dir / 'results' / 'extraction_results.json'}")
-    logger.info(f"  - Visualizations: {output_dir / 'visualizations' / '*.html'}")
 
     return results
 

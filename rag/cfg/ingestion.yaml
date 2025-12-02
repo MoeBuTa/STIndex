@@ -1,0 +1,111 @@
+# Vector Ingestion Configuration for Closed-Domain RAG Corpus
+# Optimized for CPU-only processing and multi-hop QA datasets
+
+# Encoder model configuration
+encoder:
+  # Model name from HuggingFace
+  # Options: BAAI/bge-m3, sentence-transformers/all-MiniLM-L6-v2, etc.
+  model_name: BAAI/bge-m3
+
+  # Batch size for encoding (smaller for CPU to avoid OOM)
+  batch_size: 32
+
+  # Device for encoding (cuda, mps, cpu)
+  device: cpu  # CPU-only for portability
+
+  # Use FP16 for faster encoding (only effective on GPU)
+  use_fp16: false
+
+  # Normalize embeddings (required for inner product similarity)
+  normalize_embeddings: true
+
+  # Maximum sequence length (matches typical chunk size)
+  max_length: 512
+
+# Input data configuration for closed-domain corpus
+data:
+  # Input file path: processed multi-hop QA chunks
+  input_file: data/corpus/merged/chunks.jsonl
+
+  # JSONL field names
+  id_column: chunk_id
+  text_column: text
+  title_column: doc_title
+
+  # Optional: limit number of passages for testing
+  # Set to small number like 1000 for sanity check
+  limit: null
+
+  # Skip first N passages
+  skip: 0
+
+  # Chunk size for splitting into multiple indices (null for single index)
+  # Useful for very large corpora (>5M chunks)
+  chunk_size: null
+
+# FAISS index configuration
+index:
+  # Index type: flat, ivf, hnsw
+  # - flat: Exact search, best for <100K chunks
+  # - ivf: Approximate search with clustering, good for 100K-10M chunks
+  # - hnsw: Graph-based, good balance of speed and accuracy
+  index_type: flat  # Use flat for smaller closed-domain corpus
+
+  # Metric type: l2, ip (inner product), cosine
+  # ip (inner product) is fastest when embeddings are normalized
+  metric_type: ip
+
+  # GPU configuration (disabled for CPU-only)
+  use_gpu: false
+  gpu_id: 0
+
+  # IVF parameters (only used if index_type=ivf)
+  ivf:
+    nlist: 256    # Reduced for smaller corpus
+    nprobe: 16    # Search 16 clusters
+
+  # HNSW parameters (only used if index_type=hnsw)
+  hnsw:
+    M: 32
+    efConstruction: 200
+    efSearch: 64
+
+# Output configuration
+output:
+  # Output directory for vector index
+  output_dir: data/vector/rag
+
+  # Output filenames
+  index_file: faiss_index.bin
+  metadata_file: chunks_metadata.jsonl
+  config_file: index_config.json
+  id_mapping_file: id_mapping.json
+
+  # Save interval for checkpointing
+  save_interval: 10000
+
+  # Checkpoint interval during encoding
+  checkpoint_interval: 10000
+
+  # Resume from checkpoint if available
+  resume: true
+
+# STIndex integration (for hybrid retrieval)
+stindex:
+  # Enable STIndex dimensional filtering
+  enabled: true
+
+  # STIndex warehouse path (from stindex_ingest.py output)
+  warehouse_path: data/warehouse/rag
+
+  # Index files for filtering
+  temporal_index: data/warehouse/rag/indexes/temporal_index.json
+  spatial_index: data/warehouse/rag/indexes/spatial_index.json
+
+  # Enriched chunks with dimensional metadata
+  enriched_chunks: data/warehouse/rag/chunks_enriched.jsonl
+
+# Logging
+logging:
+  show_progress: true
+  log_interval: 100

@@ -1,0 +1,28 @@
+# Save Path Setting
+################################################################################
+root_save_dir: ../data/original
+
+# Running Mode Setting
+################################################################################
+running_modes:
+  build_split: True
+  sample_sets: True
+
+# Sampling Setting
+################################################################################
+# random seed
+seed: 0223
+# first k samples to build, null to use all
+cut_off: null
+
+# Datasets Split Setting
+################################################################################
+# dataset and its corresponding splits to generate
+datasets:
+  # nq: validation
+  # triviaqa: validation
+  hotpotqa: [dev, train]
+  two_wiki: [dev, train]
+  # popqa: test
+  # webqa: test
+  musique: [dev, train]

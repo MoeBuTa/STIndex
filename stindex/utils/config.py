@@ -143,25 +143,3 @@ def load_postprocess_config(config_name: str) -> Dict[str, Any]:
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing config file {config_file}: {e}")
 
-
-def load_visualization_config() -> Dict[str, Any]:
-    """
-    Load visualization configuration file.
-
-    Returns:
-        Dictionary containing visualization configuration
-
-    Examples:
-        >>> config = load_visualization_config()
-    """
-    config_file = Path(CFG_DIR) / "visualization.yml"
-
-    try:
-        with open(config_file, "r") as f:
-            config = yaml.safe_load(f) or {}
-        return config
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Visualization config not found: {config_file}")
-    except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing config file {config_file}: {e}")
-
