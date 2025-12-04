@@ -41,24 +41,44 @@ def save_result(result, output_dir: Path, filename: str):
     """
     # Save JSON (with extraction config and raw LLM output)
     json_file = output_dir / filename
+
+    # Handle entities - they might be dicts or Pydantic models
+    temporal_entities = []
+    for e in result.temporal_entities:
+        if isinstance(e, dict):
+            temporal_entities.append(e)
+        else:
+            temporal_entities.append(e.model_dump() if hasattr(e, 'model_dump') else e.dict())
+
+    spatial_entities = []
+    for e in result.spatial_entities:
+        if isinstance(e, dict):
+            spatial_entities.append(e)
+        else:
+            spatial_entities.append(e.model_dump() if hasattr(e, 'model_dump') else e.dict())
+
     result_dict = {
         "input_text": result.input_text,
-        "temporal_entities": [e.dict() for e in result.temporal_entities],
-        "spatial_entities": [e.dict() for e in result.spatial_entities],
+        "temporal_entities": temporal_entities,
+        "spatial_entities": spatial_entities,
         "success": result.success,
         "error": result.error,
         "processing_time": result.processing_time,
     }
 
     # Add extraction config if available
+    # extraction_config can be a dict or Pydantic model
     if result.extraction_config:
-        result_dict["extraction_config"] = {
-            "llm_provider": result.extraction_config.llm_provider,
-            "model_name": result.extraction_config.model_name,
-            "temperature": result.extraction_config.temperature,
-            "max_tokens": result.extraction_config.max_tokens,
-            "raw_llm_output": result.extraction_config.raw_llm_output,
-        }
+        if isinstance(result.extraction_config, dict):
+            result_dict["extraction_config"] = result.extraction_config
+        else:
+            result_dict["extraction_config"] = {
+                "llm_provider": result.extraction_config.llm_provider,
+                "model_name": result.extraction_config.model_name,
+                "temperature": result.extraction_config.temperature,
+                "max_tokens": result.extraction_config.max_tokens,
+                "raw_llm_output": result.extraction_config.raw_llm_output,
+            }
 
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(result_dict, f, indent=2, ensure_ascii=False)
@@ -68,23 +88,42 @@ def save_result(result, output_dir: Path, filename: str):
 
 def display_json(result, output: Optional[Path] = None):
     """Display results as JSON."""
+    # Handle entities - they might be dicts or Pydantic models
+    temporal_entities = []
+    for e in result.temporal_entities:
+        if isinstance(e, dict):
+            temporal_entities.append(e)
+        else:
+            temporal_entities.append(e.model_dump() if hasattr(e, 'model_dump') else e.dict())
+
+    spatial_entities = []
+    for e in result.spatial_entities:
+        if isinstance(e, dict):
+            spatial_entities.append(e)
+        else:
+            spatial_entities.append(e.model_dump() if hasattr(e, 'model_dump') else e.dict())
+
     result_dict = {
         "input_text": result.input_text,
-        "temporal_entities": [e.dict() for e in result.temporal_entities],
-        "spatial_entities": [e.dict() for e in result.spatial_entities],
+        "temporal_entities": temporal_entities,
+        "spatial_entities": spatial_entities,
         "success": result.success,
         "error": result.error,
         "processing_time": result.processing_time,
     }
 
     # Add extraction config if available
+    # extraction_config can be a dict or Pydantic model
     if result.extraction_config:
-        result_dict["extraction_config"] = {
-            "llm_provider": result.extraction_config.llm_provider,
-            "model_name": result.extraction_config.model_name,
-            "temperature": result.extraction_config.temperature,
-            "max_tokens": result.extraction_config.max_tokens,
-        }
+        if isinstance(result.extraction_config, dict):
+            result_dict["extraction_config"] = result.extraction_config
+        else:
+            result_dict["extraction_config"] = {
+                "llm_provider": result.extraction_config.llm_provider,
+                "model_name": result.extraction_config.model_name,
+                "temperature": result.extraction_config.temperature,
+                "max_tokens": result.extraction_config.max_tokens,
+            }
 
     json_str = json.dumps(result_dict, indent=2, ensure_ascii=False, default=str)
 

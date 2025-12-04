@@ -35,7 +35,7 @@ try:
     GOOGLE_MAPS_AVAILABLE = True
 except ImportError:
     GOOGLE_MAPS_AVAILABLE = False
-    logger.debug("googlemaps package not found. Install with: pip install googlemaps for better geocoding")
+    # logger.debug("googlemaps package not found. Install with: pip install googlemaps for better geocoding")
 
 
 class GeocodeCache:

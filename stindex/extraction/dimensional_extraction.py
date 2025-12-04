@@ -186,7 +186,7 @@ class DimensionalExtractor:
                 raise ValueError(f"LLM generation failed: {llm_response.error_msg}")
 
             raw_output = llm_response.content
-            logger.debug(f"Raw LLM output: {raw_output[:200]}...")
+            logger.debug(f"Raw LLM output: {raw_output}...")
 
             # Step 3: Extract and validate JSON
             # We need to parse it as a generic dict first since the structure is dynamic
