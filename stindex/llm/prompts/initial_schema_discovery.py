@@ -1,0 +1,187 @@
+"""
+Prompt generation for initial schema discovery from question clusters.
+
+This prompt is used AFTER clustering to discover high-level dimensional schemas
+by sampling questions from each cluster and asking the LLM to propose 2-3 dimensions.
+"""
+
+import json
+from typing import Dict, List, Optional
+
+
+class GlobalSchemaPrompt:
+    """
+    Prompt for global schema discovery from question clusters.
+
+    This is the first phase of schema discovery where we ask the LLM to propose
+    2-3 high-level dimensions based on sample questions from a cluster.
+    """
+
+    def __init__(
+        self,
+        n_schemas: int = 2,
+        predefined_dimensions: Optional[List[str]] = None,
+        cluster_id: Optional[int] = None
+    ):
+        """
+        Initialize prompt builder.
+
+        Args:
+            n_schemas: Number of domain-specific dimensions to discover (default: 2)
+            predefined_dimensions: List of predefined dimension names (e.g., ['temporal', 'spatial'])
+            cluster_id: Optional cluster ID for context
+        """
+        self.n_schemas = n_schemas
+        self.predefined_dimensions = predefined_dimensions or ['temporal', 'spatial']
+        self.cluster_id = cluster_id
+
+    def system_prompt(self) -> str:
+        """Generate system prompt for schema discovery."""
+
+        template = """You are a dimensional schema design expert for information extraction.
+
+Your task is to analyze questions from a dataset and propose domain-specific dimensional schemas that can be used to organize and retrieve information.
+
+REASONING PROCESS:
+Before providing the JSON output, think step-by-step through:
+1. **Entity patterns** - What types of entities appear frequently across questions?
+2. **Natural groupings** - Which entities belong together conceptually?
+3. **Hierarchical structure** - What are the natural hierarchy levels (specific → general)?
+4. **Information utility** - How will these dimensions help retrieve relevant documents?
+
+Your response may include reasoning before the JSON output.
+If your model supports <think> tags, use them for your reasoning.
+Otherwise, write your reasoning as text before the JSON.
+
+Key Principles:
+1. **Hierarchical Structure**: Each dimension should have 2-4 levels of hierarchy
+   - Example: specific_item → item_category → broader_category → domain
+
+2. **Information Retrieval Utility**: Schemas should help in retrieving relevant documents for question answering
+   - Consider: What information would help answer these questions?
+   - Think: How can we organize knowledge to support this type of reasoning?
+
+3. **Domain Relevance**: Focus on categorizations that align with how knowledge is naturally organized in this domain
+   - Identify meaningful relationships between concepts
+   - Consider hierarchical structures (taxonomies, ontologies)
+
+4. **Avoid Redundancy**: Do NOT propose temporal or spatial dimensions (these are predefined)
+   - Predefined dimensions: {predefined_dims}
+   - Focus on domain-specific dimensions only
+
+OUTPUT FORMAT:
+After your reasoning, provide valid JSON:
+{{
+    "dimension_name_1": {{
+        "hierarchy": ["level1", "level2", "level3"],
+        "description": "Clear description of what this dimension captures and why it's useful for retrieval",
+        "examples": ["example entity 1", "example entity 2", "example entity 3"]
+    }},
+    "dimension_name_2": {{
+        "hierarchy": ["level1", "level2"],
+        "description": "...",
+        "examples": ["...", "...", "..."]
+    }}
+}}"""
+
+        return template.format(
+            predefined_dims=", ".join(self.predefined_dimensions)
+        )
+
+    def user_prompt(self, sample_questions: List[str]) -> str:
+        """
+        Generate user prompt with sampled questions.
+
+        Args:
+            sample_questions: Sample questions from the cluster (typically 15-20)
+
+        Returns:
+            Formatted user prompt
+        """
+        # Format questions (truncate if too long)
+        questions_formatted = []
+        for i, q in enumerate(sample_questions, 1):
+            # Truncate long questions
+            q_text = q[:300] + "..." if len(q) > 300 else q
+            questions_formatted.append(f"{i}. {q_text}")
+
+        questions_str = "\n".join(questions_formatted)
+
+        cluster_context = f"Cluster {self.cluster_id}: " if self.cluster_id is not None else ""
+
+        template = """{cluster_context}Analyze these {n_samples} questions and propose {n_schemas} domain-specific dimensional schemas.
+
+Questions:
+{questions}
+
+Requirements:
+1. Propose exactly {n_schemas} domain-specific dimensions (NOT temporal or spatial - those are predefined)
+2. Each dimension should capture a distinct aspect of knowledge relevant to these questions
+3. Each dimension must have a hierarchical structure with 2-4 levels
+4. Provide clear descriptions explaining what each dimension captures and why it's useful
+5. Include 3-5 concrete examples per dimension
+
+Consider:
+- What types of information appear frequently in these questions?
+- How is knowledge naturally organized in this domain?
+- What hierarchical relationships exist between concepts?
+- What information would help retrieve relevant documents to answer these questions?
+
+Output ONLY valid JSON following the schema in the system prompt."""
+
+        return template.format(
+            cluster_context=cluster_context,
+            n_samples=len(sample_questions),
+            n_schemas=self.n_schemas,
+            questions=questions_str
+        )
+
+    def build_messages(self, sample_questions: List[str]) -> List[Dict[str, str]]:
+        """
+        Build message list for schema discovery.
+
+        Args:
+            sample_questions: Sample questions from cluster
+
+        Returns:
+            List of message dicts for LLM
+        """
+        return [
+            {"role": "system", "content": self.system_prompt()},
+            {"role": "user", "content": self.user_prompt(sample_questions)}
+        ]
+
+    def parse_response(self, llm_response: str) -> Dict:
+        """
+        Parse LLM response into discovered schemas.
+
+        Args:
+            llm_response: Raw LLM response (may include reasoning + JSON)
+
+        Returns:
+            Dict with:
+                - 'schemas': Dict of dimension_name → schema config
+                - 'reasoning': Extracted CoT reasoning (if any)
+                - 'raw_response': Original LLM response
+        """
+        # Extract reasoning and JSON using new utility
+        from stindex.extraction.utils import extract_cot_and_json
+
+        result = extract_cot_and_json(llm_response)
+        discovered_schemas = result['data']
+
+        # Validate structure
+        if not isinstance(discovered_schemas, dict):
+            raise ValueError(f"Expected dict, got {type(discovered_schemas)}")
+
+        for dim_name, schema in discovered_schemas.items():
+            required_fields = {'hierarchy', 'description', 'examples'}
+            missing = required_fields - set(schema.keys())
+            if missing:
+                raise ValueError(f"Dimension '{dim_name}' missing fields: {missing}")
+
+        return {
+            'schemas': discovered_schemas,
+            'reasoning': result['reasoning'],
+            'raw_response': result['raw_response']
+        }

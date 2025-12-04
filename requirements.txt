@@ -31,6 +31,7 @@ jsonlines>=4.0.0  # For reading/writing JSONL files
 # Vector search and embeddings
 faiss-cpu>=1.7.0  # CPU-only FAISS for vector similarity search
 sentence-transformers>=2.2.0  # For encoding text to embeddings
+scikit-learn>=1.3.0  # For clustering (KMeans, metrics)
 
 # CLI and output
 rich>=13.0.0

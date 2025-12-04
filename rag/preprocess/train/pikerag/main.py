@@ -45,6 +45,7 @@ if __name__ == "__main__":
     root_save_dir: str = yaml_config["root_save_dir"]
     running_modes: Dict[str, bool] = yaml_config["running_modes"]
     dataset2split: Dict[str, List[str]] = yaml_config["datasets"]
+    mirage_config: dict = yaml_config.get("mirage_config", {"filter_clinical_only": True})
 
     # Check dataset split setting.
     for dataset, splits in dataset2split.items():
@@ -61,7 +62,11 @@ if __name__ == "__main__":
             for split in splits:
                 dataset_dir: str = get_dataset_dir(root_save_dir, dataset)
                 split_path: str = get_split_filepath(root_save_dir, dataset, split, sample_num=None)
-                reformat_dataset(dataset, split, split_path, dataset_dir, cut_off)
+                # Pass dataset-specific config (e.g., MIRAGE filtering)
+                dataset_config = {}
+                if dataset == "mirage":
+                    dataset_config = mirage_config
+                reformat_dataset(dataset, split, split_path, dataset_dir, cut_off, dataset_config)
 
     # # Sample and download valid samples and docs for each dataset.
     # if running_modes["sample_sets"]:

@@ -16,6 +16,8 @@ DATASET_TO_SPLIT_LIST: Dict[str, List[str]] = {
     "popqa": ["test"],
     "webqa": ["train", "test"],
     "musique": ["train", "dev"],
+    "mirage": ["train"],  # MIRAGE medical benchmark (no separate dev/test splits in source)
+    "medcorp": ["train"],  # MedCorp corpus: Textbooks + StatPearls
 }
 
 

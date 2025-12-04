@@ -1,0 +1,36 @@
+# Save Path Setting
+################################################################################
+root_save_dir: ../../../../data/original
+
+# Running Mode Setting
+################################################################################
+running_modes:
+  build_split: True
+  sample_sets: True
+
+# Sampling Setting
+################################################################################
+# random seed
+seed: 0223
+# first k samples to build, null to use all
+cut_off: null
+
+# Datasets Split Setting
+################################################################################
+# dataset and its corresponding splits to generate (train only)
+datasets:
+  hotpotqa: [train]
+  two_wiki: [train]
+  musique: [train]
+  mirage: [train]      # MIRAGE questions (clinical exams only: MedQA, MedMCQA, MMLU)
+  medcorp: [train]     # MedCorp corpus (Textbooks + StatPearls)
+
+# MIRAGE Configuration
+################################################################################
+# MIRAGE has two modes:
+#   1. Clinical exams only (default): 6,545 questions (MedQA, MedMCQA, MMLU)
+#      - Answerable by MedCorp corpus (Textbooks + StatPearls)
+#   2. All questions: 7,663 questions (adds PubMedQA, BioASQ)
+#      - Research QA requires PubMed corpus (not included)
+mirage_config:
+  filter_clinical_only: true  # Set to false to include all questions

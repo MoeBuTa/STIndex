@@ -2,15 +2,15 @@
 """
 STIndex Corpus Ingestion Module.
 
-This module processes corpus chunks through STIndex for:
+This module processes corpus documents through STIndex for:
 1. Temporal entity extraction (dates, durations, periods)
 2. Spatial entity extraction (locations, coordinates via geocoding)
 3. Building hierarchical indexes for efficient filtering
 4. Saving to warehouse (parquet, jsonl, geojsonl)
 
 Usage:
-    python -m rag.preprocess.ingestion.stindex_ingest \
-        --input data/corpus/merged/chunks.jsonl \
+    python -m rag.preprocess.train.ingestion.stindex_ingest \
+        --input data/corpus/documents.jsonl \
         --output data/warehouse/rag \
         --batch-size 100 \
         --config extract
@@ -42,7 +42,7 @@ except ImportError as e:
 
 class STIndexCorpusIngester:
     """
-    Ingest corpus chunks into STIndex warehouse with dimensional extraction.
+    Ingest corpus documents into STIndex warehouse with dimensional extraction.
 
     Supports:
     - Context-aware extraction for document-level consistency
@@ -85,43 +85,43 @@ class STIndexCorpusIngester:
 
         # Statistics
         self.stats = {
-            "total_chunks": 0,
-            "processed_chunks": 0,
+            "total_documents": 0,
+            "processed_documents": 0,
             "temporal_entities": 0,
             "spatial_entities": 0,
-            "failed_chunks": 0,
+            "failed_documents": 0,
             "start_time": None,
             "end_time": None,
         }
 
-    def load_chunks(self, input_path: str, limit: Optional[int] = None) -> List[Dict]:
-        """Load chunks from JSONL file."""
-        chunks = []
+    def load_documents(self, input_path: str, limit: Optional[int] = None) -> List[Dict]:
+        """Load documents from JSONL file."""
+        documents = []
         with jsonlines.open(input_path, "r") as reader:
-            for i, chunk in enumerate(reader):
+            for i, doc in enumerate(reader):
                 if limit and i >= limit:
                     break
-                chunks.append(chunk)
-        return chunks
+                documents.append(doc)
+        return documents
 
-    def extract_chunk(
+    def extract_document(
         self,
-        chunk: Dict[str, Any],
+        doc: Dict[str, Any],
         context: Optional[ExtractionContext] = None,
     ) -> Dict[str, Any]:
         """
-        Extract dimensional entities from a single chunk.
+        Extract dimensional entities from a single document.
 
         Args:
-            chunk: Chunk dict with 'text', 'doc_id', etc.
+            doc: Document dict with 'contents', 'doc_id', etc.
             context: Optional extraction context for consistency
 
         Returns:
-            Enriched chunk dict with extraction results
+            Enriched document dict with extraction results
         """
-        text = chunk.get("text", "")
+        text = doc.get("contents", "")
         if not text:
-            return chunk
+            return doc
 
         try:
             # Run extraction
@@ -135,9 +135,9 @@ class STIndexCorpusIngester:
             self.stats["temporal_entities"] += len(temporal_entities)
             self.stats["spatial_entities"] += len(spatial_entities)
 
-            # Enrich chunk
+            # Enrich document
             enriched = {
-                **chunk,
+                **doc,
                 "temporal_entities": temporal_entities,
                 "spatial_entities": spatial_entities,
                 "extraction_timestamp": datetime.now().isoformat(),
@@ -173,38 +173,38 @@ class STIndexCorpusIngester:
             return enriched
 
         except Exception as e:
-            logger.warning(f"Extraction failed for chunk {chunk.get('chunk_id')}: {e}")
-            self.stats["failed_chunks"] += 1
-            return {**chunk, "extraction_error": str(e)}
+            logger.warning(f"Extraction failed for document {doc.get('doc_id')}: {e}")
+            self.stats["failed_documents"] += 1
+            return {**doc, "extraction_error": str(e)}
 
     def process_batch(
         self,
-        chunks: List[Dict[str, Any]],
+        documents: List[Dict[str, Any]],
         context: Optional[ExtractionContext] = None,
     ) -> List[Dict[str, Any]]:
-        """Process a batch of chunks."""
+        """Process a batch of documents."""
         results = []
-        for chunk in chunks:
-            enriched = self.extract_chunk(chunk, context)
+        for doc in documents:
+            enriched = self.extract_document(doc, context)
             results.append(enriched)
-            self.stats["processed_chunks"] += 1
+            self.stats["processed_documents"] += 1
         return results
 
     def process_batch_parallel(
         self,
-        chunks: List[Dict[str, Any]],
+        documents: List[Dict[str, Any]],
         max_workers: int = 100,
     ) -> List[Dict[str, Any]]:
-        """Process a batch of chunks in parallel using ThreadPoolExecutor."""
+        """Process a batch of documents in parallel using ThreadPoolExecutor."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        results = [None] * len(chunks)
+        results = [None] * len(documents)
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_idx = {
-                executor.submit(self.extract_chunk, chunk, None): i
-                for i, chunk in enumerate(chunks)
+                executor.submit(self.extract_document, doc, None): i
+                for i, doc in enumerate(documents)
             }
 
             # Collect results as they complete
@@ -212,11 +212,11 @@ class STIndexCorpusIngester:
                 idx = future_to_idx[future]
                 try:
                     results[idx] = future.result()
-                    self.stats["processed_chunks"] += 1
+                    self.stats["processed_documents"] += 1
                 except Exception as e:
-                    logger.warning(f"Parallel extraction failed for chunk {idx}: {e}")
-                    results[idx] = {**chunks[idx], "extraction_error": str(e)}
-                    self.stats["failed_chunks"] += 1
+                    logger.warning(f"Parallel extraction failed for document {idx}: {e}")
+                    results[idx] = {**documents[idx], "extraction_error": str(e)}
+                    self.stats["failed_documents"] += 1
 
         return results
 
@@ -233,9 +233,9 @@ class STIndexCorpusIngester:
         Ingest corpus into warehouse.
 
         Args:
-            input_path: Path to input chunks JSONL
-            limit: Limit number of chunks to process
-            checkpoint_interval: Save checkpoint every N chunks
+            input_path: Path to input documents JSONL
+            limit: Limit number of documents to process
+            checkpoint_interval: Save checkpoint every N documents
             resume: Resume from checkpoint if available
             parallel: Enable parallel processing
             max_workers: Number of parallel workers (threads)
@@ -245,11 +245,11 @@ class STIndexCorpusIngester:
         """
         self.stats["start_time"] = datetime.now().isoformat()
 
-        # Load chunks
-        logger.info(f"Loading chunks from {input_path}")
-        chunks = self.load_chunks(input_path, limit)
-        self.stats["total_chunks"] = len(chunks)
-        logger.info(f"Loaded {len(chunks)} chunks")
+        # Load documents
+        logger.info(f"Loading documents from {input_path}")
+        documents = self.load_documents(input_path, limit)
+        self.stats["total_documents"] = len(documents)
+        logger.info(f"Loaded {len(documents)} documents")
 
         if parallel:
             logger.info(f"Parallel processing enabled with {max_workers} workers")
@@ -262,16 +262,16 @@ class STIndexCorpusIngester:
             with open(checkpoint_path, "r") as f:
                 checkpoint = json.load(f)
             start_idx = checkpoint.get("processed", 0)
-            logger.info(f"Resuming from checkpoint: {start_idx} chunks already processed")
+            logger.info(f"Resuming from checkpoint: {start_idx} documents already processed")
 
         # Output file
-        output_path = self.output_dir / "chunks_enriched.jsonl"
+        output_path = self.output_dir / "documents_enriched.jsonl"
         mode = "a" if start_idx > 0 else "w"
 
         # Process in batches
         with jsonlines.open(output_path, mode=mode) as writer:
-            for i in tqdm(range(start_idx, len(chunks), self.batch_size), desc="Ingesting"):
-                batch = chunks[i:i + self.batch_size]
+            for i in tqdm(range(start_idx, len(documents), self.batch_size), desc="Ingesting"):
+                batch = documents[i:i + self.batch_size]
 
                 # Create context for batch (group by doc_id)
                 context = None
@@ -286,8 +286,8 @@ class STIndexCorpusIngester:
                     enriched_batch = self.process_batch(batch, context)
 
                 # Write results
-                for chunk in enriched_batch:
-                    writer.write(chunk)
+                for doc in enriched_batch:
+                    writer.write(doc)
 
                 # Save checkpoint
                 if (i + self.batch_size) % checkpoint_interval == 0:
@@ -322,26 +322,26 @@ class STIndexCorpusIngester:
 
     def _build_indexes(self, enriched_path: Path):
         """Build inverted indexes for temporal and spatial filtering."""
-        temporal_index = {}  # year/month -> chunk_ids
-        spatial_index = {}   # region -> chunk_ids
+        temporal_index = {}  # year/month -> doc_ids
+        spatial_index = {}   # region -> doc_ids
 
         with jsonlines.open(enriched_path, "r") as reader:
-            for chunk in reader:
-                chunk_id = chunk.get("chunk_id", "")
+            for doc in reader:
+                doc_id = doc.get("doc_id", "")
 
                 # Temporal index
-                if "temporal_year" in chunk and chunk["temporal_year"]:
-                    year = str(chunk["temporal_year"])
+                if "temporal_year" in doc and doc["temporal_year"]:
+                    year = str(doc["temporal_year"])
                     if year not in temporal_index:
                         temporal_index[year] = []
-                    temporal_index[year].append(chunk_id)
+                    temporal_index[year].append(doc_id)
 
                 # Spatial index
-                if "spatial_text" in chunk and chunk["spatial_text"]:
-                    location = chunk["spatial_text"]
+                if "spatial_text" in doc and doc["spatial_text"]:
+                    location = doc["spatial_text"]
                     if location not in spatial_index:
                         spatial_index[location] = []
-                    spatial_index[location].append(chunk_id)
+                    spatial_index[location].append(doc_id)
 
         # Save indexes
         indexes_dir = self.output_dir / "indexes"
@@ -357,29 +357,29 @@ class STIndexCorpusIngester:
         logger.info(f"Built spatial index: {len(spatial_index)} locations")
 
     def _export_parquet(self, enriched_path: Path):
-        """Export enriched chunks to Parquet format."""
+        """Export enriched documents to Parquet format."""
         try:
             import pandas as pd
 
-            chunks = []
+            documents = []
             with jsonlines.open(enriched_path, "r") as reader:
-                for chunk in reader:
+                for doc in reader:
                     # Flatten for parquet
-                    flat_chunk = {
-                        k: v for k, v in chunk.items()
+                    flat_doc = {
+                        k: v for k, v in doc.items()
                         if not isinstance(v, (list, dict))
                     }
                     # Store complex fields as JSON strings
-                    if "temporal_entities" in chunk:
-                        flat_chunk["temporal_entities_json"] = json.dumps(chunk["temporal_entities"])
-                    if "spatial_entities" in chunk:
-                        flat_chunk["spatial_entities_json"] = json.dumps(chunk["spatial_entities"])
-                    chunks.append(flat_chunk)
+                    if "temporal_entities" in doc:
+                        flat_doc["temporal_entities_json"] = json.dumps(doc["temporal_entities"])
+                    if "spatial_entities" in doc:
+                        flat_doc["spatial_entities_json"] = json.dumps(doc["spatial_entities"])
+                    documents.append(flat_doc)
 
-            df = pd.DataFrame(chunks)
-            parquet_path = self.output_dir / "chunks_enriched.parquet"
+            df = pd.DataFrame(documents)
+            parquet_path = self.output_dir / "documents_enriched.parquet"
             df.to_parquet(parquet_path, index=False)
-            logger.info(f"Exported {len(df)} chunks to {parquet_path}")
+            logger.info(f"Exported {len(df)} documents to {parquet_path}")
 
         except ImportError:
             logger.warning("pandas not installed, skipping Parquet export")
@@ -389,9 +389,9 @@ class STIndexCorpusIngester:
         features = []
 
         with jsonlines.open(enriched_path, "r") as reader:
-            for chunk in reader:
-                lat = chunk.get("latitude")
-                lon = chunk.get("longitude")
+            for doc in reader:
+                lat = doc.get("latitude")
+                lon = doc.get("longitude")
 
                 if lat is not None and lon is not None:
                     feature = {
@@ -401,11 +401,11 @@ class STIndexCorpusIngester:
                             "coordinates": [lon, lat],
                         },
                         "properties": {
-                            "chunk_id": chunk.get("chunk_id"),
-                            "doc_id": chunk.get("doc_id"),
-                            "location": chunk.get("spatial_text"),
-                            "temporal": chunk.get("temporal_normalized"),
-                            "text_preview": chunk.get("text", "")[:200],
+                            "doc_id": doc.get("doc_id"),
+                            "title": doc.get("title"),
+                            "location": doc.get("spatial_text"),
+                            "temporal": doc.get("temporal_normalized"),
+                            "text_preview": doc.get("contents", "")[:200],
                         },
                     }
                     features.append(feature)
@@ -426,8 +426,8 @@ def main():
     parser.add_argument(
         "--input",
         type=str,
-        default="data/corpus/merged/chunks.jsonl",
-        help="Input chunks JSONL file",
+        default="data/corpus/documents.jsonl",
+        help="Input documents JSONL file",
     )
     parser.add_argument(
         "--output",
@@ -451,7 +451,7 @@ def main():
         "--limit",
         type=int,
         default=None,
-        help="Limit number of chunks to process",
+        help="Limit number of documents to process",
     )
     parser.add_argument(
         "--enable-geocoding",
@@ -502,11 +502,11 @@ def main():
     )
 
     print(f"\n=== Ingestion Complete ===")
-    print(f"Total chunks: {stats['total_chunks']}")
-    print(f"Processed: {stats['processed_chunks']}")
+    print(f"Total documents: {stats['total_documents']}")
+    print(f"Processed: {stats['processed_documents']}")
     print(f"Temporal entities: {stats['temporal_entities']}")
     print(f"Spatial entities: {stats['spatial_entities']}")
-    print(f"Failed: {stats['failed_chunks']}")
+    print(f"Failed: {stats['failed_documents']}")
 
 
 if __name__ == "__main__":

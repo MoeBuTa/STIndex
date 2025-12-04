@@ -2,7 +2,7 @@
 """
 FAISS CPU Vector Ingestion Module.
 
-This module encodes corpus chunks into dense vectors using a sentence transformer
+This module encodes corpus documents into dense vectors using a sentence transformer
 and indexes them in FAISS for efficient similarity search.
 
 Optimized for:
@@ -11,8 +11,8 @@ Optimized for:
 - Memory-efficient batch processing with checkpointing
 
 Usage:
-    python -m rag.preprocess.ingestion.vector_ingest \
-        --input data/corpus/merged/chunks.jsonl \
+    python -m rag.preprocess.train.ingestion.vector_ingest \
+        --input data/corpus/documents.jsonl \
         --output data/vector/rag \
         --config rag/cfg/ingestion.yaml
 """
@@ -33,7 +33,7 @@ from tqdm import tqdm
 
 class VectorIngester:
     """
-    Ingest corpus chunks into FAISS vector index.
+    Ingest corpus documents into FAISS vector index.
 
     Supports:
     - Multiple encoder models (BGE-M3, all-MiniLM, etc.)
@@ -84,9 +84,9 @@ class VectorIngester:
 
         # Statistics
         self.stats = {
-            "total_chunks": 0,
-            "encoded_chunks": 0,
-            "failed_chunks": 0,
+            "total_documents": 0,
+            "encoded_documents": 0,
+            "failed_documents": 0,
             "index_type": self.index_type,
             "model_name": self.model_name,
             "start_time": None,
@@ -174,15 +174,15 @@ class VectorIngester:
 
         return embeddings.astype(np.float32)
 
-    def load_chunks(
+    def load_documents(
         self,
         input_path: str,
         limit: Optional[int] = None,
-        text_field: str = "text",
-        id_field: str = "chunk_id",
+        text_field: str = "contents",
+        id_field: str = "doc_id",
     ) -> Tuple[List[str], List[str], List[Dict]]:
         """
-        Load chunks from JSONL file.
+        Load documents from JSONL file.
 
         Returns:
             Tuple of (texts, ids, metadata)
@@ -192,18 +192,18 @@ class VectorIngester:
         metadata = []
 
         with jsonlines.open(input_path, "r") as reader:
-            for i, chunk in enumerate(reader):
+            for i, doc in enumerate(reader):
                 if limit and i >= limit:
                     break
 
-                text = chunk.get(text_field, "")
+                text = doc.get(text_field, "")
                 if not text:
                     continue
 
                 texts.append(text)
-                ids.append(chunk.get(id_field, f"chunk_{i}"))
+                ids.append(doc.get(id_field, f"doc_{i}"))
                 metadata.append({
-                    k: v for k, v in chunk.items()
+                    k: v for k, v in doc.items()
                     # Include all fields including text for retrieval
                 })
 
@@ -213,8 +213,8 @@ class VectorIngester:
         self,
         input_path: str,
         limit: Optional[int] = None,
-        text_field: str = "text",
-        id_field: str = "chunk_id",
+        text_field: str = "contents",
+        id_field: str = "doc_id",
         checkpoint_interval: int = 10000,
         resume: bool = True,
     ) -> Dict[str, Any]:
@@ -222,11 +222,11 @@ class VectorIngester:
         Ingest corpus into FAISS index.
 
         Args:
-            input_path: Path to input chunks JSONL
-            limit: Limit number of chunks to process
+            input_path: Path to input documents JSONL
+            limit: Limit number of documents to process
             text_field: Field name for text content
-            id_field: Field name for chunk ID
-            checkpoint_interval: Save checkpoint every N chunks
+            id_field: Field name for document ID
+            checkpoint_interval: Save checkpoint every N documents
             resume: Resume from checkpoint if available
 
         Returns:
@@ -234,14 +234,14 @@ class VectorIngester:
         """
         self.stats["start_time"] = datetime.now().isoformat()
 
-        # Load chunks
-        logger.info(f"Loading chunks from {input_path}")
-        texts, ids, metadata = self.load_chunks(input_path, limit, text_field, id_field)
-        self.stats["total_chunks"] = len(texts)
-        logger.info(f"Loaded {len(texts)} chunks")
+        # Load documents
+        logger.info(f"Loading documents from {input_path}")
+        texts, ids, metadata = self.load_documents(input_path, limit, text_field, id_field)
+        self.stats["total_documents"] = len(texts)
+        logger.info(f"Loaded {len(texts)} documents")
 
         if len(texts) == 0:
-            logger.warning("No chunks to ingest")
+            logger.warning("No documents to ingest")
             return self.stats
 
         # Check for checkpoint
@@ -261,17 +261,17 @@ class VectorIngester:
         self._init_encoder()
 
         # Encode in batches
-        logger.info(f"Encoding chunks (batch_size={self.batch_size})...")
+        logger.info(f"Encoding documents (batch_size={self.batch_size})...")
         for i in tqdm(range(start_idx, len(texts), self.batch_size), desc="Encoding"):
             batch_texts = texts[i:i + self.batch_size]
 
             try:
                 batch_embeddings = self.encode_texts(batch_texts)
                 embeddings_list.append(batch_embeddings)
-                self.stats["encoded_chunks"] += len(batch_texts)
+                self.stats["encoded_documents"] += len(batch_texts)
             except Exception as e:
                 logger.warning(f"Encoding failed for batch {i}: {e}")
-                self.stats["failed_chunks"] += len(batch_texts)
+                self.stats["failed_documents"] += len(batch_texts)
                 continue
 
             # Save checkpoint
@@ -314,7 +314,7 @@ class VectorIngester:
         with open(stats_path, "w") as f:
             json.dump(self.stats, f, indent=2)
 
-        logger.success(f"Vector ingestion complete! {self.stats['encoded_chunks']} chunks indexed")
+        logger.success(f"Vector ingestion complete! {self.stats['encoded_documents']} documents indexed")
         return self.stats
 
     def _save_index(
@@ -514,8 +514,8 @@ def main():
     parser.add_argument(
         "--input",
         type=str,
-        default="data/corpus/merged/chunks.jsonl",
-        help="Input chunks JSONL file",
+        default="data/corpus/documents.jsonl",
+        help="Input documents JSONL file",
     )
     parser.add_argument(
         "--output",
@@ -544,7 +544,7 @@ def main():
     parser.add_argument(
         "--index-type",
         type=str,
-        default="flat",
+        default="ivf",
         choices=["flat", "ivf", "hnsw"],
         help="FAISS index type",
     )
@@ -552,7 +552,7 @@ def main():
         "--limit",
         type=int,
         default=None,
-        help="Limit number of chunks to process",
+        help="Limit number of documents to process",
     )
     parser.add_argument(
         "--checkpoint-interval",
@@ -594,9 +594,9 @@ def main():
     )
 
     print(f"\n=== Vector Ingestion Complete ===")
-    print(f"Total chunks: {stats['total_chunks']}")
-    print(f"Encoded: {stats['encoded_chunks']}")
-    print(f"Failed: {stats['failed_chunks']}")
+    print(f"Total documents: {stats['total_documents']}")
+    print(f"Encoded: {stats['encoded_documents']}")
+    print(f"Failed: {stats['failed_documents']}")
     print(f"Index type: {stats['index_type']}")
     print(f"Model: {stats['model_name']}")
 

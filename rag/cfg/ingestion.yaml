@@ -19,37 +19,33 @@ encoder:
   # Normalize embeddings (required for inner product similarity)
   normalize_embeddings: true
 
-  # Maximum sequence length (matches typical chunk size)
+  # Maximum sequence length
   max_length: 512
 
 # Input data configuration for closed-domain corpus
 data:
-  # Input file path: processed multi-hop QA chunks
-  input_file: data/corpus/merged/chunks.jsonl
+  # Input file path: merged corpus documents
+  input_file: data/corpus/documents.jsonl
 
   # JSONL field names
-  id_column: chunk_id
-  text_column: text
-  title_column: doc_title
+  id_column: doc_id
+  text_column: contents
+  title_column: title
 
-  # Optional: limit number of passages for testing
+  # Optional: limit number of documents for testing
   # Set to small number like 1000 for sanity check
   limit: null
 
-  # Skip first N passages
+  # Skip first N documents
   skip: 0
-
-  # Chunk size for splitting into multiple indices (null for single index)
-  # Useful for very large corpora (>5M chunks)
-  chunk_size: null
 
 # FAISS index configuration
 index:
   # Index type: flat, ivf, hnsw
-  # - flat: Exact search, best for <100K chunks
-  # - ivf: Approximate search with clustering, good for 100K-10M chunks
+  # - flat: Exact search, best for <100K documents
+  # - ivf: Approximate search with clustering, good for 100K-10M documents
   # - hnsw: Graph-based, good balance of speed and accuracy
-  index_type: flat  # Use flat for smaller closed-domain corpus
+  index_type: ivf  # Use IVF for 1M+ documents
 
   # Metric type: l2, ip (inner product), cosine
   # ip (inner product) is fastest when embeddings are normalized
@@ -61,8 +57,8 @@ index:
 
   # IVF parameters (only used if index_type=ivf)
   ivf:
-    nlist: 256    # Reduced for smaller corpus
-    nprobe: 16    # Search 16 clusters
+    nlist: 1024   # Number of clusters for 1M+ corpus
+    nprobe: 32    # Search 32 clusters
 
   # HNSW parameters (only used if index_type=hnsw)
   hnsw:
@@ -77,7 +73,7 @@ output:
 
   # Output filenames
   index_file: faiss_index.bin
-  metadata_file: chunks_metadata.jsonl
+  metadata_file: documents_metadata.jsonl
   config_file: index_config.json
   id_mapping_file: id_mapping.json
 
@@ -102,8 +98,8 @@ stindex:
   temporal_index: data/warehouse/rag/indexes/temporal_index.json
   spatial_index: data/warehouse/rag/indexes/spatial_index.json
 
-  # Enriched chunks with dimensional metadata
-  enriched_chunks: data/warehouse/rag/chunks_enriched.jsonl
+  # Enriched documents with dimensional metadata
+  enriched_documents: data/warehouse/rag/documents_enriched.jsonl
 
 # Logging
 logging:

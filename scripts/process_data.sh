@@ -6,23 +6,25 @@
 # This script processes RAG datasets through multiple stages:
 #
 # Stage 1: Download and format raw datasets (pikerag)
-# Stage 2: Generate training data (GRPO, SFT)
-# Stage 3: Extract unique documents from GRPO for RAG corpus
+# Stage 2: Extract documents and questions from datasets
+# Stage 3: (Optional) Generate training data (GRPO, SFT)
 # Stage 4: (Optional) Vector ingestion for retrieval
 #
 # Output Structure:
 #   data/
 #   ├── original/               # Stage 1: Formatted QA datasets
-#   │   ├── hotpotqa/
-#   │   ├── two_wiki/
-#   │   └── musique/
-#   ├── data_conversation/      # Stage 2: Test data for inference
-#   ├── data_train/             # Stage 2: Training data
+#   │   ├── hotpotqa/train.jsonl
+#   │   ├── two_wiki/train.jsonl
+#   │   └── musique/train.jsonl
+#   ├── corpus/                 # Stage 2: Merged corpus
+#   │   ├── documents.jsonl     # 1.2M unique documents
+#   │   └── {dataset}/train/    # Per-dataset documents
+#   ├── questions/              # Stage 2: Merged questions
+#   │   ├── questions.jsonl     # 275K questions
+#   │   └── {dataset}/train/    # Per-dataset questions
+#   ├── data_train/             # Stage 3: Training data
 #   │   ├── grpo/
 #   │   └── sft/
-#   ├── corpus/                 # Stage 3: RAG corpus (from GRPO)
-#   │   └── grpo/
-#   │       └── chunks.jsonl    # Unique documents for retrieval
 #   └── vector/                 # Stage 4: Vector index
 #       └── rag/
 # =============================================================================
@@ -38,14 +40,14 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Configuration
-DATASETS="hotpotqa two_wiki musique"
+DATASETS="hotpotqa two_wiki musique mirage medcorp"
 
 # Parse command line arguments
 SKIP_DOWNLOAD=false
-SKIP_TRAINING=false
 SKIP_CORPUS=false
-SKIP_VECTOR=true  # Skip vector ingestion by default (takes time)
-VECTOR_LIMIT=""   # Empty means all documents
+SKIP_TRAINING=true  # Skip training data by default
+SKIP_VECTOR=true    # Skip vector ingestion by default
+VECTOR_LIMIT=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -53,12 +55,12 @@ while [[ $# -gt 0 ]]; do
             SKIP_DOWNLOAD=true
             shift
             ;;
-        --skip-training)
-            SKIP_TRAINING=true
-            shift
-            ;;
         --skip-corpus)
             SKIP_CORPUS=true
+            shift
+            ;;
+        --with-training)
+            SKIP_TRAINING=false
             shift
             ;;
         --with-vector)
@@ -78,11 +80,11 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --skip-download    Skip Stage 1 (download and format)"
-            echo "  --skip-training    Skip Stage 2 (training data generation)"
-            echo "  --skip-corpus      Skip Stage 3 (corpus extraction from GRPO)"
+            echo "  --skip-corpus      Skip Stage 2 (corpus extraction)"
+            echo "  --with-training    Enable Stage 3 (training data generation)"
             echo "  --with-vector      Enable Stage 4 (vector ingestion)"
             echo "  --vector-limit N   Limit vector ingestion to N documents"
-            echo "  --datasets         Datasets to process (default: hotpotqa two_wiki musique)"
+            echo "  --datasets         Datasets to process (default: hotpotqa two_wiki musique mirage medcorp)"
             echo "  --help             Show this help message"
             exit 0
             ;;
@@ -102,7 +104,7 @@ if [ "$SKIP_DOWNLOAD" = false ]; then
     echo "  Stage 1: Download and Format Raw Datasets"
     echo "========================================================"
 
-    cd "$PROJECT_ROOT/rag/preprocess/pikerag"
+    cd "$PROJECT_ROOT/rag/preprocess/train/pikerag"
 
     echo "Running pikerag data processor..."
     python main.py data_process/config/datasets.yaml
@@ -116,52 +118,54 @@ else
 fi
 
 # =============================================================================
-# Stage 2: Generate Training and Evaluation Data
+# Stage 2: Extract Documents and Questions
+# =============================================================================
+if [ "$SKIP_CORPUS" = false ]; then
+    echo ""
+    echo "========================================================"
+    echo "  Stage 2: Extract Documents and Questions"
+    echo "========================================================"
+
+    echo "Extracting documents and questions from train datasets..."
+    python -m rag.preprocess.corpus.extract_documents \
+        --datasets $DATASETS \
+        --input-dir "$PROJECT_ROOT/data/original" \
+        --corpus-dir "$PROJECT_ROOT/data/corpus" \
+        --questions-dir "$PROJECT_ROOT/data/questions"
+
+    echo "✓ Stage 2 complete: Corpus and questions extracted"
+else
+    echo ""
+    echo "Skipping Stage 2 (--skip-corpus)"
+fi
+
+# =============================================================================
+# Stage 3: Generate Training Data (Optional)
 # =============================================================================
 if [ "$SKIP_TRAINING" = false ]; then
     echo ""
     echo "========================================================"
-    echo "  Stage 2: Generate Training Data (GRPO, SFT)"
+    echo "  Stage 3: Generate Training Data (GRPO, SFT)"
     echo "========================================================"
 
-    echo "Generating conversation data for inference/evaluation..."
-    python "$PROJECT_ROOT/rag/preprocess/dataset/dataset_generator.py" \
+    echo "Generating GRPO training data..."
+    python "$PROJECT_ROOT/rag/preprocess/train/dataset/dataset_generator.py" \
         --datasets $DATASETS \
         --train-limits 10000 10000 5000 \
         --test-limit 500 \
         --grpo-output-name grpo_25000
 
     echo ""
-    echo "Generating SFT training data (2000 samples)..."
-    python "$PROJECT_ROOT/rag/preprocess/dataset/dataset_generator_sft.py" \
+    echo "Generating SFT training data..."
+    python "$PROJECT_ROOT/rag/preprocess/train/dataset/dataset_generator_sft.py" \
         --mode direct \
         --datasets $DATASETS \
         --output-name sft_2000
 
-    echo "✓ Stage 2 complete: Training data generated"
+    echo "✓ Stage 3 complete: Training data generated"
 else
     echo ""
-    echo "Skipping Stage 2 (--skip-training)"
-fi
-
-# =============================================================================
-# Stage 3: Extract Documents from GRPO for RAG Corpus
-# =============================================================================
-if [ "$SKIP_CORPUS" = false ]; then
-    echo ""
-    echo "========================================================"
-    echo "  Stage 3: Extract RAG Corpus from GRPO"
-    echo "========================================================"
-
-    echo "Extracting unique documents from GRPO training data..."
-    python "$PROJECT_ROOT/rag/preprocess/extract_grpo_docs.py" \
-        --input "$PROJECT_ROOT/data/data_train/grpo/grpo_25000.jsonl" \
-        --output "$PROJECT_ROOT/data/corpus/grpo/chunks.jsonl"
-
-    echo "✓ Stage 3 complete: RAG corpus extracted"
-else
-    echo ""
-    echo "Skipping Stage 3 (--skip-corpus)"
+    echo "Skipping Stage 3 (use --with-training to enable)"
 fi
 
 # =============================================================================
@@ -174,12 +178,12 @@ if [ "$SKIP_VECTOR" = false ]; then
     echo "========================================================"
 
     echo "Running vector ingestion..."
-    python -m rag.preprocess.ingestion.vector_ingest \
-        --input "$PROJECT_ROOT/data/corpus/grpo/chunks.jsonl" \
+    python -m rag.preprocess.train.ingestion.vector_ingest \
+        --input "$PROJECT_ROOT/data/corpus/documents.jsonl" \
         --output "$PROJECT_ROOT/data/vector/rag" \
         --model "BAAI/bge-m3" \
         --batch-size 32 \
-        --index-type flat \
+        --index-type ivf \
         $VECTOR_LIMIT
 
     echo "✓ Stage 4 complete: Vector index built"
@@ -199,35 +203,49 @@ echo ""
 echo "Generated files:"
 echo ""
 echo "Stage 1 - Formatted QA datasets:"
-echo "  data/original/{hotpotqa,two_wiki,musique}/{dev,train}.jsonl"
+echo "  data/original/{hotpotqa,two_wiki,musique,mirage,medcorp}/train.jsonl"
 echo ""
-echo "Stage 2 - Training data:"
-echo "  data/data_train/grpo/grpo_25000.jsonl    # GRPO training"
-echo "  data/data_train/sft/sft_2000.jsonl       # SFT training"
-echo "  data/data_conversation/{dataset}/test.jsonl  # Evaluation"
-echo ""
-echo "Stage 3 - RAG corpus (from GRPO):"
-echo "  data/corpus/grpo/chunks.jsonl            # Unique documents"
-echo "  data/corpus/grpo/extraction_stats.json   # Statistics"
+echo "Stage 2 - Corpus and Questions:"
+echo "  data/corpus/documents.jsonl      # Merged corpus (1.2M docs)"
+echo "  data/questions/questions.jsonl   # Merged questions (275K)"
 echo ""
 
 # Print corpus statistics if available
-if [ -f "$PROJECT_ROOT/data/corpus/grpo/extraction_stats.json" ]; then
-    echo "RAG Corpus Statistics:"
-    cat "$PROJECT_ROOT/data/corpus/grpo/extraction_stats.json" | python3 -c "
+if [ -f "$PROJECT_ROOT/data/corpus/stats.json" ]; then
+    echo "Corpus Statistics:"
+    cat "$PROJECT_ROOT/data/corpus/stats.json" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
-print(f'  Total QA samples: {d.get(\"total_samples\", \"N/A\"):,}')
-print(f'  Document references: {d.get(\"total_doc_refs\", \"N/A\"):,}')
-print(f'  Unique documents: {d.get(\"unique_documents\", \"N/A\"):,}')
+print(f'  Total documents: {d.get(\"total_unique_documents\", \"N/A\"):,}')
+for name, count in d.get('documents_per_dataset', {}).items():
+    print(f'    - {name}: {count:,}')
 "
     echo ""
 fi
 
+if [ -f "$PROJECT_ROOT/data/questions/stats.json" ]; then
+    echo "Questions Statistics:"
+    cat "$PROJECT_ROOT/data/questions/stats.json" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(f'  Total questions: {d.get(\"total_questions\", \"N/A\"):,}')
+for name, count in d.get('questions_per_dataset', {}).items():
+    print(f'    - {name}: {count:,}')
+"
+    echo ""
+fi
+
+if [ "$SKIP_TRAINING" = false ]; then
+    echo "Stage 3 - Training data:"
+    echo "  data/data_train/grpo/grpo_25000.jsonl"
+    echo "  data/data_train/sft/sft_2000.jsonl"
+    echo ""
+fi
+
 if [ "$SKIP_VECTOR" = false ] && [ -f "$PROJECT_ROOT/data/vector/rag/index_config.json" ]; then
-    echo "Vector Index:"
+    echo "Stage 4 - Vector Index:"
     echo "  data/vector/rag/faiss_index.bin"
     echo "  data/vector/rag/id_mapping.json"
-    echo "  data/vector/rag/chunks_metadata.jsonl"
+    echo "  data/vector/rag/documents_metadata.jsonl"
     echo ""
 fi

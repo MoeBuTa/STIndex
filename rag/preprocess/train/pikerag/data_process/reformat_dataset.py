@@ -13,10 +13,27 @@ def get_dataset_utils_module(dataset: str):
     return module
 
 
-def reformat_dataset(dataset: str, split: str, dump_path: str, dataset_dir: str, cut_off: Optional[int]=None) -> None:
+def reformat_dataset(
+    dataset: str,
+    split: str,
+    dump_path: str,
+    dataset_dir: str,
+    cut_off: Optional[int] = None,
+    dataset_config: Optional[dict] = None,
+) -> None:
     dataset_utils = get_dataset_utils_module(dataset)
 
-    raw_data = dataset_utils.load_raw_data(dataset_dir, split)
+    # Pass dataset-specific config to load_raw_data if supported
+    if dataset_config is None:
+        dataset_config = {}
+
+    # Check if load_raw_data accepts additional parameters
+    import inspect
+    load_sig = inspect.signature(dataset_utils.load_raw_data)
+    if len(load_sig.parameters) > 2:  # More than just (dataset_dir, split)
+        raw_data = dataset_utils.load_raw_data(dataset_dir, split, **dataset_config)
+    else:
+        raw_data = dataset_utils.load_raw_data(dataset_dir, split)
     if cut_off is None:
         cut_off = len(raw_data)
 
