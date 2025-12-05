@@ -54,16 +54,25 @@ If your model supports <think> tags, use them for your reasoning.
 Otherwise, write your reasoning as text before the JSON.
 
 Key Principles:
-1. **Hierarchical Structure**: Each dimension should have 2-4 levels of hierarchy
-   - Example: specific_item → item_category → broader_category → domain
+1. **Natural Hierarchical Structure**: Each dimension should have hierarchy levels that naturally emerge from the data
+   - Use as many or as few levels as the concepts require
+   - Let the inherent granularity of the domain determine the depth
+   - Simple taxonomies may need fewer levels, complex ones may need more
+   - Examples:
+     * Shallow: item → category
+     * Medium: specific_term → subcategory → category
+     * Deep: most_specific → intermediate_levels... → broad_domain
+   - IMPORTANT: Hierarchy depth should be data-driven, not predetermined
 
 2. **Information Retrieval Utility**: Schemas should help in retrieving relevant documents for question answering
    - Consider: What information would help answer these questions?
    - Think: How can we organize knowledge to support this type of reasoning?
+   - Deeper hierarchies enable both precise filtering and broad generalization
 
-3. **Domain Relevance**: Focus on categorizations that align with how knowledge is naturally organized in this domain
+3. **Domain Relevance**: Focus on categorizations that align with how knowledge is naturally organized
    - Identify meaningful relationships between concepts
-   - Consider hierarchical structures (taxonomies, ontologies)
+   - Consider existing taxonomies and ontologies if relevant
+   - Let the structure emerge from observed patterns in the data
 
 4. **Avoid Redundancy**: Do NOT propose temporal or spatial dimensions (these are predefined)
    - Predefined dimensions: {predefined_dims}
@@ -117,7 +126,9 @@ Questions:
 Requirements:
 1. Propose exactly {n_schemas} domain-specific dimensions (NOT temporal or spatial - those are predefined)
 2. Each dimension should capture a distinct aspect of knowledge relevant to these questions
-3. Each dimension must have a hierarchical structure with 2-4 levels
+3. Each dimension must have a hierarchical structure with as many levels as naturally fit the data
+   - Don't force a specific number of levels - let the hierarchy emerge naturally
+   - Simple concepts may need only 2 levels, complex ones may need 5 or more
 4. Provide clear descriptions explaining what each dimension captures and why it's useful
 5. Include 3-5 concrete examples per dimension
 

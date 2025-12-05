@@ -106,7 +106,7 @@ EXTRACTION PRINCIPLES:
    - Follow naming conventions established in prior extractions
 
 3. **Accuracy**: Only extract entities that are explicitly stated or clearly implied
-   - Don't invent information
+- Don't invent information
    - Use null for hierarchy levels that don't apply
 
 4. **Hierarchical Mapping**: Correctly map extracted entities to their hierarchical levels
