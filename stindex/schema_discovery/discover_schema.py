@@ -1,8 +1,8 @@
 """
 End-to-end schema discovery pipeline.
 
-Simplified pipeline using global dimensions + entity tracking.
-NO FAISS, NO retrieval - just simple entity list tracking!
+Pure cluster-level discovery: each cluster discovers dimensions independently,
+then schemas are merged across clusters.
 """
 
 from pathlib import Path
@@ -12,23 +12,22 @@ import yaml
 import pandas as pd
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
 
 from stindex.schema_discovery.question_clusterer import QuestionClusterer
-from stindex.schema_discovery.global_schema_discoverer import GlobalSchemaDiscoverer
-from stindex.schema_discovery.cluster_entity_extractor import ClusterEntityExtractor
+from stindex.schema_discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
 from stindex.schema_discovery.schema_merger import SchemaMerger
+from stindex.schema_discovery.cot_logger import CoTLogger
+from stindex.schema_discovery.models import FinalSchema
 
 
 class SchemaDiscoveryPipeline:
     """
-    Simplified end-to-end schema discovery pipeline.
+    Pure cluster-level schema discovery pipeline.
 
     Steps:
-    1. Cluster questions (already complete - reuse results)
-    2. Discover global dimensions from 200 representative questions
-    3. Extract entities per cluster using global dimensions (parallel)
-    4. Merge and deduplicate entity lists
+    1. Cluster questions
+    2. Per-cluster discovery + extraction (each cluster discovers dimensions independently)
+    3. Cross-cluster schema merging (no global baseline)
     """
 
     def __init__(
@@ -36,7 +35,7 @@ class SchemaDiscoveryPipeline:
         llm_config: Dict,
         config: Optional[Dict] = None,
         n_clusters: int = 10,
-        n_samples_per_cluster: int = 20,
+        n_samples_for_discovery: int = 20,
         similarity_threshold: float = 0.85,
         batch_size: int = 50,
         enable_parallel: bool = True,
@@ -50,9 +49,9 @@ class SchemaDiscoveryPipeline:
             llm_config: LLM configuration (provider, model, etc.)
             config: Optional pipeline config dict (overrides other params if provided)
             n_clusters: Number of question clusters
-            n_samples_per_cluster: Samples per cluster for global discovery
+            n_samples_for_discovery: Sample size per cluster for dimension discovery
             similarity_threshold: Fuzzy matching threshold for deduplication
-            batch_size: Number of questions per LLM call (default: 50)
+            batch_size: Number of questions per LLM call during extraction (default: 50)
             enable_parallel: Enable parallel cluster processing (default: True)
             max_workers: Max parallel workers for cluster processing (default: 5)
             test_clusters: Optional list of cluster IDs to test on (e.g., [0, 1])
@@ -62,16 +61,20 @@ class SchemaDiscoveryPipeline:
 
         # Load config if provided
         if config:
-            self.n_clusters = config.get('global_discovery', {}).get('num_clusters', n_clusters)
-            self.n_samples_per_cluster = config.get('global_discovery', {}).get('samples_per_cluster', n_samples_per_cluster)
+            self.n_clusters = config.get('cluster_discovery', {}).get('num_clusters', n_clusters)
+            self.n_samples_for_discovery = config.get('cluster_discovery', {}).get('samples_per_discovery', n_samples_for_discovery)
             self.batch_size = config.get('entity_extraction', {}).get('batch_size', batch_size)
+            self.allow_new_dimensions = config.get('entity_extraction', {}).get('allow_new_dimensions', True)
+            self.max_retries = config.get('entity_extraction', {}).get('retry', {}).get('max_retries', 3)
             self.enable_parallel = config.get('parallel', {}).get('enabled', enable_parallel)
             self.max_workers = config.get('parallel', {}).get('max_workers', max_workers)
-            self.similarity_threshold = config.get('schema_merging', {}).get('min_entity_frequency', similarity_threshold)
+            self.similarity_threshold = config.get('schema_merging', {}).get('similarity_threshold', similarity_threshold)
         else:
             self.n_clusters = n_clusters
-            self.n_samples_per_cluster = n_samples_per_cluster
+            self.n_samples_for_discovery = n_samples_for_discovery
             self.batch_size = batch_size
+            self.allow_new_dimensions = True
+            self.max_retries = 3
             self.enable_parallel = enable_parallel
             self.max_workers = max_workers
             self.similarity_threshold = similarity_threshold
@@ -81,9 +84,9 @@ class SchemaDiscoveryPipeline:
         questions_file: str,
         output_dir: str,
         reuse_clusters: bool = True
-    ) -> Dict:
+    ) -> FinalSchema:
         """
-        Run full schema discovery pipeline.
+        Run full schema discovery pipeline (pure cluster-level).
 
         Args:
             questions_file: Path to questions.jsonl (e.g., data/original/mirage/train.jsonl)
@@ -91,17 +94,16 @@ class SchemaDiscoveryPipeline:
             reuse_clusters: If True, reuse existing cluster results
 
         Returns:
-            {
-                'global_dimensions': {...},
-                'cluster_results': [...],
-                'final_schema': {...}
-            }
+            FinalSchema Pydantic model with all discovered dimensions and entities
         """
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
+        # Create shared CoT logger for all components
+        cot_logger = CoTLogger(output_dir)
+
         logger.info("=" * 80)
-        logger.info("SCHEMA DISCOVERY PIPELINE")
+        logger.info("SCHEMA DISCOVERY PIPELINE (Cluster-Level)")
         logger.info("=" * 80)
 
         # Step 1: Question Clustering
@@ -121,37 +123,19 @@ class SchemaDiscoveryPipeline:
                 questions_file=questions_file,
                 output_dir=str(output_path),
                 n_clusters=self.n_clusters,
-                n_samples_per_cluster=self.n_samples_per_cluster
+                n_samples_per_cluster=self.n_samples_for_discovery
             )
             with open(cluster_samples_path) as f:
                 cluster_samples = json.load(f)
                 cluster_samples = {int(k): v for k, v in cluster_samples.items()}
             logger.info(f"  ✓ Clustered into {self.n_clusters} clusters")
 
-        logger.info("\nStep 2: Global Dimensional Discovery")
-        total_samples = sum(len(samples) for samples in cluster_samples.values())
-        logger.info(f"  Discovering dimensions from {total_samples} questions...")
-
-        discoverer = GlobalSchemaDiscoverer(
-            llm_config=self.llm_config,
-            output_dir=output_dir
-        )
-        global_dimensions = discoverer.discover_dimensions(cluster_samples)
-
-        # Save global dimensions
-        global_dims_path = output_path / "global_dimensions.json"
-        with open(global_dims_path, 'w') as f:
-            json.dump(global_dimensions, f, indent=2)
-
-        logger.info(f"  ✓ Discovered {len(global_dimensions)} dimensions:")
-        for dim_name in sorted(global_dimensions.keys()):
-            hierarchy = ' → '.join(global_dimensions[dim_name].get('hierarchy', []))
-            logger.info(f"    • {dim_name}: {hierarchy}")
-
-        # Step 3: Per-Cluster Entity Extraction
-        logger.info("\nStep 3: Per-Cluster Entity Extraction")
+        # Step 2: Per-Cluster Discovery + Extraction (no global phase)
+        logger.info("\nStep 2: Per-Cluster Discovery + Extraction")
         logger.info(f"  Parallel processing: {'enabled' if self.enable_parallel else 'disabled'} (max_workers={self.max_workers})")
-        logger.info(f"  Batch size: {self.batch_size} questions per LLM call")
+        logger.info(f"  Discovery sample size: {self.n_samples_for_discovery} questions per cluster")
+        logger.info(f"  Extraction batch size: {self.batch_size} questions per LLM call")
+        logger.info(f"  Dimensions per cluster: Data-driven (no constraint)")
 
         # Load all questions
         logger.info(f"  Loading questions from {questions_file}...")
@@ -190,7 +174,7 @@ class SchemaDiscoveryPipeline:
             cluster_data = [c for c in cluster_data if c['cluster_id'] in self.test_clusters]
             logger.info(f"  Testing with {len(cluster_data)} clusters: {self.test_clusters}")
 
-        # Extract entities per cluster (parallel or sequential)
+        # Process clusters (parallel or sequential)
         cluster_results = []
 
         if self.enable_parallel and len(cluster_data) > 1:
@@ -198,14 +182,14 @@ class SchemaDiscoveryPipeline:
             logger.info(f"\n  Processing {len(cluster_data)} clusters in parallel...")
 
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                # Submit all cluster extraction tasks
+                # Submit all cluster processing tasks
                 future_to_cluster = {
                     executor.submit(
                         self._process_cluster,
                         cluster_info['cluster_id'],
                         cluster_info['questions'],
-                        global_dimensions,
-                        output_path
+                        output_path,
+                        cot_logger
                     ): cluster_info['cluster_id']
                     for cluster_info in cluster_data
                 }
@@ -218,7 +202,7 @@ class SchemaDiscoveryPipeline:
                         cluster_results.append(result)
 
                         # Log stats
-                        total_entities = sum(count for count in result['entity_counts'].values())
+                        total_entities = result.get_total_entities()
                         logger.info(f"  ✓ Cluster {cluster_id} complete: {total_entities} unique entities")
                     except Exception as e:
                         logger.error(f"  ✗ Cluster {cluster_id} failed: {e}")
@@ -236,38 +220,43 @@ class SchemaDiscoveryPipeline:
                     result = self._process_cluster(
                         cluster_id,
                         cluster_info['questions'],
-                        global_dimensions,
-                        output_path
+                        output_path,
+                        cot_logger
                     )
                     cluster_results.append(result)
 
                     # Log stats
-                    total_entities = sum(count for count in result['entity_counts'].values())
+                    total_entities = result.get_total_entities()
                     logger.info(f"    ✓ Extracted {total_entities} unique entities")
-                    for dim_name, count in sorted(result['entity_counts'].items()):
+                    for dim_name, count in sorted(result.get_dimension_stats().items()):
                         logger.info(f"      - {dim_name}: {count}")
                 except Exception as e:
                     logger.error(f"    ✗ Failed: {e}")
 
-        logger.info(f"\n  ✓ Completed extraction for all {len(cluster_results)} clusters")
+        logger.info(f"\n  ✓ Completed discovery + extraction for all {len(cluster_results)} clusters")
 
-        # Step 4: Merge & Deduplicate
-        logger.info("\nStep 4: Merge & Deduplicate")
+        # Save CoT reasoning summary
+        if cot_logger:
+            cot_logger.save_final_summary()
+
+        # Step 3: Cross-Cluster Merging (no global baseline)
+        logger.info("\nStep 3: Cross-Cluster Schema Merging")
 
         merger = SchemaMerger(similarity_threshold=self.similarity_threshold)
-        final_schema = merger.merge_clusters(cluster_results, global_dimensions)
+        final_schema = merger.merge_clusters(cluster_results)
 
         # Save final schema (YAML format)
         final_schema_path = output_path / "final_schema.yml"
+        final_schema_dict = final_schema.to_yaml_dict()
         with open(final_schema_path, 'w') as f:
-            yaml.dump(final_schema, f, sort_keys=False, indent=2, allow_unicode=True)
+            yaml.dump(final_schema_dict, f, sort_keys=False, indent=2, allow_unicode=True)
 
         logger.info("  ✓ Final schema saved to: final_schema.yml")
 
         # Also save as JSON for easier programmatic access
         final_schema_json_path = output_path / "final_schema.json"
         with open(final_schema_json_path, 'w') as f:
-            json.dump(final_schema, f, indent=2)
+            json.dump(final_schema.model_dump(), f, indent=2)
 
         logger.info("  ✓ Final schema saved to: final_schema.json")
 
@@ -277,52 +266,53 @@ class SchemaDiscoveryPipeline:
         logger.info("=" * 80)
         logger.info(f"\nOutput directory: {output_dir}")
         logger.info(f"Final schema: {final_schema_path}")
-        logger.info(f"\nDiscovered {len(final_schema)} dimensions:")
+        logger.info(f"\nDiscovered {len(final_schema.dimensions)} dimensions:")
 
-        for dim_name in sorted(final_schema.keys()):
-            dim_info = final_schema[dim_name]
-            hierarchy = ' → '.join(dim_info.get('hierarchy', []))
-            count = dim_info.get('count', 0)
+        for dim_name in sorted(final_schema.get_dimension_names()):
+            dim = final_schema.dimensions[dim_name]
+            hierarchy = ' → '.join(dim.hierarchy)
+            count = dim.total_entity_count
             logger.info(f"  • {dim_name}: {hierarchy} ({count} entities)")
 
-        return {
-            'global_dimensions': global_dimensions,
-            'cluster_results': cluster_results,
-            'final_schema': final_schema
-        }
+        return final_schema
 
     def _process_cluster(
         self,
         cluster_id: int,
         cluster_questions: List[str],
-        global_dimensions: Dict,
-        output_path: Path
-    ) -> Dict:
+        output_path: Path,
+        cot_logger: CoTLogger
+    ):
         """
-        Process a single cluster (for parallel execution).
+        Process a single cluster: discover dimensions + extract entities.
 
         Args:
             cluster_id: Cluster identifier
             cluster_questions: List of questions in cluster
-            global_dimensions: Global dimensional schema
             output_path: Output directory path
+            cot_logger: Shared CoT logger instance
 
         Returns:
-            Cluster extraction result dict
+            ClusterSchemaDiscoveryResult with discovered dimensions and entities
         """
-        # Extract entities
-        extractor = ClusterEntityExtractor(
-            global_dimensions,
-            self.llm_config,
+        # Use ClusterSchemaDiscoverer for discovery + extraction
+        discoverer = ClusterSchemaDiscoverer(
+            llm_config=self.llm_config,
             batch_size=self.batch_size,
-            output_dir=str(output_path)
+            cot_logger=cot_logger
         )
-        result = extractor.extract_from_cluster(cluster_questions, cluster_id)
+
+        result = discoverer.discover_and_extract(
+            cluster_id=cluster_id,
+            cluster_questions=cluster_questions,
+            n_samples_for_discovery=self.n_samples_for_discovery,
+            allow_new_dimensions=self.allow_new_dimensions
+        )
 
         # Save intermediate result
-        cluster_result_path = output_path / f"cluster_{cluster_id}_entities.json"
+        cluster_result_path = output_path / f"cluster_{cluster_id}_result.json"
         with open(cluster_result_path, 'w') as f:
-            json.dump(result, f, indent=2)
+            json.dump(result.model_dump(), f, indent=2)
 
         return result
 
@@ -405,8 +395,8 @@ Examples:
     )
     parser.add_argument(
         '--config',
-        default='stindex/schema_discovery/config/schema_discovery.yml',
-        help='Path to pipeline config file (default: stindex/schema_discovery/config/schema_discovery.yml)'
+        default='cfg/schema_discovery.yml',
+        help='Path to pipeline config file (default: cfg/schema_discovery.yml)'
     )
     parser.add_argument(
         '--batch-size',
@@ -470,7 +460,7 @@ Examples:
         llm_config=llm_config,
         config=config,
         n_clusters=args.n_clusters,
-        n_samples_per_cluster=args.n_samples,
+        n_samples_for_discovery=args.n_samples,
         similarity_threshold=args.similarity_threshold,
         test_clusters=test_clusters
     )
@@ -487,11 +477,12 @@ Examples:
         print("SUMMARY")
         print("=" * 80)
         print(f"\nOutput directory: {args.output_dir}")
-        print(f"\nDiscovered {len(result['final_schema'])} dimensions:")
-        for dim_name, dim_info in result['final_schema'].items():
-            hierarchy = dim_info.get('hierarchy', [])
-            count = dim_info.get('count', 0)
-            print(f"  • {dim_name}: {' → '.join(hierarchy)} ({count} entities)")
+        print(f"\nDiscovered {len(result.dimensions)} dimensions:")
+        for dim_name in sorted(result.get_dimension_names()):
+            dim = result.dimensions[dim_name]
+            hierarchy = ' → '.join(dim.hierarchy)
+            count = dim.total_entity_count
+            print(f"  • {dim_name}: {hierarchy} ({count} entities)")
 
     except Exception as e:
         logger.error(f"\n✗ Pipeline failed: {e}")

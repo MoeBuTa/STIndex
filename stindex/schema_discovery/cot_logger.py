@@ -5,6 +5,7 @@ Saves LLM reasoning and raw responses to files for debugging and analysis.
 """
 
 import json
+import threading
 from pathlib import Path
 from typing import Optional, Dict, List
 from loguru import logger
@@ -33,46 +34,61 @@ class CoTLogger:
         # Create CoT directories
         self.cot_dir.mkdir(parents=True, exist_ok=True)
 
-        # Track statistics
+        # Track statistics (cluster-level only)
         self.stats = {
-            "global_discovery": {
-                "has_reasoning": False,
-                "reasoning_length": 0
-            },
             "clusters": {}
         }
 
+        # Thread safety for parallel cluster processing
+        self.stats_lock = threading.Lock()
+
         logger.debug(f"CoT logger initialized: {self.cot_dir}")
 
-    def log_global_discovery(
+    def log_cluster_discovery(
         self,
+        cluster_id: int,
         reasoning: str,
-        raw_response: str
+        raw_response: str,
+        n_dimensions: int = 0
     ):
         """
-        Log global schema discovery reasoning.
+        Log cluster schema discovery reasoning.
 
         Args:
+            cluster_id: Cluster identifier
             reasoning: Extracted CoT reasoning
             raw_response: Raw LLM response
+            n_dimensions: Number of dimensions discovered
         """
-        # Create global discovery directory
-        global_dir = self.cot_dir / "global_discovery"
-        global_dir.mkdir(parents=True, exist_ok=True)
+        # Create cluster directory
+        cluster_dir = self.cot_dir / f"cluster_{cluster_id}"
+        cluster_dir.mkdir(parents=True, exist_ok=True)
 
         # Save reasoning
-        reasoning_file = global_dir / "reasoning_global.txt"
+        reasoning_file = cluster_dir / "discovery_reasoning.txt"
         reasoning_file.write_text(reasoning if reasoning else "(no reasoning extracted)")
 
         # Save raw response
-        raw_file = global_dir / "raw_response_global.txt"
+        raw_file = cluster_dir / "discovery_raw.txt"
         raw_file.write_text(raw_response)
 
-        # Update stats
-        self.stats["global_discovery"]["has_reasoning"] = bool(reasoning)
-        self.stats["global_discovery"]["reasoning_length"] = len(reasoning) if reasoning else 0
+        # Update stats (thread-safe)
+        with self.stats_lock:
+            if cluster_id not in self.stats["clusters"]:
+                self.stats["clusters"][cluster_id] = {
+                    "discovery_dimensions": 0,
+                    "has_discovery_reasoning": False,
+                    "batches": 0,
+                    "batches_with_reasoning": 0,
+                    "total_reasoning_length": 0,
+                    "total_entities": 0
+                }
 
-        logger.debug(f"✓ Saved global discovery CoT (reasoning: {len(reasoning)} chars)")
+            cluster_stats = self.stats["clusters"][cluster_id]
+            cluster_stats["discovery_dimensions"] = n_dimensions
+            cluster_stats["has_discovery_reasoning"] = bool(reasoning)
+
+        logger.debug(f"✓ Saved cluster {cluster_id} discovery CoT ({n_dimensions} dimensions, reasoning: {len(reasoning)} chars)")
 
     def log_cluster_batch(
         self,
@@ -104,21 +120,22 @@ class CoTLogger:
         raw_file = cluster_dir / f"batch_{batch_idx:03d}_raw.txt"
         raw_file.write_text(raw_response)
 
-        # Update stats
-        if cluster_id not in self.stats["clusters"]:
-            self.stats["clusters"][cluster_id] = {
-                "batches": 0,
-                "batches_with_reasoning": 0,
-                "total_reasoning_length": 0,
-                "total_entities": 0
-            }
+        # Update stats (thread-safe)
+        with self.stats_lock:
+            if cluster_id not in self.stats["clusters"]:
+                self.stats["clusters"][cluster_id] = {
+                    "batches": 0,
+                    "batches_with_reasoning": 0,
+                    "total_reasoning_length": 0,
+                    "total_entities": 0
+                }
 
-        cluster_stats = self.stats["clusters"][cluster_id]
-        cluster_stats["batches"] += 1
-        if reasoning:
-            cluster_stats["batches_with_reasoning"] += 1
-            cluster_stats["total_reasoning_length"] += len(reasoning)
-        cluster_stats["total_entities"] += n_entities
+            cluster_stats = self.stats["clusters"][cluster_id]
+            cluster_stats["batches"] += 1
+            if reasoning:
+                cluster_stats["batches_with_reasoning"] += 1
+                cluster_stats["total_reasoning_length"] += len(reasoning)
+            cluster_stats["total_entities"] += n_entities
 
         logger.debug(
             f"✓ Saved Cluster {cluster_id} Batch {batch_idx} CoT "
@@ -127,13 +144,12 @@ class CoTLogger:
 
     def save_final_summary(self):
         """
-        Save final summary statistics to JSON.
+        Save final summary statistics to JSON (cluster-level only).
         """
         summary_file = self.cot_dir / "reasoning_summary.json"
 
         # Calculate aggregate statistics
         summary = {
-            "global_discovery": self.stats["global_discovery"],
             "clusters": {}
         }
 

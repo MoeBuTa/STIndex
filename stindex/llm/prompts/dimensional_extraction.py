@@ -8,6 +8,7 @@ supporting any combination of dimensions defined in YAML.
 import json
 from typing import Dict, List, Optional
 
+from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.dimension_loader import DimensionConfig
 
 
@@ -22,7 +23,7 @@ class DimensionalExtractionPrompt:
         self,
         dimensions: Dict[str, DimensionConfig],
         document_metadata: Optional[Dict] = None,
-        extraction_context: Optional[object] = None  # ExtractionContext (avoid circular import)
+        extraction_context: Optional[ExtractionContext] = None  # ExtractionContext (avoid circular import)
     ):
         """
         Initialize prompt builder.
@@ -34,7 +35,7 @@ class DimensionalExtractionPrompt:
         """
         self.dimensions = dimensions
         self.document_metadata = document_metadata or {}
-        self.extraction_context = extraction_context
+        self.extraction_context: ExtractionContext = extraction_context
 
     def system_prompt(self) -> str:
         """Generate system prompt with multi-dimensional extraction instructions."""

@@ -1,93 +1,86 @@
 """
 Cluster entity extractor for schema discovery.
 
-Extracts entities from all questions in a cluster using global dimensions,
-tracking unique entities per dimension with simple set/list data structures.
+Extracts entities from all questions in a cluster using dimensional schemas,
+returning HierarchicalEntity Pydantic models.
 """
 
 from typing import Dict, List, Set
+import json
 from loguru import logger
 
 from stindex.llm.manager import LLMManager
 from stindex.llm.prompts.entity_extraction_with_discovery import ClusterEntityPrompt
 from stindex.schema_discovery.cot_logger import CoTLogger
+from stindex.schema_discovery.models import DiscoveredDimensionSchema, HierarchicalEntity
 
 
 class ClusterEntityExtractor:
     """
-    Extract entities from one cluster using global dimensions.
+    Extract entities from one cluster using discovered dimensional schemas.
 
-    Context = dimension names + running entity lists (simple!)
-    NO retrieval, NO embeddings - just show what exists for consistency.
+    Returns HierarchicalEntity Pydantic models with validated hierarchy values.
     """
 
     def __init__(
         self,
-        global_dimensions: Dict[str, Dict],
+        global_dimensions: Dict[str, DiscoveredDimensionSchema],
         llm_config: Dict,
         batch_size: int = 50,
-        output_dir: str = None
+        output_dir: str = None,
+        allow_new_dimensions: bool = True,
+        max_retries: int = 3,
+        cot_logger: 'CoTLogger' = None
     ):
         """
         Initialize cluster entity extractor.
 
         Args:
-            global_dimensions: Global dimensional schema discovered from all clusters
-                Example: {'symptom': {'hierarchy': [...], 'description': '...', 'examples': [...]}, ...}
+            global_dimensions: Dimensional schemas (either discovered globally or per-cluster)
+                Example: {'symptom': DiscoveredDimensionSchema(...), ...}
             llm_config: LLM configuration dict (provider, model, etc.)
             batch_size: Number of questions to process per LLM call (default: 50)
-            output_dir: Output directory for CoT logging (optional)
+            output_dir: Output directory for CoT logging (optional, deprecated if cot_logger provided)
+            allow_new_dimensions: Allow discovering new dimensions during extraction (default: True)
+            max_retries: Maximum retry attempts for JSON parsing errors (default: 3)
+            cot_logger: Shared CoT logger instance (optional, preferred over output_dir)
         """
         self.global_dimensions = global_dimensions
         self.llm_manager = LLMManager(llm_config)
         self.batch_size = batch_size
-        self.cot_logger = CoTLogger(output_dir) if output_dir else None
+        # Use provided cot_logger, or create new one from output_dir
+        self.cot_logger = cot_logger if cot_logger else (CoTLogger(output_dir) if output_dir else None)
+        self.allow_new_dimensions = allow_new_dimensions
+        self.max_retries = max_retries
 
-        # Entity tracking per dimension (list of dicts with hierarchy fields)
-        # Track entity text separately for deduplication
-        self.entity_lists: Dict[str, List[Dict]] = {
+        # Entity tracking per dimension (list of HierarchicalEntity)
+        self.entity_lists: Dict[str, List[HierarchicalEntity]] = {
             dim_name: [] for dim_name in global_dimensions.keys()
-        }
-        self._entity_text_seen: Dict[str, Set[str]] = {
-            dim_name: set() for dim_name in global_dimensions.keys()
         }
 
         logger.info(f"Initialized extractor with {len(global_dimensions)} dimensions (batch_size={batch_size})")
         for dim_name in sorted(global_dimensions.keys()):
-            hierarchy = ' → '.join(global_dimensions[dim_name].get('hierarchy', []))
+            hierarchy = ' → '.join(global_dimensions[dim_name].hierarchy)
             logger.debug(f"  • {dim_name}: {hierarchy}")
 
     def extract_from_cluster(
         self,
         cluster_questions: List[str],
         cluster_id: int
-    ) -> Dict:
+    ) -> Dict[str, List[HierarchicalEntity]]:
         """
         Extract entities from all questions in cluster.
 
         Args:
-            cluster_questions: ~650 questions in this cluster
+            cluster_questions: Questions in this cluster
             cluster_id: Cluster identifier
 
         Returns:
-            {
-                'cluster_id': 0,
-                'n_questions': 654,
-                'entities': {
-                    'symptom': ['fever', 'cough', 'headache', ...],
-                    'disease': ['pneumonia', 'influenza', ...],
-                    ...
-                },
-                'entity_counts': {
-                    'symptom': 127,
-                    'disease': 89,
-                    ...
-                }
-            }
+            Dict mapping dimension name → list of HierarchicalEntity objects
         """
         logger.info(f"Extracting entities from Cluster {cluster_id} ({len(cluster_questions)} questions, batch_size={self.batch_size})")
 
-        # Convert global dimensions to DimensionConfig format for prompt
+        # Convert dimensions to DimensionConfig format for prompt
         dimension_configs = self._convert_to_dimension_configs(self.global_dimensions)
 
         # Create case-insensitive mapping for dimension names
@@ -104,7 +97,7 @@ class ClusterEntityExtractor:
         prompt = ClusterEntityPrompt(
             dimensions=dimension_configs,
             extraction_context=None,  # Context added per batch
-            allow_new_dimensions=False,  # Use global dims only
+            allow_new_dimensions=self.allow_new_dimensions,  # Allow discovering new dimensions
             cluster_id=cluster_id
         )
 
@@ -128,67 +121,115 @@ class ClusterEntityExtractor:
                 total_batches=total_batches
             )
 
-            # Get LLM response
-            try:
-                response = self.llm_manager.generate(messages)
-                result = prompt.parse_response_with_discovery(response.content)
+            # Get LLM response with retry on JSON parsing errors
+            result = None
+            last_error = None
 
-                # Extract entity-first format
-                entity_first = result['entities']
-                reasoning = result['reasoning']
+            for attempt in range(self.max_retries):
+                try:
+                    response = self.llm_manager.generate(messages)
+                    result = prompt.parse_response_with_discovery(response.content)
+                    # Success - break out of retry loop
+                    break
+                except (ValueError, json.JSONDecodeError) as e:
+                    last_error = e
+                    if attempt < self.max_retries - 1:
+                        logger.warning(f"  ⚠ Cluster {cluster_id} Batch {batch_idx+1}: JSON parsing error (attempt {attempt+1}/{self.max_retries}), retrying...")
+                    else:
+                        logger.error(f"  ✗ Cluster {cluster_id} Batch {batch_idx+1}: Failed after {self.max_retries} attempts: {e}")
+                        # Continue with empty result
+                        result = None
+                        break
 
-                # Log CoT
-                if self.cot_logger:
-                    self.cot_logger.log_cluster_batch(
-                        cluster_id=cluster_id,
-                        batch_idx=batch_idx,
-                        reasoning=reasoning,
-                        raw_response=result['raw_response'],
-                        n_entities=len(entity_first)
-                    )
-
-                # Convert entity-first to dimension-first for aggregation
-                dimension_first = self._convert_to_dimension_first(entity_first)
-
-                # Update entity lists (preserve full entity objects with hierarchy)
-                for dim_name, entities in dimension_first.items():
-                    # Normalize dimension name (case-insensitive, handle underscores)
-                    normalized_key = dim_name.lower().replace(' ', '_')
-                    normalized_dim = dim_name_mapping.get(normalized_key)
-                    if not normalized_dim:
-                        normalized_key = dim_name.lower()
-                        normalized_dim = dim_name_mapping.get(normalized_key, dim_name)
-
-                    if normalized_dim not in self.entity_lists:
-                        logger.warning(f"Unexpected dimension '{dim_name}' in extraction result (Batch {batch_idx+1})")
-                        self.entity_lists[normalized_dim] = []
-                        self._entity_text_seen[normalized_dim] = set()
-
-                    for entity in entities:
-                        if not isinstance(entity, dict):
-                            continue
-
-                        entity_text = entity.get('text', '')
-                        if entity_text and entity_text.strip():
-                            # Deduplicate by entity text (case-insensitive)
-                            entity_text_normalized = entity_text.strip().lower()
-                            if entity_text_normalized not in self._entity_text_seen[normalized_dim]:
-                                self._entity_text_seen[normalized_dim].add(entity_text_normalized)
-                                # Store full entity object with all hierarchy fields
-                                self.entity_lists[normalized_dim].append(entity)
-
-                # Log progress
-                total_entities = sum(len(entities) for entities in self.entity_lists.values())
-                logger.info(f"  Progress: Batch {batch_idx+1}/{total_batches} ({end_idx}/{len(cluster_questions)} questions), {total_entities} unique entities")
-
-            except Exception as e:
-                logger.warning(f"  ✗ Failed to extract from batch {batch_idx+1}: {e}")
-                # Continue processing other batches
+            if result is None:
+                # All retries failed - skip this batch
+                logger.warning(f"  ⚠ Cluster {cluster_id} Batch {batch_idx+1}: Skipping batch due to parsing errors")
                 continue
+
+            # Extract entity-first format
+            entity_first = result['entities']
+            reasoning = result['reasoning']
+            new_dimensions = result.get('new_dimensions', {})
+
+            # Log CoT
+            if self.cot_logger:
+                self.cot_logger.log_cluster_batch(
+                    cluster_id=cluster_id,
+                    batch_idx=batch_idx,
+                    reasoning=reasoning,
+                    raw_response=result['raw_response'],
+                    n_entities=len(entity_first)
+                )
+
+            # Handle newly discovered dimensions
+            if new_dimensions and self.allow_new_dimensions:
+                for dim_name, dim_schema in new_dimensions.items():
+                    if dim_name not in self.global_dimensions:
+                        logger.info(f"  📝 Cluster {cluster_id} Batch {batch_idx+1}: Discovered new dimension '{dim_name}'")
+                        logger.info(f"     Hierarchy: {' → '.join(dim_schema.get('hierarchy', []))}")
+
+                        # Add to global dimensions - create DiscoveredDimensionSchema
+                        self.global_dimensions[dim_name] = DiscoveredDimensionSchema(
+                            hierarchy=dim_schema.get('hierarchy', []),
+                            description=dim_schema.get('description', ''),
+                            examples=dim_schema.get('example_entities', [])
+                        )
+
+                        # Initialize tracking for new dimension
+                        self.entity_lists[dim_name] = []
+
+                        # Update dimension name mapping
+                        normalized_key = dim_name.lower().replace(' ', '_')
+                        dim_name_mapping[normalized_key] = dim_name
+                        dim_name_mapping[dim_name.lower()] = dim_name
+
+            # Convert entity-first to dimension-first for aggregation
+            dimension_first = self._convert_to_dimension_first(entity_first)
+
+            # Update entity lists (preserve full entity objects with hierarchy)
+            for dim_name, entities in dimension_first.items():
+                # Normalize dimension name (case-insensitive, handle underscores)
+                normalized_key = dim_name.lower().replace(' ', '_')
+                normalized_dim = dim_name_mapping.get(normalized_key)
+                if not normalized_dim:
+                    normalized_key = dim_name.lower()
+                    normalized_dim = dim_name_mapping.get(normalized_key, dim_name)
+
+                if normalized_dim not in self.entity_lists:
+                    logger.warning(f"Unexpected dimension '{dim_name}' in extraction result (Batch {batch_idx+1})")
+                    self.entity_lists[normalized_dim] = []
+
+                for entity in entities:
+                    if not isinstance(entity, dict):
+                        continue
+
+                    entity_text = entity.get('text', '')
+                    if entity_text and entity_text.strip():
+                        # Extract hierarchy values (all fields except 'text' and 'dimension')
+                        hierarchy_values = {
+                            k: v for k, v in entity.items()
+                            if k not in ['text', 'dimension']
+                        }
+
+                        # Create HierarchicalEntity object
+                        entity_obj = HierarchicalEntity(
+                            text=entity_text,
+                            dimension=normalized_dim,
+                            hierarchy_values=hierarchy_values
+                        )
+
+                        # Deduplicate using matches_entity()
+                        if not any(e.matches_entity(entity_obj, similarity_threshold=0.85)
+                                   for e in self.entity_lists[normalized_dim]):
+                            self.entity_lists[normalized_dim].append(entity_obj)
+
+            # Log progress
+            total_entities = sum(len(entities) for entities in self.entity_lists.values())
+            logger.info(f"  Progress: Batch {batch_idx+1}/{total_batches} ({end_idx}/{len(cluster_questions)} questions), {total_entities} unique entities")
 
         # Sort entities by text field for consistent output
         entities_lists = {
-            dim: sorted(entities, key=lambda x: x.get('text', '').lower())
+            dim: sorted(entities, key=lambda x: x.text.lower())
             for dim, entities in self.entity_lists.items()
         }
 
@@ -201,11 +242,15 @@ class ClusterEntityExtractor:
         for dim_name in sorted(entity_counts.keys()):
             logger.info(f"  • {dim_name}: {entity_counts[dim_name]} unique entities")
 
+        # Log final cluster schema
+        logger.info(f"  Final cluster schema: {len(self.global_dimensions)} dimensions")
+
         return {
             'cluster_id': cluster_id,
             'n_questions': len(cluster_questions),
             'entities': entities_lists,
-            'entity_counts': entity_counts
+            'entity_counts': entity_counts,
+            'final_cluster_schema': self.global_dimensions  # Include evolved schema
         }
 
     def _build_context(self) -> str:
@@ -222,7 +267,7 @@ class ClusterEntityExtractor:
         if not any(self.entity_lists.values()):
             # No entities yet - return just dimension names
             return "# Discovered Dimensions\n" + "\n".join([
-                f"- {dim_name}: {self.global_dimensions[dim_name].get('description', 'N/A')}"
+                f"- {dim_name}: {self.global_dimensions[dim_name].description}"
                 for dim_name in sorted(self.entity_lists.keys())
             ])
 
@@ -232,11 +277,11 @@ class ClusterEntityExtractor:
 
             if not entities:
                 # No entities yet for this dimension
-                desc = self.global_dimensions[dim_name].get('description', 'N/A')
+                desc = self.global_dimensions[dim_name].description
                 lines.append(f"- {dim_name}: {desc}")
             else:
                 # Extract entity text from entity objects and show first 5 + count
-                entity_texts = [e.get('text', '') for e in entities if e.get('text')]
+                entity_texts = [e.text for e in entities]
                 display = ", ".join(sorted(entity_texts[:5], key=str.lower))
                 if len(entity_texts) > 5:
                     display += f" ... ({len(entity_texts)} total)"
@@ -292,15 +337,15 @@ Return a single JSON object with all entities from ALL questions combined. Do no
             {"role": "user", "content": user_message}
         ]
 
-    def _convert_to_dimension_configs(self, dimensions: Dict[str, Dict]) -> Dict:
+    def _convert_to_dimension_configs(self, dimensions: Dict[str, DiscoveredDimensionSchema]) -> Dict:
         """
-        Convert global dimensions to DimensionConfig-like dict for prompt.
+        Convert global dimensions to DimensionConfig objects for prompt.
 
         Args:
             dimensions: Global dimensional schemas
 
         Returns:
-            Dict compatible with ClusterEntityPrompt
+            Dict of dimension_name → DimensionConfig
         """
         # Import here to avoid circular dependency
         from stindex.extraction.dimension_loader import DimensionConfig
@@ -308,9 +353,8 @@ Return a single JSON object with all entities from ALL questions combined. Do no
         configs = {}
 
         for dim_name, dim_schema in dimensions.items():
-            # Create a simple DimensionConfig-like dict
-            # The prompt needs: hierarchy, description, fields
-            hierarchy = dim_schema.get('hierarchy', [])
+            # Create a DimensionConfig object with hierarchy support
+            hierarchy = dim_schema.hierarchy
 
             # Generate field definitions from hierarchy levels
             fields = []
@@ -322,7 +366,7 @@ Return a single JSON object with all entities from ALL questions combined. Do no
                 })
 
             # Prepare examples in the correct format (list of dicts)
-            raw_examples = dim_schema.get('examples', [])
+            raw_examples = dim_schema.examples
             formatted_examples = []
             if raw_examples:
                 for ex in raw_examples:
@@ -335,15 +379,15 @@ Return a single JSON object with all entities from ALL questions combined. Do no
                     elif isinstance(ex, dict):
                         formatted_examples.append(ex)
 
-            # Create config
+            # Create DimensionConfig object with hierarchy
             configs[dim_name] = DimensionConfig(
-                name=dim_name,  # Add missing name parameter
+                name=dim_name,
                 enabled=True,
                 extraction_type='hierarchical_categorical',
                 hierarchy=hierarchy,
                 schema_type='HierarchicalCategoricalMention',
                 fields=fields,
-                description=dim_schema.get('description', ''),
+                description=dim_schema.description,
                 examples=formatted_examples
             )
 

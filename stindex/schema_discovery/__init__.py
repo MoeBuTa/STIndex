@@ -1,12 +1,12 @@
 """
 Schema Discovery Module for STIndex.
 
-This module implements simplified cluster-based dimensional schema discovery from question-answering datasets.
+This module implements cluster-level dimensional schema discovery from question-answering datasets.
 
 Main Components:
 - QuestionClusterer: Semantic clustering of questions using sentence embeddings
-- GlobalSchemaDiscoverer: Discovers global dimensions from representative samples across all clusters
-- ClusterEntityExtractor: Extracts entities per cluster using global dimensions with simple entity tracking
+- ClusterSchemaDiscoverer: Discovers dimensions from questions within a cluster
+- ClusterEntityExtractor: Extracts entities per cluster using discovered dimensions
 - SchemaMerger: Merges entity lists from all clusters with fuzzy deduplication
 - SchemaDiscoveryPipeline: End-to-end pipeline orchestration
 
@@ -17,7 +17,7 @@ Example Usage:
     pipeline = SchemaDiscoveryPipeline(
         llm_config={'llm_provider': 'openai', 'model_name': 'gpt-4o-mini'},
         n_clusters=10,
-        n_samples_per_cluster=20
+        n_samples_for_discovery=20
     )
 
     result = pipeline.discover_schema(
@@ -27,14 +27,14 @@ Example Usage:
 """
 
 from stindex.schema_discovery.question_clusterer import QuestionClusterer
-from stindex.schema_discovery.global_schema_discoverer import GlobalSchemaDiscoverer
+from stindex.schema_discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
 from stindex.schema_discovery.cluster_entity_extractor import ClusterEntityExtractor
 from stindex.schema_discovery.schema_merger import SchemaMerger
 from stindex.schema_discovery.discover_schema import SchemaDiscoveryPipeline
 
 __all__ = [
     'QuestionClusterer',
-    'GlobalSchemaDiscoverer',
+    'ClusterSchemaDiscoverer',
     'ClusterEntityExtractor',
     'SchemaMerger',
     'SchemaDiscoveryPipeline'

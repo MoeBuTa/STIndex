@@ -9,17 +9,17 @@ import json
 from typing import Dict, List, Optional
 
 
-class GlobalSchemaPrompt:
+class ClusterSchemaPrompt:
     """
-    Prompt for global schema discovery from question clusters.
+    Prompt for cluster-level schema discovery from question clusters.
 
     This is the first phase of schema discovery where we ask the LLM to propose
-    2-3 high-level dimensions based on sample questions from a cluster.
+    dimensions based purely on what naturally emerges from sample questions.
+    No constraints on dimension count - fully data-driven.
     """
 
     def __init__(
         self,
-        n_schemas: int = 2,
         predefined_dimensions: Optional[List[str]] = None,
         cluster_id: Optional[int] = None
     ):
@@ -27,11 +27,9 @@ class GlobalSchemaPrompt:
         Initialize prompt builder.
 
         Args:
-            n_schemas: Number of domain-specific dimensions to discover (default: 2)
             predefined_dimensions: List of predefined dimension names (e.g., ['temporal', 'spatial'])
             cluster_id: Optional cluster ID for context
         """
-        self.n_schemas = n_schemas
         self.predefined_dimensions = predefined_dimensions or ['temporal', 'spatial']
         self.cluster_id = cluster_id
 
@@ -79,10 +77,10 @@ Key Principles:
    - Focus on domain-specific dimensions only
 
 OUTPUT FORMAT:
-After your reasoning, provide valid JSON:
+After your reasoning, provide valid JSON with VARIABLE hierarchy depths:
 {{
     "dimension_name_1": {{
-        "hierarchy": ["level1", "level2", "level3"],
+        "hierarchy": ["level1", "level2", "level3", "level4"],
         "description": "Clear description of what this dimension captures and why it's useful for retrieval",
         "examples": ["example entity 1", "example entity 2", "example entity 3"]
     }},
@@ -90,8 +88,15 @@ After your reasoning, provide valid JSON:
         "hierarchy": ["level1", "level2"],
         "description": "...",
         "examples": ["...", "...", "..."]
+    }},
+    "dimension_name_3": {{
+        "hierarchy": ["level1", "level2", "level3", "level4", "level5"],
+        "description": "...",
+        "examples": ["...", "...", "..."]
     }}
-}}"""
+}}
+
+NOTE: The examples above show 4, 2, and 5 levels respectively - your dimensions should have varying depths based on domain complexity!"""
 
         return template.format(
             predefined_dims=", ".join(self.predefined_dimensions)
@@ -118,13 +123,17 @@ After your reasoning, provide valid JSON:
 
         cluster_context = f"Cluster {self.cluster_id}: " if self.cluster_id is not None else ""
 
-        template = """{cluster_context}Analyze these {n_samples} questions and propose {n_schemas} domain-specific dimensional schemas.
+        template = """{cluster_context}Analyze these {n_samples} questions and propose domain-specific dimensional schemas.
 
 Questions:
 {questions}
 
 Requirements:
-1. Propose exactly {n_schemas} domain-specific dimensions (NOT temporal or spatial - those are predefined)
+1. Propose domain-specific dimensions based ONLY on what you observe in the data
+   - Only propose dimensions that clearly and naturally emerge from the question patterns
+   - Fewer, high-quality dimensions are better than many forced ones
+   - Do NOT propose temporal or spatial dimensions (those are predefined)
+   - Let the data determine how many dimensions exist - could be 2, could be 5, could be more
 2. Each dimension should capture a distinct aspect of knowledge relevant to these questions
 3. Each dimension must have a hierarchical structure with as many levels as naturally fit the data
    - Don't force a specific number of levels - let the hierarchy emerge naturally
@@ -137,13 +146,13 @@ Consider:
 - How is knowledge naturally organized in this domain?
 - What hierarchical relationships exist between concepts?
 - What information would help retrieve relevant documents to answer these questions?
+- Are there truly distinct dimensional aspects, or would some dimensions overlap?
 
 Output ONLY valid JSON following the schema in the system prompt."""
 
         return template.format(
             cluster_context=cluster_context,
             n_samples=len(sample_questions),
-            n_schemas=self.n_schemas,
             questions=questions_str
         )
 

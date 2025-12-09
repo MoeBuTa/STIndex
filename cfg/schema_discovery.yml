@@ -1,0 +1,66 @@
+# Schema Discovery Configuration
+
+# Cluster-level dimensional discovery (no global baseline)
+cluster_discovery:
+  num_clusters: 10
+  # Number of sample questions per cluster for dimension discovery phase
+  samples_per_discovery: 20
+
+# Per-cluster entity extraction
+entity_extraction:
+  # Number of questions to batch in a single LLM call
+  # Higher values = faster but may reduce extraction quality
+  # Lower values = slower but better context tracking
+  batch_size: 50
+
+  # Maximum number of questions to process per cluster (for testing)
+  # Set to null or -1 to process all questions
+  max_questions_per_cluster: null
+
+  # Log progress every N batches
+  log_interval: 10
+
+  # Allow discovering new dimensions during entity extraction
+  # When enabled, each cluster can evolve its own schema as it processes batches
+  allow_new_dimensions: true
+
+  # Retry configuration for handling LLM errors
+  retry:
+    # Maximum number of retry attempts for failed LLM calls
+    max_retries: 3
+
+    # Initial delay between retries in seconds
+    initial_delay: 1.0
+
+    # Exponential backoff multiplier (delay *= backoff_factor after each retry)
+    backoff_factor: 2.0
+
+    # Maximum delay between retries in seconds
+    max_delay: 10.0
+
+    # Whether to adjust temperature on retry (can help with JSON formatting)
+    adjust_temperature: true
+
+    # Temperature reduction on retry (0.7 -> 0.5 -> 0.3)
+    temperature_reduction: 0.2
+
+# Parallel processing
+parallel:
+  # Enable parallel cluster processing
+  enabled: true
+
+  # Maximum number of clusters to process in parallel
+  # Set to -1 for unlimited (processes all clusters in parallel)
+  max_workers: 5
+
+  # Timeout per cluster in seconds (null for no timeout)
+  cluster_timeout: 3600
+
+# Schema merging across clusters
+schema_merging:
+  # Similarity threshold for fuzzy dimension name matching and entity deduplication (0.0-1.0)
+  # 0.85 means strings with ≥85% similarity are considered duplicates
+  similarity_threshold: 0.85
+
+  # Maximum entities per dimension in final output
+  max_entities_per_dimension: 1000

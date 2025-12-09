@@ -22,7 +22,7 @@ class DimensionConfig(BaseModel):
     name: str
     enabled: bool = True
     description: str
-    extraction_type: str  # normalized, geocoded, categorical, structured, free_text
+    extraction_type: str  # normalized, geocoded, categorical, structured, free_text, hierarchical_categorical
     schema_type: str  # Name of the schema class
 
     # Field definitions
@@ -30,6 +30,9 @@ class DimensionConfig(BaseModel):
 
     # Examples for few-shot learning
     examples: List[Dict[str, Any]] = Field(default_factory=list)
+
+    # Hierarchy levels (for hierarchical_categorical extraction)
+    hierarchy: Optional[List[str]] = None
 
     # Type-specific configuration
     normalization: Optional[Dict[str, Any]] = None
