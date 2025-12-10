@@ -235,10 +235,11 @@ class ClusterSchemaDiscoverer:
             cot_logger=self.cot_logger
         )
 
-        # Extract entities (will be updated in Phase 6 to return HierarchicalEntity)
-        entities = extractor.extract_from_cluster(
+        # Extract entities - returns dict with 'entities' key
+        result = extractor.extract_from_cluster(
             cluster_questions=cluster_questions,
             cluster_id=cluster_id
         )
 
-        return entities
+        # Extract just the entities field
+        return result['entities']

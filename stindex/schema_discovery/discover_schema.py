@@ -256,7 +256,7 @@ class SchemaDiscoveryPipeline:
         # Also save as JSON for easier programmatic access
         final_schema_json_path = output_path / "final_schema.json"
         with open(final_schema_json_path, 'w') as f:
-            json.dump(final_schema.model_dump(), f, indent=2)
+            json.dump(final_schema.model_dump(mode='json'), f, indent=2)
 
         logger.info("  ✓ Final schema saved to: final_schema.json")
 
@@ -312,7 +312,7 @@ class SchemaDiscoveryPipeline:
         # Save intermediate result
         cluster_result_path = output_path / f"cluster_{cluster_id}_result.json"
         with open(cluster_result_path, 'w') as f:
-            json.dump(result.model_dump(), f, indent=2)
+            json.dump(result.model_dump(mode='json'), f, indent=2)
 
         return result
 

@@ -206,8 +206,10 @@ class ClusterEntityExtractor:
                     entity_text = entity.get('text', '')
                     if entity_text and entity_text.strip():
                         # Extract hierarchy values (all fields except 'text' and 'dimension')
+                        # Convert all values to strings to handle LLM returning integers/other types
                         hierarchy_values = {
-                            k: v for k, v in entity.items()
+                            k: str(v) if v is not None else None
+                            for k, v in entity.items()
                             if k not in ['text', 'dimension']
                         }
 
