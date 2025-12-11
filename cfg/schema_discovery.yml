@@ -1,14 +1,24 @@
 # Schema Discovery Configuration
 
-# Cluster-level dimensional discovery (no global baseline)
+# Cluster-level dimensional discovery (unified approach - no separate discovery phase)
 cluster_discovery:
   num_clusters: 10
-  # Number of sample questions per cluster for dimension discovery phase
-  samples_per_discovery: 20
+
+  # Adaptive first batch sizing
+  # First batch uses adaptive size based on cluster size for discovery
+  # Subsequent batches use standard batch_size for refinement
+  adaptive_batching:
+    enabled: true
+    # Minimum size for first batch
+    min_size: 50
+    # Maximum size for first batch
+    max_size: 150
+    # First batch as percentage of cluster size (0.10 = 10%)
+    ratio: 0.10
 
 # Per-cluster entity extraction
 entity_extraction:
-  # Number of questions to batch in a single LLM call
+  # Number of questions to batch in a single LLM call (for batches after the first)
   # Higher values = faster but may reduce extraction quality
   # Lower values = slower but better context tracking
   batch_size: 50
@@ -23,6 +33,23 @@ entity_extraction:
   # Allow discovering new dimensions during entity extraction
   # When enabled, each cluster can evolve its own schema as it processes batches
   allow_new_dimensions: true
+
+  # Decay thresholds for schema refinement
+  # Controls how strict the confidence threshold is for proposing new dimensions
+  # Early batches can propose dimensions more easily, later batches require higher confidence
+  decay_thresholds:
+    early:
+      start_batch: 1   # Batches 1-2 (1-indexed)
+      end_batch: 2
+      threshold: 0.3   # Low threshold - easy to propose new dimensions
+    medium:
+      start_batch: 3   # Batches 3-5
+      end_batch: 5
+      threshold: 0.6   # Medium threshold - moderate difficulty
+    late:
+      start_batch: 6   # Batches 6+
+      end_batch: 999999
+      threshold: 0.9   # High threshold - rare proposals only
 
   # Retry configuration for handling LLM errors
   retry:

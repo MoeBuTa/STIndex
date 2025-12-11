@@ -28,7 +28,9 @@ class ClusterEntityPrompt(DimensionalExtractionPrompt):
         document_metadata: Optional[Dict] = None,
         extraction_context: Optional[object] = None,
         allow_new_dimensions: bool = True,
-        cluster_id: Optional[int] = None
+        cluster_id: Optional[int] = None,
+        batch_idx: Optional[int] = None,
+        decay_threshold: Optional[float] = None
     ):
         """
         Initialize prompt builder.
@@ -39,10 +41,14 @@ class ClusterEntityPrompt(DimensionalExtractionPrompt):
             extraction_context: Optional ExtractionContext for context-aware prompts
             allow_new_dimensions: Whether to allow proposing new dimensions
             cluster_id: Optional cluster ID for context
+            batch_idx: Optional batch index for decay-aware prompts
+            decay_threshold: Optional confidence threshold for new dimensions
         """
         super().__init__(dimensions, document_metadata, extraction_context)
         self.allow_new_dimensions = allow_new_dimensions
         self.cluster_id = cluster_id
+        self.batch_idx = batch_idx
+        self.decay_threshold = decay_threshold
 
     def system_prompt(self) -> str:
         """Generate system prompt with extraction + discovery instructions."""
@@ -125,18 +131,109 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
     def _build_discovery_instructions(self) -> str:
         """Build instructions for schema discovery during extraction."""
 
+        # Batch-aware instructions
+        if self.batch_idx is not None and self.decay_threshold is not None:
+            batch_num = self.batch_idx + 1
+
+            if self.batch_idx == 0:
+                # First batch - discovery mode
+                template = """
+
+5. NEW DIMENSION DISCOVERY (Primary Task for First Batch):
+   This is the FIRST BATCH - your primary task is to discover the dimensional schema.
+
+   **DISCOVERY MODE:**
+   - Analyze the questions to identify natural dimensions
+   - Extract entities AND propose dimensions simultaneously
+   - Think about what types of information are being asked about
+   - Consider hierarchical relationships (e.g., specific → category → broader_category)
+
+   **Requirements for new dimensions:**
+   - Must include a "confidence" field (float 0.0-1.0) indicating your confidence in this dimension
+   - Confidence threshold for acceptance: {threshold:.1f}
+   - Provide a clear hierarchical structure (2-4 levels recommended)
+   - Include example entities from the questions
+   - Explain why this dimension is useful
+
+   New dimension format:
+   "new_dimensions": {{
+       "proposed_dimension_name": {{
+           "confidence": 0.95,  // REQUIRED: Your confidence in proposing this dimension
+           "hierarchy": ["level1", "level2", "level3"],
+           "description": "What this dimension captures",
+           "example_entities": ["entity1", "entity2", "entity3"],
+           "rationale": "Why this dimension is needed and how it helps organize the data"
+       }}
+   }}
+
+   **Guidance:**
+   - In this first batch, err on the side of discovering more dimensions
+   - Any dimension with confidence ≥ {threshold:.1f} will be accepted
+   - Focus on dimensions that appear consistently across questions"""
+
+                return template.format(threshold=self.decay_threshold)
+
+            else:
+                # Subsequent batches - refinement mode with decay
+                if batch_num <= 2:
+                    stage = "Early Refinement"
+                    guidance = "You can still propose new dimensions relatively easily"
+                elif batch_num <= 5:
+                    stage = "Medium Refinement"
+                    guidance = "New dimensions should be well-justified and clearly distinct"
+                else:
+                    stage = "Late Refinement"
+                    guidance = "New dimensions should be rare and exceptionally important"
+
+                template = """
+
+5. NEW DIMENSION DISCOVERY (Refinement Mode - Batch {batch_num}, {stage}):
+   **REFINEMENT MODE:**
+   - Primary task: Extract entities using existing dimensions
+   - Secondary task: Propose new dimensions only if highly confident
+
+   **Requirements for new dimensions:**
+   - Must include "confidence" field (float 0.0-1.0)
+   - Confidence threshold for acceptance: {threshold:.1f} ({guidance})
+   - Must be clearly distinct from existing dimensions
+   - Must appear consistently across multiple questions in this batch
+   - Should fill a gap that existing dimensions don't cover
+
+   New dimension format:
+   "new_dimensions": {{
+       "proposed_dimension_name": {{
+           "confidence": 0.95,  // REQUIRED: Must be ≥ {threshold:.1f} to be accepted
+           "hierarchy": ["level1", "level2"],
+           "description": "What this dimension captures",
+           "example_entities": ["entity1", "entity2"],
+           "rationale": "Why existing dimensions are insufficient"
+       }}
+   }}
+
+   **Note:** Most batches should NOT propose new dimensions. Only propose if you find a clear gap in the schema."""
+
+                return template.format(
+                    batch_num=batch_num,
+                    stage=stage,
+                    threshold=self.decay_threshold,
+                    guidance=guidance
+                )
+
+        # Default instructions (no batch context)
         template = """
 
 5. NEW DIMENSION DISCOVERY (Optional):
    If you encounter important entities that don't fit existing dimensions:
    - Add a "new_dimensions" field to your JSON output
    - Propose new dimension(s) with hierarchical structure
+   - Include a "confidence" field (0.0-1.0) for each proposed dimension
    - This should be RARE - try to fit entities into existing dimensions first
    - Only propose dimensions for information types that appear frequently/are clearly important
 
    New dimension format:
    "new_dimensions": {{
        "proposed_dimension_name": {{
+           "confidence": 0.90,  // REQUIRED: Your confidence in proposing this dimension
            "hierarchy": ["level1", "level2", "level3"],
            "description": "What this dimension captures",
            "example_entities": ["entity1", "entity2", "entity3"],

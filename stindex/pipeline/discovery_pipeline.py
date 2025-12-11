@@ -35,7 +35,6 @@ class SchemaDiscoveryPipeline:
         llm_config: Dict,
         config: Optional[Dict] = None,
         n_clusters: int = 10,
-        n_samples_for_discovery: int = 20,
         similarity_threshold: float = 0.85,
         batch_size: int = 50,
         enable_parallel: bool = True,
@@ -49,7 +48,6 @@ class SchemaDiscoveryPipeline:
             llm_config: LLM configuration (provider, model, etc.)
             config: Optional pipeline config dict (overrides other params if provided)
             n_clusters: Number of question clusters
-            n_samples_for_discovery: Sample size per cluster for dimension discovery
             similarity_threshold: Fuzzy matching threshold for deduplication
             batch_size: Number of questions per LLM call during extraction (default: 50)
             enable_parallel: Enable parallel cluster processing (default: True)
@@ -62,7 +60,25 @@ class SchemaDiscoveryPipeline:
         # Load config if provided
         if config:
             self.n_clusters = config.get('cluster_discovery', {}).get('num_clusters', n_clusters)
-            self.n_samples_for_discovery = config.get('cluster_discovery', {}).get('samples_per_discovery', n_samples_for_discovery)
+
+            # Adaptive batching configuration
+            adaptive_config = config.get('cluster_discovery', {}).get('adaptive_batching', {})
+            self.adaptive_first_batch = adaptive_config.get('enabled', True)
+            self.first_batch_min = adaptive_config.get('min_size', 50)
+            self.first_batch_max = adaptive_config.get('max_size', 150)
+            self.first_batch_ratio = adaptive_config.get('ratio', 0.10)
+
+            # Decay thresholds configuration
+            decay_config = config.get('entity_extraction', {}).get('decay_thresholds', {})
+            self.decay_config = {}
+            for stage in ['early', 'medium', 'late']:
+                stage_config = decay_config.get(stage, {})
+                self.decay_config[stage] = (
+                    stage_config.get('start_batch', 1),
+                    stage_config.get('end_batch', 999999),
+                    stage_config.get('threshold', 0.9)
+                )
+
             self.batch_size = config.get('entity_extraction', {}).get('batch_size', batch_size)
             self.allow_new_dimensions = config.get('entity_extraction', {}).get('allow_new_dimensions', True)
             self.max_retries = config.get('entity_extraction', {}).get('retry', {}).get('max_retries', 3)
@@ -71,13 +87,25 @@ class SchemaDiscoveryPipeline:
             self.similarity_threshold = config.get('schema_merging', {}).get('similarity_threshold', similarity_threshold)
         else:
             self.n_clusters = n_clusters
-            self.n_samples_for_discovery = n_samples_for_discovery
             self.batch_size = batch_size
             self.allow_new_dimensions = True
             self.max_retries = 3
             self.enable_parallel = enable_parallel
             self.max_workers = max_workers
             self.similarity_threshold = similarity_threshold
+
+            # Default adaptive batching
+            self.adaptive_first_batch = True
+            self.first_batch_min = 50
+            self.first_batch_max = 150
+            self.first_batch_ratio = 0.10
+
+            # Default decay thresholds
+            self.decay_config = {
+                'early': (1, 2, 0.3),
+                'medium': (3, 5, 0.6),
+                'late': (6, 999999, 0.9)
+            }
 
     def discover_schema(
         self,
@@ -122,19 +150,21 @@ class SchemaDiscoveryPipeline:
             cluster_result = clusterer.cluster_questions_from_file(
                 questions_file=questions_file,
                 output_dir=str(output_path),
-                n_clusters=self.n_clusters,
-                n_samples_per_cluster=self.n_samples_for_discovery
+                n_clusters=self.n_clusters
             )
             with open(cluster_samples_path) as f:
                 cluster_samples = json.load(f)
                 cluster_samples = {int(k): v for k, v in cluster_samples.items()}
             logger.info(f"  ✓ Clustered into {self.n_clusters} clusters")
 
-        # Step 2: Per-Cluster Discovery + Extraction (no global phase)
-        logger.info("\nStep 2: Per-Cluster Discovery + Extraction")
+        # Step 2: Unified Discovery + Extraction (no separate discovery phase)
+        logger.info("\nStep 2: Unified Discovery + Extraction")
         logger.info(f"  Parallel processing: {'enabled' if self.enable_parallel else 'disabled'} (max_workers={self.max_workers})")
-        logger.info(f"  Discovery sample size: {self.n_samples_for_discovery} questions per cluster")
-        logger.info(f"  Extraction batch size: {self.batch_size} questions per LLM call")
+        logger.info(f"  Standard batch size: {self.batch_size} questions per LLM call")
+        logger.info(f"  Adaptive first batch: {'enabled' if self.adaptive_first_batch else 'disabled'}")
+        if self.adaptive_first_batch:
+            logger.info(f"    - First batch size: {self.first_batch_ratio*100:.0f}% of cluster (min={self.first_batch_min}, max={self.first_batch_max})")
+        logger.info(f"  Decay thresholds: early={self.decay_config['early'][2]:.1f}, medium={self.decay_config['medium'][2]:.1f}, late={self.decay_config['late'][2]:.1f}")
         logger.info(f"  Dimensions per cluster: Data-driven (no constraint)")
 
         # Load all questions
@@ -305,8 +335,12 @@ class SchemaDiscoveryPipeline:
         result = discoverer.discover_and_extract(
             cluster_id=cluster_id,
             cluster_questions=cluster_questions,
-            n_samples_for_discovery=self.n_samples_for_discovery,
-            allow_new_dimensions=self.allow_new_dimensions
+            allow_new_dimensions=self.allow_new_dimensions,
+            adaptive_first_batch=self.adaptive_first_batch,
+            first_batch_min=self.first_batch_min,
+            first_batch_max=self.first_batch_max,
+            first_batch_ratio=self.first_batch_ratio,
+            decay_config=self.decay_config
         )
 
         # Save intermediate result
@@ -331,8 +365,7 @@ Examples:
   python -m stindex.pipeline.discovery_pipeline \\
       --questions data/original/mirage/train.jsonl \\
       --output-dir data/schema_discovery \\
-      --n-clusters 10 \\
-      --n-samples 20
+      --n-clusters 10
 
   # Reuse existing cluster results (faster)
   python -m stindex.pipeline.discovery_pipeline \\
@@ -344,8 +377,7 @@ Examples:
   python -m stindex.pipeline.discovery_pipeline \\
       --questions data/original/mirage/train.jsonl \\
       --output-dir data/schema_discovery_test \\
-      --n-clusters 3 \\
-      --n-samples 10
+      --n-clusters 3
         """
     )
 
@@ -365,12 +397,7 @@ Examples:
         default=10,
         help='Number of question clusters (default: 10)'
     )
-    parser.add_argument(
-        '--n-samples',
-        type=int,
-        default=20,
-        help='Number of samples per cluster for global discovery (default: 20)'
-    )
+    # Removed --n-samples argument - using adaptive batching instead
     parser.add_argument(
         '--similarity-threshold',
         type=float,
@@ -460,7 +487,6 @@ Examples:
         llm_config=llm_config,
         config=config,
         n_clusters=args.n_clusters,
-        n_samples_for_discovery=args.n_samples,
         similarity_threshold=args.similarity_threshold,
         test_clusters=test_clusters
     )

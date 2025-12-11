@@ -27,9 +27,11 @@ class ClusterEntityExtractor:
         global_dimensions: Dict[str, DiscoveredDimensionSchema],
         llm_config: Dict,
         batch_size: int = 50,
+        first_batch_size: int = None,
         output_dir: str = None,
         allow_new_dimensions: bool = True,
         max_retries: int = 3,
+        decay_config: Dict = None,
         cot_logger: 'CoTLogger' = None
     ):
         """
@@ -40,28 +42,62 @@ class ClusterEntityExtractor:
                 Example: {'symptom': DiscoveredDimensionSchema(...), ...}
             llm_config: LLM configuration dict (provider, model, etc.)
             batch_size: Number of questions to process per LLM call (default: 50)
+            first_batch_size: Size of first batch (adaptive, default: same as batch_size)
             output_dir: Output directory for CoT logging (optional, deprecated if cot_logger provided)
             allow_new_dimensions: Allow discovering new dimensions during extraction (default: True)
             max_retries: Maximum retry attempts for JSON parsing errors (default: 3)
+            decay_config: Decay thresholds config (default: early=0.3, medium=0.6, late=0.9)
             cot_logger: Shared CoT logger instance (optional, preferred over output_dir)
         """
         self.global_dimensions = global_dimensions
         self.llm_manager = LLMManager(llm_config)
         self.batch_size = batch_size
+        self.first_batch_size = first_batch_size if first_batch_size is not None else batch_size
         # Use provided cot_logger, or create new one from output_dir
         self.cot_logger = cot_logger if cot_logger else (CoTLogger(output_dir) if output_dir else None)
         self.allow_new_dimensions = allow_new_dimensions
         self.max_retries = max_retries
+
+        # Decay configuration for schema refinement
+        self.decay_config = decay_config if decay_config is not None else {
+            'early': (1, 2, 0.3),   # Batches 1-2: threshold 0.3 (easy to propose)
+            'medium': (3, 5, 0.6),  # Batches 3-5: threshold 0.6 (moderate)
+            'late': (6, float('inf'), 0.9)  # Batches 6+: threshold 0.9 (rare proposals)
+        }
 
         # Entity tracking per dimension (list of HierarchicalEntity)
         self.entity_lists: Dict[str, List[HierarchicalEntity]] = {
             dim_name: [] for dim_name in global_dimensions.keys()
         }
 
-        logger.info(f"Initialized extractor with {len(global_dimensions)} dimensions (batch_size={batch_size})")
+        logger.info(f"Initialized extractor with {len(global_dimensions)} dimensions (batch_size={batch_size}, first_batch_size={self.first_batch_size})")
         for dim_name in sorted(global_dimensions.keys()):
             hierarchy = ' → '.join(global_dimensions[dim_name].hierarchy)
             logger.debug(f"  • {dim_name}: {hierarchy}")
+
+    def _get_decay_threshold(self, batch_idx: int) -> float:
+        """
+        Get confidence threshold based on batch index (decay mechanism).
+
+        Args:
+            batch_idx: Current batch index (0-indexed)
+
+        Returns:
+            Confidence threshold for new dimension proposals
+
+        Examples:
+            batch_idx=0 (batch 1): 0.3 (early - easy to propose)
+            batch_idx=3 (batch 4): 0.6 (medium - moderate difficulty)
+            batch_idx=7 (batch 8): 0.9 (late - rare proposals)
+        """
+        batch_num = batch_idx + 1  # Convert to 1-indexed
+
+        for stage, (start, end, threshold) in self.decay_config.items():
+            if start <= batch_num <= end:
+                return threshold
+
+        # Default to highest threshold if not found
+        return 0.9
 
     def extract_from_cluster(
         self,
@@ -101,24 +137,37 @@ class ClusterEntityExtractor:
             cluster_id=cluster_id
         )
 
-        # Process questions in batches
-        total_batches = (len(cluster_questions) + self.batch_size - 1) // self.batch_size
+        # Calculate total batches accounting for adaptive first batch
+        total_batches = self._calculate_total_batches(len(cluster_questions))
 
         for batch_idx in range(total_batches):
-            start_idx = batch_idx * self.batch_size
-            end_idx = min(start_idx + self.batch_size, len(cluster_questions))
+            # Use adaptive first batch size for batch 0, standard batch size for rest
+            current_batch_size = self.first_batch_size if batch_idx == 0 else self.batch_size
+
+            # Calculate batch range
+            if batch_idx == 0:
+                start_idx = 0
+                end_idx = min(self.first_batch_size, len(cluster_questions))
+            else:
+                start_idx = self.first_batch_size + (batch_idx - 1) * self.batch_size
+                end_idx = min(start_idx + self.batch_size, len(cluster_questions))
+
             batch_questions = cluster_questions[start_idx:end_idx]
+
+            # Get decay threshold for this batch
+            decay_threshold = self._get_decay_threshold(batch_idx)
 
             # Build context: dimension names + current entity lists
             context_str = self._build_context()
 
-            # Build messages for this batch
+            # Build messages for this batch (with decay threshold)
             messages = self._build_batch_messages(
                 prompt=prompt,
                 batch_questions=batch_questions,
                 context_str=context_str,
                 batch_idx=batch_idx,
-                total_batches=total_batches
+                total_batches=total_batches,
+                decay_threshold=decay_threshold
             )
 
             # Get LLM response with retry on JSON parsing errors
@@ -161,27 +210,15 @@ class ClusterEntityExtractor:
                     n_entities=len(entity_first)
                 )
 
-            # Handle newly discovered dimensions
+            # Handle newly discovered dimensions with decay filtering
             if new_dimensions and self.allow_new_dimensions:
-                for dim_name, dim_schema in new_dimensions.items():
-                    if dim_name not in self.global_dimensions:
-                        logger.info(f"  📝 Cluster {cluster_id} Batch {batch_idx+1}: Discovered new dimension '{dim_name}'")
-                        logger.info(f"     Hierarchy: {' → '.join(dim_schema.get('hierarchy', []))}")
-
-                        # Add to global dimensions - create DiscoveredDimensionSchema
-                        self.global_dimensions[dim_name] = DiscoveredDimensionSchema(
-                            hierarchy=dim_schema.get('hierarchy', []),
-                            description=dim_schema.get('description', ''),
-                            examples=dim_schema.get('example_entities', [])
-                        )
-
-                        # Initialize tracking for new dimension
-                        self.entity_lists[dim_name] = []
-
-                        # Update dimension name mapping
-                        normalized_key = dim_name.lower().replace(' ', '_')
-                        dim_name_mapping[normalized_key] = dim_name
-                        dim_name_mapping[dim_name.lower()] = dim_name
+                self._process_new_dimensions(
+                    new_dimensions=new_dimensions,
+                    decay_threshold=decay_threshold,
+                    batch_idx=batch_idx,
+                    cluster_id=cluster_id,
+                    dim_name_mapping=dim_name_mapping
+                )
 
             # Convert entity-first to dimension-first for aggregation
             dimension_first = self._convert_to_dimension_first(entity_first)
@@ -227,7 +264,7 @@ class ClusterEntityExtractor:
 
             # Log progress
             total_entities = sum(len(entities) for entities in self.entity_lists.values())
-            logger.info(f"  Progress: Batch {batch_idx+1}/{total_batches} ({end_idx}/{len(cluster_questions)} questions), {total_entities} unique entities")
+            logger.info(f"  Progress: Batch {batch_idx+1}/{total_batches} ({end_idx}/{len(cluster_questions)} questions), {total_entities} unique entities, decay_threshold={decay_threshold:.1f}")
 
         # Sort entities by text field for consistent output
         entities_lists = {
@@ -252,8 +289,78 @@ class ClusterEntityExtractor:
             'n_questions': len(cluster_questions),
             'entities': entities_lists,
             'entity_counts': entity_counts,
-            'final_cluster_schema': self.global_dimensions  # Include evolved schema
+            'discovered_dimensions': self.global_dimensions,  # Final evolved schema
+            'reasoning': ''  # Placeholder - can be populated from first batch if needed
         }
+
+    def _calculate_total_batches(self, n_questions: int) -> int:
+        """
+        Calculate total number of batches accounting for adaptive first batch.
+
+        Args:
+            n_questions: Total number of questions
+
+        Returns:
+            Total number of batches
+        """
+        if n_questions <= self.first_batch_size:
+            return 1
+
+        remaining = n_questions - self.first_batch_size
+        remaining_batches = (remaining + self.batch_size - 1) // self.batch_size
+
+        return 1 + remaining_batches
+
+    def _process_new_dimensions(
+        self,
+        new_dimensions: Dict,
+        decay_threshold: float,
+        batch_idx: int,
+        cluster_id: int,
+        dim_name_mapping: Dict
+    ):
+        """
+        Process new dimensions with confidence-based decay filtering.
+
+        Args:
+            new_dimensions: New dimensions proposed by LLM
+            decay_threshold: Confidence threshold for this batch
+            batch_idx: Current batch index
+            cluster_id: Cluster ID for logging
+            dim_name_mapping: Dimension name mapping for normalization
+        """
+        for dim_name, dim_schema in new_dimensions.items():
+            if dim_name in self.global_dimensions:
+                continue  # Already exists
+
+            # Get confidence score (default to 1.0 if not provided)
+            confidence = dim_schema.get('confidence', 1.0)
+
+            # Apply decay threshold
+            if confidence < decay_threshold:
+                logger.info(f"  ✗ Cluster {cluster_id} Batch {batch_idx+1}: Rejected dimension '{dim_name}' "
+                           f"(confidence={confidence:.2f} < threshold={decay_threshold:.2f})")
+                continue
+
+            # Accept dimension
+            logger.info(f"  📝 Cluster {cluster_id} Batch {batch_idx+1}: Discovered new dimension '{dim_name}' "
+                       f"(confidence={confidence:.2f})")
+            logger.info(f"     Hierarchy: {' → '.join(dim_schema.get('hierarchy', []))}")
+
+            # Add to global dimensions - create DiscoveredDimensionSchema
+            self.global_dimensions[dim_name] = DiscoveredDimensionSchema(
+                hierarchy=dim_schema.get('hierarchy', []),
+                description=dim_schema.get('description', ''),
+                examples=dim_schema.get('example_entities', [])
+            )
+
+            # Initialize tracking for new dimension
+            self.entity_lists[dim_name] = []
+
+            # Update dimension name mapping
+            normalized_key = dim_name.lower().replace(' ', '_')
+            dim_name_mapping[normalized_key] = dim_name
+            dim_name_mapping[dim_name.lower()] = dim_name
 
     def _build_context(self) -> str:
         """
@@ -299,7 +406,8 @@ class ClusterEntityExtractor:
         batch_questions: List[str],
         context_str: str,
         batch_idx: int,
-        total_batches: int
+        total_batches: int,
+        decay_threshold: float
     ) -> List[Dict]:
         """
         Build messages for a batch of questions.
@@ -310,6 +418,7 @@ class ClusterEntityExtractor:
             context_str: Context string with discovered dimensions
             batch_idx: Current batch index
             total_batches: Total number of batches
+            decay_threshold: Decay threshold for this batch
 
         Returns:
             List of message dicts for LLM
@@ -319,10 +428,36 @@ class ClusterEntityExtractor:
             f"{i+1}. {q}" for i, q in enumerate(batch_questions)
         ])
 
+        # Add batch context based on batch index
+        if batch_idx == 0:
+            batch_context = f"""# Batch {batch_idx+1}/{total_batches} - DISCOVERY MODE
+
+This is the FIRST BATCH. Your primary task is to:
+1. Extract entities AND discover the dimensional schema
+2. Propose dimensions that naturally emerge from these questions
+3. Use confidence scores (0.0-1.0) for new dimensions (threshold: {decay_threshold:.1f})
+"""
+        else:
+            batch_num = batch_idx + 1
+            if batch_num <= 2:
+                stage = "REFINEMENT (Early)"
+            elif batch_num <= 5:
+                stage = "REFINEMENT (Medium)"
+            else:
+                stage = "REFINEMENT (Late)"
+
+            batch_context = f"""# Batch {batch_idx+1}/{total_batches} - {stage}
+
+Extract entities using existing dimensions. You may propose new dimensions if they are:
+- Highly confident (confidence ≥ {decay_threshold:.1f})
+- Distinct from existing dimensions
+- Consistently present across questions
+"""
+
         # Build user message with context + batch instructions + questions
         user_message = f"""{context_str}
 
-# Batch {batch_idx+1}/{total_batches}
+{batch_context}
 
 Extract entities from the following {len(batch_questions)} questions. For each question, identify entities across ALL dimensions.
 
@@ -333,7 +468,11 @@ OUTPUT FORMAT:
 Return a single JSON object with all entities from ALL questions combined. Do not separate by question - just extract all unique entities you find across all questions in this batch.
 """
 
-        # Use the prompt's system message
+        # Use the prompt's system message (pass batch_idx and decay_threshold)
+        # Note: We need to update ClusterEntityPrompt to accept these parameters
+        prompt.batch_idx = batch_idx
+        prompt.decay_threshold = decay_threshold
+
         return [
             {"role": "system", "content": prompt.system_prompt()},
             {"role": "user", "content": user_message}

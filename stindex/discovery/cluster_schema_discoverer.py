@@ -1,17 +1,15 @@
 """
-Cluster-level schema discoverer with integrated entity extraction.
+Cluster-level schema discoverer with unified entity extraction.
 
-Discovers dimensional schemas from questions within a SINGLE cluster,
-then extracts entities using the discovered schema.
+Discovers dimensional schemas and extracts entities in a single unified process.
+No separate discovery phase - discovery happens during first batch extraction.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 import json
-import random
 from loguru import logger
 
 from stindex.llm.manager import LLMManager
-from stindex.llm.prompts.initial_schema_discovery import ClusterSchemaPrompt
 from stindex.discovery.cot_logger import CoTLogger
 from stindex.discovery.models import (
     DiscoveredDimensionSchema,
@@ -25,9 +23,9 @@ class ClusterSchemaDiscoverer:
     """
     Discover dimensions and extract entities for a single cluster.
 
-    Two-phase approach:
-    1. Discovery: Sample questions from cluster → discover dimensions
-    2. Extraction: Process all questions in batches → extract entities
+    Unified approach:
+    - First batch: Discovers schema + extracts entities (adaptive size)
+    - Subsequent batches: Refines schema + extracts entities (with decay)
 
     Returns Pydantic models for type safety.
     """
@@ -53,25 +51,62 @@ class ClusterSchemaDiscoverer:
         self.cot_logger = cot_logger if cot_logger else (CoTLogger(output_dir) if output_dir else None)
         self.batch_size = batch_size
 
+    def _calculate_adaptive_batch_size(
+        self,
+        cluster_size: int,
+        min_size: int = 50,
+        max_size: int = 150,
+        ratio: float = 0.10
+    ) -> int:
+        """
+        Calculate adaptive first batch size based on cluster size.
+
+        Formula: max(min_size, min(max_size, cluster_size * ratio))
+
+        Args:
+            cluster_size: Total number of questions in cluster
+            min_size: Minimum batch size (default: 50)
+            max_size: Maximum batch size (default: 150)
+            ratio: Percentage of cluster to use (default: 0.10 = 10%)
+
+        Returns:
+            Adaptive batch size
+
+        Examples:
+            cluster_size=100 → 50 (10% = 10, but min is 50)
+            cluster_size=500 → 50 (10% = 50, within range)
+            cluster_size=2000 → 150 (10% = 200, but max is 150)
+        """
+        adaptive_size = int(cluster_size * ratio)
+        return max(min_size, min(max_size, adaptive_size))
+
     def discover_and_extract(
         self,
         cluster_id: int,
         cluster_questions: List[str],
-        n_samples_for_discovery: int = 20,
-        allow_new_dimensions: bool = True
+        allow_new_dimensions: bool = True,
+        adaptive_first_batch: bool = True,
+        first_batch_min: int = 50,
+        first_batch_max: int = 150,
+        first_batch_ratio: float = 0.10,
+        decay_config: Optional[Dict] = None
     ) -> ClusterSchemaDiscoveryResult:
         """
         Discover dimensions and extract entities for a single cluster.
 
-        Two-phase approach:
-        1. Discovery: Sample questions → discover dimensions
-        2. Extraction: All questions in batches → extract entities
+        Unified approach:
+        - First batch: Discovers schema + extracts entities (adaptive size)
+        - Subsequent batches: Refines schema + extracts entities (with decay)
 
         Args:
             cluster_id: Cluster ID
             cluster_questions: All questions in this cluster
-            n_samples_for_discovery: Number of questions to sample for discovery (default: 20)
             allow_new_dimensions: Allow discovering new dimensions during extraction
+            adaptive_first_batch: Use adaptive sizing for first batch (default: True)
+            first_batch_min: Minimum first batch size (default: 50)
+            first_batch_max: Maximum first batch size (default: 150)
+            first_batch_ratio: First batch as ratio of cluster size (default: 0.10 = 10%)
+            decay_config: Decay thresholds config (optional, uses defaults if not provided)
 
         Returns:
             ClusterSchemaDiscoveryResult with discovered dimensions and extracted entities
@@ -81,24 +116,38 @@ class ClusterSchemaDiscoverer:
 
         logger.info(f"Cluster {cluster_id}: Processing {len(cluster_questions)} questions")
 
-        # Phase 1: Discovery from sample
-        logger.info(f"Cluster {cluster_id}: Phase 1 - Discovering dimensions")
-        sample_questions = self._sample_questions(cluster_questions, n_samples_for_discovery)
-        discovered_dims, reasoning = self._discover_dimensions_for_cluster(cluster_id, sample_questions)
+        # Calculate adaptive first batch size
+        if adaptive_first_batch:
+            first_batch_size = self._calculate_adaptive_batch_size(
+                cluster_size=len(cluster_questions),
+                min_size=first_batch_min,
+                max_size=first_batch_max,
+                ratio=first_batch_ratio
+            )
+            logger.info(f"Cluster {cluster_id}: Adaptive first batch size = {first_batch_size}")
+        else:
+            first_batch_size = self.batch_size
+            logger.info(f"Cluster {cluster_id}: Using standard batch size = {first_batch_size}")
 
+        # Unified extraction (discovery + extraction in one process)
+        logger.info(f"Cluster {cluster_id}: Starting unified discovery + extraction")
+        result = self._extract_entities_unified(
+            cluster_id=cluster_id,
+            cluster_questions=cluster_questions,
+            first_batch_size=first_batch_size,
+            allow_new_dimensions=allow_new_dimensions,
+            decay_config=decay_config
+        )
+
+        discovered_dims = result['discovered_dimensions']
+        entities = result['entities']
+        reasoning = result.get('reasoning', '')
+
+        # Log discovered dimensions
         logger.info(f"Cluster {cluster_id}: Discovered {len(discovered_dims)} dimensions")
         for dim_name, dim_schema in discovered_dims.items():
             hierarchy_str = ' → '.join(dim_schema.hierarchy)
             logger.info(f"  • {dim_name}: {hierarchy_str}")
-
-        # Phase 2: Extraction from all questions
-        logger.info(f"Cluster {cluster_id}: Phase 2 - Extracting entities")
-        entities = self._extract_entities(
-            cluster_id,
-            cluster_questions,
-            discovered_dims,
-            allow_new_dimensions
-        )
 
         # Calculate statistics
         entity_stats = {dim: len(ents) for dim, ents in entities.items()}
@@ -116,130 +165,49 @@ class ClusterSchemaDiscoverer:
             extraction_time=extraction_time
         )
 
-    def _sample_questions(
-        self,
-        questions: List[str],
-        n_samples: int
-    ) -> List[str]:
-        """
-        Sample questions for discovery phase.
-
-        Args:
-            questions: All questions in cluster
-            n_samples: Number of samples to draw
-
-        Returns:
-            Sampled questions (or all if fewer than n_samples)
-        """
-        if len(questions) <= n_samples:
-            return questions
-
-        return random.sample(questions, n_samples)
-
-    def _discover_dimensions_for_cluster(
-        self,
-        cluster_id: int,
-        sample_questions: List[str]
-    ) -> tuple[Dict[str, DiscoveredDimensionSchema], str]:
-        """
-        Discover dimensions from sample questions in a cluster.
-
-        Args:
-            cluster_id: Cluster ID
-            sample_questions: Sample questions for discovery
-
-        Returns:
-            Tuple of (discovered_dimensions, reasoning)
-        """
-        logger.info(f"Cluster {cluster_id}: Discovering from {len(sample_questions)} sample questions")
-
-        # Create prompt for schema discovery
-        prompt = ClusterSchemaPrompt(
-            predefined_dimensions=[],  # No predefined dimensions
-            cluster_id=cluster_id
-        )
-
-        # Build messages
-        messages = prompt.build_messages(sample_questions)
-
-        logger.debug(f"Cluster {cluster_id}: System prompt length: {len(messages[0]['content'])} chars")
-        logger.debug(f"Cluster {cluster_id}: User prompt length: {len(messages[1]['content'])} chars")
-
-        # Get LLM response
-        try:
-            response = self.llm_manager.generate(messages)
-            logger.info(f"Cluster {cluster_id}: ✓ LLM response received")
-
-        except Exception as e:
-            logger.error(f"Cluster {cluster_id}: ✗ LLM generation failed: {e}")
-            raise
-
-        # Parse discovered dimensions
-        try:
-            result = prompt.parse_response(response.content)
-            discovered_dims_dict = result['schemas']
-            reasoning = result['reasoning']
-
-            # Log CoT
-            if self.cot_logger:
-                self.cot_logger.log_cluster_discovery(
-                    cluster_id=cluster_id,
-                    reasoning=reasoning,
-                    raw_response=result['raw_response'],
-                    n_dimensions=len(discovered_dims_dict)
-                )
-
-            # Convert to Pydantic models
-            discovered_dims = {}
-            for dim_name, dim_dict in discovered_dims_dict.items():
-                discovered_dims[dim_name] = DiscoveredDimensionSchema(
-                    hierarchy=dim_dict['hierarchy'],
-                    description=dim_dict['description'],
-                    examples=dim_dict.get('examples', [])
-                )
-
-            logger.info(f"Cluster {cluster_id}: ✓ Parsed {len(discovered_dims)} dimensions")
-
-            return discovered_dims, reasoning
-
-        except Exception as e:
-            logger.error(f"Cluster {cluster_id}: ✗ Failed to parse LLM response: {e}")
-            logger.debug(f"  Raw response: {response.content[:500]}")
-            raise
-
-    def _extract_entities(
+    def _extract_entities_unified(
         self,
         cluster_id: int,
         cluster_questions: List[str],
-        discovered_dimensions: Dict[str, DiscoveredDimensionSchema],
-        allow_new_dimensions: bool = True
-    ) -> Dict[str, List[HierarchicalEntity]]:
+        first_batch_size: int,
+        allow_new_dimensions: bool = True,
+        decay_config: Optional[Dict] = None
+    ) -> Dict:
         """
-        Extract entities from all questions using discovered dimensions.
+        Extract entities using unified approach (discovery + extraction together).
+
+        First batch discovers schema + extracts entities.
+        Subsequent batches refine schema + extract entities (with decay).
 
         Args:
             cluster_id: Cluster ID
             cluster_questions: All questions in cluster
-            discovered_dimensions: Discovered dimensional schemas
+            first_batch_size: Size of first batch (adaptive)
             allow_new_dimensions: Allow discovering new dimensions during extraction
+            decay_config: Decay thresholds config (optional)
 
         Returns:
-            Map of dimension name → list of extracted entities
+            Dict with keys:
+                - discovered_dimensions: Final discovered dimensions
+                - entities: Extracted entities
+                - reasoning: Discovery reasoning (from first batch)
         """
-        # Use ClusterEntityExtractor for batch processing
+        # Use ClusterEntityExtractor for unified processing
+        # Start with empty global_dimensions - discovery from scratch
         extractor = ClusterEntityExtractor(
-            global_dimensions=discovered_dimensions,  # Using discovered dims as "global" for this cluster
+            global_dimensions={},  # Empty - will be discovered in first batch
             llm_config=self.llm_manager.config,
             batch_size=self.batch_size,
+            first_batch_size=first_batch_size,
             allow_new_dimensions=allow_new_dimensions,
+            decay_config=decay_config,
             cot_logger=self.cot_logger
         )
 
-        # Extract entities - returns dict with 'entities' key
+        # Extract entities - returns dict with 'entities' and 'discovered_dimensions' keys
         result = extractor.extract_from_cluster(
             cluster_questions=cluster_questions,
             cluster_id=cluster_id
         )
 
-        # Extract just the entities field
-        return result['entities']
+        return result
