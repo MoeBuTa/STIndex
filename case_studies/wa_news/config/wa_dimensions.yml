@@ -1,100 +1,85 @@
-# Western Australia News Case Study - Dimension Configuration
-# Extracts temporal, spatial, and entity information from WA news articles and documents
-#
-# This config EXTENDS cfg/dimensions.yml by adding news-specific dimensions:
-#   - person: People mentioned in news
-#   - organization: Organizations and institutions
-#   - event_type: News event classification
-#
-# Base dimensions (temporal, spatial) are inherited from cfg/dimensions.yml
-
-# Override base settings for news extraction
 extraction:
   use_few_shot: true
   enable_thinking: true
   max_retries: 3
-
-# Override geocoding for Western Australia context
 geocoding:
-  user_agent: "stindex-wa-news/1.0"
+  user_agent: stindex-wa-news/1.0
   enable_cache: true
   rate_limit: 1.0
-
-# Domain-specific metadata defaults
 document_metadata:
-  source_location: "Western Australia"
-  language: "en"
-
-# Dimension definitions
+  source_location: Western Australia
+  language: en
 dimensions:
-  # Inherit temporal and spatial from cfg/dimensions.yml by enabling them
   temporal:
     enabled: true
-    # Override timezone for Australian context
     normalization:
-      timezone: "Australia/Perth"
-
+      timezone: Australia/Perth
   spatial:
     enabled: true
-    # All other settings inherited from cfg/dimensions.yml
-
-  # Entity dimensions
   person:
     enabled: true
-    description: "People mentioned in news articles"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Person's name"
-      - name: category
-        type: enum
-        values: ["researcher", "administrator", "government_official", "student", "astronaut", "other"]
+    description: People mentioned in news articles
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "Associate Professor David Coward"
-        category: "researcher"
-      - text: "Diane Smith-Gander"
-        category: "administrator"
-      - text: "Governor Chris Dawson"
-        category: "government_official"
-
+    - text: Associate Professor David Coward
+      category: researcher
+    - text: Diane Smith-Gander
+      category: administrator
+    - text: Governor Chris Dawson
+      category: government_official
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - researcher
+      - administrator
+      - government_official
+      - student
+      - astronaut
+      - other
   organization:
     enabled: true
-    description: "Organizations and institutions mentioned"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Organization name"
-      - name: category
-        type: enum
-        values: ["university", "government_agency", "research_organization", "private_company", "international_agency", "other"]
+    description: Organizations and institutions mentioned
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "University of Western Australia"
-        category: "university"
-      - text: "Polish Space Agency"
-        category: "international_agency"
-      - text: "Australian Research Council"
-        category: "research_organization"
-
+    - text: University of Western Australia
+      category: university
+    - text: Polish Space Agency
+      category: international_agency
+    - text: Australian Research Council
+      category: research_organization
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - university
+      - government_agency
+      - research_organization
+      - private_company
+      - international_agency
+      - other
   event_type:
     enabled: true
-    description: "Type of news event or topic"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Description of the event"
-      - name: category
-        type: enum
-        values: ["research", "governance", "finance", "education", "infrastructure", "international_partnership", "other"]
+    description: Type of news event or topic
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "Poland-Australia partnership to track space debris"
-        category: "international_partnership"
-      - text: "Installation of first female Chancellor"
-        category: "governance"
-      - text: "Workshop on space surveillance"
-        category: "research"
+    - text: Poland-Australia partnership to track space debris
+      category: international_partnership
+    - text: Installation of first female Chancellor
+      category: governance
+    - text: Workshop on space surveillance
+      category: research
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - research
+      - governance
+      - finance
+      - education
+      - infrastructure
+      - international_partnership
+      - other

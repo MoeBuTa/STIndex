@@ -1,210 +1,129 @@
-# Generic Multi-Dimensional Extraction Configuration
-# This file defines the base dimensions that STIndex can extract
-# Custom dimensions can be added by extending this config or creating domain-specific configs
-#
-# Usage:
-#   - This is the BASE configuration file
-#   - Domain-specific configs (e.g., health_dimensions.yml) extend this by adding custom dimensions
-#   - Common settings (temporal, spatial, extraction, geocoding) are defined here once
-
-# Extraction Settings
 extraction:
-  use_few_shot: false      # Include few-shot examples in prompts
-  enable_thinking: true    # Enable <think> tags for reasoning models (Qwen3)
-  max_retries: 3          # Max retries on extraction failure
-
-# Geocoding Settings
+  use_few_shot: false
+  enable_thinking: true
+  max_retries: 3
 geocoding:
-  user_agent: "stindex-extraction/1.0"
+  user_agent: stindex-extraction/1.0
   enable_cache: true
-  rate_limit: 1.0  # seconds between requests
-
-# Document Metadata (can be overridden at runtime)
+  rate_limit: 1.0
 document_metadata:
-  publication_date: null  # ISO 8601 date
-  source_location: null   # Geographic context
+  publication_date: null
+  source_location: null
   source_url: null
-  language: "en"
-
-# ============================================================================
-# DIMENSION DEFINITIONS
-# ============================================================================
-
+  language: en
 dimensions:
-  # -----------------------------
-  # Temporal Dimension (Default)
-  # -----------------------------
   temporal:
     enabled: true
-    description: "Extract temporal expressions (dates, times, durations, intervals)"
-    extraction_type: "normalized"
-    schema_type: "TemporalMention"
-
-    fields:
-      - name: text
-        type: string
-        description: "Original temporal expression from text"
-        required: true
-
-      - name: normalized
-        type: string
-        description: "ISO 8601 normalized format"
-        required: true
-        validation: "iso8601"
-
-      - name: normalization_type
-        type: enum
-        values: ["date", "time", "datetime", "duration", "interval"]
-        required: true
-
+    description: Extract temporal expressions (dates, times, durations, intervals)
+    extraction_type: normalized
+    schema_type: TemporalEntity
     normalization:
-      handle_relative: true   # Resolve relative dates like "Monday", "next week"
-      default_year: "document"  # Use document year if not specified
-      timezone: "UTC"         # Default timezone
-
+      handle_relative: true
+      default_year: document
+      timezone: UTC
     examples:
-      - input: "On March 15, 2022, a cyclone hit Broome"
-        output:
-          text: "March 15, 2022"
-          normalized: "2022-03-15"
-          normalization_type: "date"
-
-  # -----------------------------
-  # Spatial Dimension (Default)
-  # -----------------------------
+    - input: On March 15, 2022, a cyclone hit Broome
+      output:
+        text: March 15, 2022
+        normalized: '2022-03-15'
+        normalization_type: date
+    hierarchy:
+    - level: timestamp
+      description: Specific date and time (ISO 8601)
+    - level: date
+      description: Calendar date (YYYY-MM-DD)
+    - level: month
+      description: Year and month (YYYY-MM)
+    - level: year
+      description: Calendar year (YYYY)
   spatial:
     enabled: true
-    description: "Extract spatial/location mentions with parent regions for disambiguation"
-    extraction_type: "geocoded"
-    schema_type: "SpatialMention"
-
-    fields:
-      - name: text
-        type: string
-        description: "Original location name from text"
-        required: true
-
-      - name: location_type
-        type: enum
-        values: ["country", "city", "region", "landmark", "feature", "venue", "address", "other"]
-        required: true
-
-      - name: parent_region
-        type: string
-        description: "Parent region for disambiguation (e.g., state, country)"
-        required: false
-
+    description: Extract spatial/location mentions with parent regions for disambiguation
+    extraction_type: geocoded
+    schema_type: SpatialEntity
     disambiguation:
       use_parent_region: true
       use_document_context: true
       use_source_location: true
-
     geocoding:
       enabled: true
-      provider: "nominatim"
+      provider: nominatim
       cache_results: true
-
     examples:
-      - input: "a cyclone hit Broome, Western Australia"
-        output:
-          text: "Broome"
-          location_type: "city"
-          parent_region: "Western Australia"
-
-  # -----------------------------
-  # Generic Event Dimension (Optional)
-  # -----------------------------
+    - input: a cyclone hit Broome, Western Australia
+      output:
+        text: Broome
+        location_type: city
+        parent_region: Western Australia
+    hierarchy:
+    - level: location
+      description: Specific location name, address, or point of interest
+    - level: city
+      description: City or municipality
+    - level: state
+      description: State, province, or region
+    - level: country
+      description: Country name
   event:
-    enabled: false  # Disabled by default, enable for event extraction
-    description: "Extract event types and descriptions"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-
-    fields:
-      - name: text
-        type: string
-        description: "Original text describing the event"
-        required: true
-
-      - name: category
-        type: enum
-        values: ["natural_disaster", "health_event", "traffic_incident", "political_event", "sports_event", "other"]
-        required: true
-
-      - name: confidence
-        type: float
-        description: "Confidence score (0.0-1.0)"
-        default: 1.0
-
+    enabled: false
+    description: Extract event types and descriptions
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - input: "a cyclone hit Broome"
-        output:
-          text: "cyclone hit"
-          category: "natural_disaster"
-          confidence: 1.0
-
-  # -----------------------------
-  # Entity Dimension (Optional)
-  # -----------------------------
+    - input: a cyclone hit Broome
+      output:
+        text: cyclone hit
+        category: natural_disaster
+        confidence: 1.0
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - natural_disaster
+      - health_event
+      - traffic_incident
+      - political_event
+      - sports_event
+      - other
   entity:
-    enabled: false  # Disabled by default
-    description: "Extract named entities (persons, organizations, etc.)"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-
-    fields:
-      - name: text
-        type: string
-        description: "Entity name"
-        required: true
-
-      - name: category
-        type: enum
-        values: ["person", "organization", "product", "other"]
-        required: true
-
+    enabled: false
+    description: Extract named entities (persons, organizations, etc.)
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - input: "WHO announced new guidelines"
-        output:
-          text: "WHO"
-          category: "organization"
-
-# ============================================================================
-# POST-PROCESSING RULES
-# ============================================================================
-
+    - input: WHO announced new guidelines
+      output:
+        text: WHO
+        category: organization
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - person
+      - organization
+      - product
+      - other
 post_processing:
   temporal:
-    - resolve_relative_dates   # Convert relative dates to absolute
-    - validate_iso8601         # Ensure valid ISO 8601
-
+  - resolve_relative_dates
+  - validate_iso8601
   spatial:
-    - geocode_locations        # Geocode to lat/lon
-    - validate_coordinates     # Ensure valid coordinates
-
+  - geocode_locations
+  - validate_coordinates
   categorical:
-    - normalize_case           # Lowercase for matching
-    - validate_categories      # Check against allowed values
-
-# ============================================================================
-# CROSS-DIMENSIONAL LINKING
-# ============================================================================
-
+  - normalize_case
+  - validate_categories
 linking:
-  enabled: false  # Disabled by default, enable for event-level extraction
-
+  enabled: false
   rules:
-    - name: "spatiotemporal_event"
-      description: "Link spatial + temporal mentions to create events"
-      dimensions: ["spatial", "temporal"]
-      output_schema: "SpatioTemporalEvent"
-
-# ============================================================================
-# OUTPUT SETTINGS
-# ============================================================================
-
+  - name: spatiotemporal_event
+    description: Link spatial + temporal mentions to create events
+    dimensions:
+    - spatial
+    - temporal
+    output_schema: SpatioTemporalEvent
 output:
-  format: "json"
+  format: json
   include_raw_llm_output: true
   include_confidence_scores: true
   group_by_dimension: true

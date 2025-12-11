@@ -41,9 +41,8 @@ class ExtractionContext:
     rate_limits: Dict[str, float] = field(default_factory=dict)
 
     # Memory context (cmem) - Prior extractions across chunks
-    prior_temporal_refs: List[Dict] = field(default_factory=list)
-    prior_spatial_refs: List[Dict] = field(default_factory=list)
-    prior_events: List[Dict] = field(default_factory=list)
+    # Dynamic: supports any dimension (temporal, spatial, symptom, disease, etc.)
+    prior_refs: Dict[str, List[Dict]] = field(default_factory=dict)
 
     # State context (cstate)
     document_metadata: Dict[str, Any] = field(default_factory=dict)
@@ -55,15 +54,47 @@ class ExtractionContext:
     max_memory_refs: int = 10  # Keep last N references
     enable_nearby_locations: bool = False  # OSM nearby locations feature
 
+    # Backward compatibility properties for existing code
+    @property
+    def prior_temporal_refs(self) -> List[Dict]:
+        """Backward compatibility: access temporal refs from prior_refs."""
+        return self.prior_refs.get('temporal', [])
+
+    @prior_temporal_refs.setter
+    def prior_temporal_refs(self, value: List[Dict]):
+        """Backward compatibility: set temporal refs in prior_refs."""
+        self.prior_refs['temporal'] = value
+
+    @property
+    def prior_spatial_refs(self) -> List[Dict]:
+        """Backward compatibility: access spatial refs from prior_refs."""
+        return self.prior_refs.get('spatial', [])
+
+    @prior_spatial_refs.setter
+    def prior_spatial_refs(self, value: List[Dict]):
+        """Backward compatibility: set spatial refs in prior_refs."""
+        self.prior_refs['spatial'] = value
+
+    @property
+    def prior_events(self) -> List[Dict]:
+        """Backward compatibility: access event refs from prior_refs."""
+        return self.prior_refs.get('event', [])
+
+    @prior_events.setter
+    def prior_events(self, value: List[Dict]):
+        """Backward compatibility: set event refs in prior_refs."""
+        self.prior_refs['event'] = value
+
     def to_prompt_context(self) -> str:
         """
         Convert context to prompt string for LLM.
 
         Builds context sections:
-        1. Document context (publication date, source location, position)
-        2. Previous temporal references (last 5)
-        3. Previous spatial references (last 5)
-        4. Previous events (if available)
+        1. Document context (publication date, source location, cluster ID, position)
+        2. Previous dimensional references (dynamic - any dimension)
+
+        Supports both document extraction (temporal, spatial, event) and
+        schema discovery (symptom, disease, treatment, etc.)
 
         Returns:
             Formatted context string for LLM prompt
@@ -73,39 +104,80 @@ class ExtractionContext:
         # Document context (cstate)
         if self.document_metadata:
             sections.append("# Document Context")
-            pub_date = self.document_metadata.get('publication_date', 'Unknown')
-            source_loc = self.document_metadata.get('source_location', 'Unknown')
-            sections.append(f"Publication Date: {pub_date}")
-            sections.append(f"Source Location: {source_loc}")
-            sections.append(f"Current Position: Chunk {self.current_chunk_index + 1} of {self.total_chunks}")
 
+            # Publication date (for document extraction)
+            pub_date = self.document_metadata.get('publication_date')
+            if pub_date and pub_date != 'Unknown':
+                sections.append(f"Publication Date: {pub_date}")
+
+            # Source location (for document extraction)
+            source_loc = self.document_metadata.get('source_location')
+            if source_loc and source_loc != 'Unknown':
+                sections.append(f"Source Location: {source_loc}")
+
+            # Cluster ID (for schema discovery)
+            cluster_id = self.document_metadata.get('cluster_id')
+            if cluster_id is not None:
+                sections.append(f"Cluster ID: {cluster_id}")
+
+            # Position
+            if self.total_chunks > 0:
+                sections.append(f"Current Position: Chunk {self.current_chunk_index + 1} of {self.total_chunks}")
+
+            # Section hierarchy (for long documents)
             if self.section_hierarchy:
                 sections.append(f"Section: {self.section_hierarchy}")
 
             sections.append("")
 
-        # Memory context (cmem) - Prior extractions
-        if self.prior_temporal_refs:
-            sections.append("# Previous Temporal References")
-            sections.append("Use these references to resolve relative temporal expressions:")
-            for ref in self.prior_temporal_refs[-5:]:  # Last 5
-                sections.append(f"- {ref['text']} → {ref['normalized']}")
-            sections.append("")
+        # Memory context (cmem) - DYNAMIC dimensions
+        # Sort dimensions for consistent ordering
+        sorted_dimensions = sorted(self.prior_refs.keys())
 
-        if self.prior_spatial_refs:
-            sections.append("# Previous Spatial References")
-            sections.append("Locations already mentioned in this document:")
-            for ref in self.prior_spatial_refs[-5:]:  # Last 5
-                parent = ref.get('parent_region', '')
-                parent_str = f" ({parent})" if parent else ""
-                sections.append(f"- {ref['text']}{parent_str}")
-            sections.append("")
+        for dimension_name in sorted_dimensions:
+            refs = self.prior_refs[dimension_name]
+            if not refs:
+                continue
 
-        if self.prior_events:
-            sections.append("# Previous Events")
-            for event in self.prior_events[-3:]:  # Last 3
-                sections.append(f"- {event.get('text', '')}")
-            sections.append("")
+            # Format dimension name for display
+            dim_display = dimension_name.replace('_', ' ').title()
+
+            # Different formatting for different dimension types
+            if dimension_name == 'temporal':
+                # Temporal: show text → normalized
+                sections.append(f"# Previous {dim_display} References")
+                sections.append("Use these references to resolve relative temporal expressions:")
+                for ref in refs[-5:]:  # Last 5
+                    normalized = ref.get('normalized', '')
+                    if normalized:
+                        sections.append(f"- {ref['text']} → {normalized}")
+                    else:
+                        sections.append(f"- {ref['text']}")
+                sections.append("")
+
+            elif dimension_name == 'spatial':
+                # Spatial: show location with parent region
+                sections.append(f"# Previous {dim_display} References")
+                sections.append("Locations already mentioned:")
+                for ref in refs[-5:]:  # Last 5
+                    parent = ref.get('parent_region', '')
+                    parent_str = f" ({parent})" if parent else ""
+                    sections.append(f"- {ref['text']}{parent_str}")
+                sections.append("")
+
+            else:
+                # Generic dimensions (symptom, disease, treatment, event, etc.)
+                sections.append(f"# Previous {dim_display} Extractions")
+                sections.append("Maintain consistent terminology:")
+                for ref in refs[-5:]:  # Last 5
+                    # Show text and category/type if available
+                    text = ref.get('text', '')
+                    category = ref.get('category', '') or ref.get('type', '')
+                    if category:
+                        sections.append(f"- {text} ({category})")
+                    else:
+                        sections.append(f"- {text}")
+                sections.append("")
 
         return "\n".join(sections)
 
@@ -113,49 +185,68 @@ class ExtractionContext:
         """
         Update memory context with new extraction results.
 
-        This method is called after each chunk extraction to maintain
-        running context across document processing.
+        This method is called after each chunk/question extraction to maintain
+        running context across document processing or question clustering.
+
+        Supports DYNAMIC dimensions - works for any dimension type:
+        - Document extraction: temporal, spatial, event
+        - Schema discovery: symptom, disease, treatment, body_system, etc.
 
         Args:
             extraction_result: Dictionary with extraction results
-                Expected keys: temporal, spatial, event, etc. (dimension names)
+                Keys are dimension names (e.g., 'temporal', 'symptom', 'disease')
+                Values are lists of entity dictionaries
+                Skip meta fields like 'new_dimensions', 'metadata'
         """
-        # Update temporal memory
-        temporal_entities = extraction_result.get('temporal', [])
-        for entity in temporal_entities:
-            self.prior_temporal_refs.append({
-                'text': entity.get('text', ''),
-                'normalized': entity.get('normalized', ''),
-                'chunk_index': self.current_chunk_index
-            })
+        # Meta fields to skip (not dimensions)
+        skip_fields = {'new_dimensions', 'metadata', 'raw_llm_output', 'extraction_config'}
 
-        # Update spatial memory
-        spatial_entities = extraction_result.get('spatial', [])
-        for entity in spatial_entities:
-            self.prior_spatial_refs.append({
-                'text': entity.get('text', ''),
-                'parent_region': entity.get('parent_region'),
-                'chunk_index': self.current_chunk_index
-            })
+        # Update memory for each dimension dynamically
+        for dimension_name, entities in extraction_result.items():
+            # Skip meta fields
+            if dimension_name in skip_fields:
+                continue
 
-        # Update event memory (if available)
-        event_entities = extraction_result.get('event', [])
-        for entity in event_entities:
-            self.prior_events.append({
-                'text': entity.get('text', ''),
-                'category': entity.get('category'),
-                'chunk_index': self.current_chunk_index
-            })
+            # Skip if not a list of entities
+            if not isinstance(entities, list):
+                continue
 
-        # Keep only last N references (sliding window)
-        self.prior_temporal_refs = self.prior_temporal_refs[-self.max_memory_refs:]
-        self.prior_spatial_refs = self.prior_spatial_refs[-self.max_memory_refs:]
-        self.prior_events = self.prior_events[-self.max_memory_refs:]
+            # Initialize dimension tracking if first time
+            if dimension_name not in self.prior_refs:
+                self.prior_refs[dimension_name] = []
 
-        logger.debug(
-            f"Updated context memory: {len(self.prior_temporal_refs)} temporal, "
-            f"{len(self.prior_spatial_refs)} spatial refs"
-        )
+            # Add each entity to memory
+            for entity in entities:
+                if not isinstance(entity, dict):
+                    continue
+
+                # Build reference entry
+                ref_entry = {
+                    'text': entity.get('text', ''),
+                    'chunk_index': self.current_chunk_index
+                }
+
+                # Add dimension-specific fields
+                if 'normalized' in entity:
+                    ref_entry['normalized'] = entity['normalized']
+                if 'parent_region' in entity:
+                    ref_entry['parent_region'] = entity['parent_region']
+                if 'category' in entity:
+                    ref_entry['category'] = entity['category']
+                if 'type' in entity:
+                    ref_entry['type'] = entity['type']
+
+                self.prior_refs[dimension_name].append(ref_entry)
+
+            # Keep only last N references per dimension (sliding window)
+            self.prior_refs[dimension_name] = self.prior_refs[dimension_name][-self.max_memory_refs:]
+
+        # Log update
+        if self.prior_refs:
+            dimension_counts = {dim: len(refs) for dim, refs in self.prior_refs.items()}
+            logger.debug(f"Updated context memory: {dimension_counts}")
+        else:
+            logger.debug("Context memory update: no dimensions tracked")
 
     def get_anchor_date(self) -> Optional[str]:
         """
@@ -244,10 +335,8 @@ class ExtractionContext:
         return ""
 
     def reset_memory(self):
-        """Reset memory context (for new document)."""
-        self.prior_temporal_refs = []
-        self.prior_spatial_refs = []
-        self.prior_events = []
+        """Reset memory context (for new document or cluster)."""
+        self.prior_refs = {}
         self.current_chunk_index = 0
         logger.debug("Context memory reset")
 
@@ -276,11 +365,10 @@ class ExtractionContext:
             "current_chunk_index": self.current_chunk_index,
             "total_chunks": self.total_chunks,
             "section_hierarchy": self.section_hierarchy,
-            "prior_temporal_refs": self.prior_temporal_refs,
-            "prior_spatial_refs": self.prior_spatial_refs,
-            "prior_events": self.prior_events,
+            "prior_refs": self.prior_refs,  # Dynamic dimensions
             "geocoding_provider": self.geocoding_provider,
             "enable_nearby_locations": self.enable_nearby_locations,
+            "max_memory_refs": self.max_memory_refs,
         }
 
     @classmethod
@@ -288,20 +376,45 @@ class ExtractionContext:
         """
         Deserialize context from dictionary.
 
+        Supports both new format (prior_refs) and old format (prior_temporal_refs, etc.)
+        for backward compatibility.
+
         Args:
             data: Dictionary representation
 
         Returns:
             ExtractionContext instance
         """
+        # Handle new format (prior_refs dict)
+        if "prior_refs" in data:
+            return cls(
+                document_metadata=data.get("document_metadata", {}),
+                current_chunk_index=data.get("current_chunk_index", 0),
+                total_chunks=data.get("total_chunks", 0),
+                section_hierarchy=data.get("section_hierarchy", ""),
+                prior_refs=data.get("prior_refs", {}),
+                geocoding_provider=data.get("geocoding_provider", "nominatim"),
+                enable_nearby_locations=data.get("enable_nearby_locations", False),
+                max_memory_refs=data.get("max_memory_refs", 10),
+            )
+
+        # Handle old format (prior_temporal_refs, prior_spatial_refs, prior_events)
+        # Convert to new format automatically
+        prior_refs = {}
+        if "prior_temporal_refs" in data:
+            prior_refs["temporal"] = data["prior_temporal_refs"]
+        if "prior_spatial_refs" in data:
+            prior_refs["spatial"] = data["prior_spatial_refs"]
+        if "prior_events" in data:
+            prior_refs["event"] = data["prior_events"]
+
         return cls(
             document_metadata=data.get("document_metadata", {}),
             current_chunk_index=data.get("current_chunk_index", 0),
             total_chunks=data.get("total_chunks", 0),
             section_hierarchy=data.get("section_hierarchy", ""),
-            prior_temporal_refs=data.get("prior_temporal_refs", []),
-            prior_spatial_refs=data.get("prior_spatial_refs", []),
-            prior_events=data.get("prior_events", []),
+            prior_refs=prior_refs,
             geocoding_provider=data.get("geocoding_provider", "nominatim"),
             enable_nearby_locations=data.get("enable_nearby_locations", False),
+            max_memory_refs=data.get("max_memory_refs", 10),
         )

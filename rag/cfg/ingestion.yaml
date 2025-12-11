@@ -1,0 +1,107 @@
+# Vector Ingestion Configuration for Closed-Domain RAG Corpus
+# Optimized for CPU-only processing and multi-hop QA datasets
+
+# Encoder model configuration
+encoder:
+  # Model name from HuggingFace
+  # Options: BAAI/bge-m3, sentence-transformers/all-MiniLM-L6-v2, etc.
+  model_name: BAAI/bge-m3
+
+  # Batch size for encoding (smaller for CPU to avoid OOM)
+  batch_size: 32
+
+  # Device for encoding (cuda, mps, cpu)
+  device: cpu  # CPU-only for portability
+
+  # Use FP16 for faster encoding (only effective on GPU)
+  use_fp16: false
+
+  # Normalize embeddings (required for inner product similarity)
+  normalize_embeddings: true
+
+  # Maximum sequence length
+  max_length: 512
+
+# Input data configuration for closed-domain corpus
+data:
+  # Input file path: merged corpus documents
+  input_file: data/corpus/documents.jsonl
+
+  # JSONL field names
+  id_column: doc_id
+  text_column: contents
+  title_column: title
+
+  # Optional: limit number of documents for testing
+  # Set to small number like 1000 for sanity check
+  limit: null
+
+  # Skip first N documents
+  skip: 0
+
+# FAISS index configuration
+index:
+  # Index type: flat, ivf, hnsw
+  # - flat: Exact search, best for <100K documents
+  # - ivf: Approximate search with clustering, good for 100K-10M documents
+  # - hnsw: Graph-based, good balance of speed and accuracy
+  index_type: ivf  # Use IVF for 1M+ documents
+
+  # Metric type: l2, ip (inner product), cosine
+  # ip (inner product) is fastest when embeddings are normalized
+  metric_type: ip
+
+  # GPU configuration (disabled for CPU-only)
+  use_gpu: false
+  gpu_id: 0
+
+  # IVF parameters (only used if index_type=ivf)
+  ivf:
+    nlist: 1024   # Number of clusters for 1M+ corpus
+    nprobe: 32    # Search 32 clusters
+
+  # HNSW parameters (only used if index_type=hnsw)
+  hnsw:
+    M: 32
+    efConstruction: 200
+    efSearch: 64
+
+# Output configuration
+output:
+  # Output directory for vector index
+  output_dir: data/vector/rag
+
+  # Output filenames
+  index_file: faiss_index.bin
+  metadata_file: documents_metadata.jsonl
+  config_file: index_config.json
+  id_mapping_file: id_mapping.json
+
+  # Save interval for checkpointing
+  save_interval: 10000
+
+  # Checkpoint interval during encoding
+  checkpoint_interval: 10000
+
+  # Resume from checkpoint if available
+  resume: true
+
+# STIndex integration (for hybrid retrieval)
+stindex:
+  # Enable STIndex dimensional filtering
+  enabled: true
+
+  # STIndex warehouse path (from stindex_ingest.py output)
+  warehouse_path: data/warehouse/rag
+
+  # Index files for filtering
+  temporal_index: data/warehouse/rag/indexes/temporal_index.json
+  spatial_index: data/warehouse/rag/indexes/spatial_index.json
+
+  # Enriched documents with dimensional metadata
+  enriched_documents: data/warehouse/rag/documents_enriched.jsonl
+
+# Logging
+logging:
+  show_progress: true
+  log_interval: 100

@@ -3,6 +3,8 @@ Dimension configuration loader and utilities.
 
 Loads dimension definitions from YAML files and provides utilities
 for working with multi-dimensional extraction configs.
+
+Supports hierarchy-based dimension schemas for discovered dimensions.
 """
 
 import json
@@ -16,6 +18,22 @@ from pydantic import BaseModel, Field
 from stindex.llm.response.dimension_models import DimensionMetadata, DimensionType
 
 
+# Predefined mandatory dimensions with hierarchies
+MANDATORY_TEMPORAL_HIERARCHY = [
+    {"level": "timestamp", "description": "Specific date and time (ISO 8601)"},
+    {"level": "date", "description": "Calendar date (YYYY-MM-DD)"},
+    {"level": "month", "description": "Year and month (YYYY-MM)"},
+    {"level": "year", "description": "Calendar year (YYYY)"}
+]
+
+MANDATORY_SPATIAL_HIERARCHY = [
+    {"level": "location", "description": "Specific location name, address, or point of interest"},
+    {"level": "city", "description": "City or municipality"},
+    {"level": "state", "description": "State, province, or region"},
+    {"level": "country", "description": "Country name"}
+]
+
+
 class DimensionConfig(BaseModel):
     """Validated dimension configuration."""
 
@@ -23,10 +41,13 @@ class DimensionConfig(BaseModel):
     enabled: bool = True
     description: str
     extraction_type: str  # normalized, geocoded, categorical, structured, free_text
-    schema_type: str  # Name of the schema class
+    schema_type: str = "GenericEntity"  # Name of the schema class
 
-    # Field definitions
+    # Field definitions (legacy format OR auto-generated from hierarchy)
     fields: List[Dict[str, Any]] = Field(default_factory=list)
+
+    # Hierarchy levels (new format - takes precedence over fields if present)
+    hierarchy: Optional[List[Dict[str, Any]]] = None
 
     # Examples for few-shot learning
     examples: List[Dict[str, Any]] = Field(default_factory=list)
@@ -35,6 +56,56 @@ class DimensionConfig(BaseModel):
     normalization: Optional[Dict[str, Any]] = None
     disambiguation: Optional[Dict[str, Any]] = None
     geocoding: Optional[Dict[str, Any]] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        """Post-initialization: auto-generate fields from hierarchy if present."""
+        if self.hierarchy and not self.fields:
+            # Auto-generate fields from hierarchy
+            self.fields = self._generate_fields_from_hierarchy()
+            logger.debug(f"Auto-generated {len(self.fields)} fields from hierarchy for dimension '{self.name}'")
+
+    def _generate_fields_from_hierarchy(self) -> List[Dict[str, Any]]:
+        """
+        Generate field definitions from hierarchy levels.
+
+        Returns:
+            List of field definitions
+        """
+        fields = []
+
+        # Always add 'text' field first
+        fields.append({
+            "name": "text",
+            "type": "string",
+            "description": "Original text mention from document",
+            "required": True
+        })
+
+        # Add hierarchy level fields
+        for level_def in self.hierarchy:
+            level_name = level_def.get("level")
+            level_desc = level_def.get("description", f"{level_name} level")
+            level_values = level_def.get("values", [])
+
+            if level_values:
+                # If values provided, make it an enum field
+                fields.append({
+                    "name": level_name,
+                    "type": "enum",
+                    "values": level_values,
+                    "description": level_desc,
+                    "required": False  # Hierarchy levels are optional
+                })
+            else:
+                # Free-text field
+                fields.append({
+                    "name": level_name,
+                    "type": "string",
+                    "description": level_desc,
+                    "required": False
+                })
+
+        return fields
 
     def to_metadata(self) -> DimensionMetadata:
         """Convert to DimensionMetadata."""
@@ -50,7 +121,7 @@ class DimensionConfig(BaseModel):
 
 
 class DimensionConfigLoader:
-    """Loads and manages dimension configurations."""
+    """Loads and manages dimension configurations with hierarchy support."""
 
     def __init__(self, config_dir: str = "cfg/extraction/inference"):
         """
@@ -68,7 +139,7 @@ class DimensionConfigLoader:
         Args:
             config_path: Path to config file (relative to config_dir or absolute)
                         Can be:
-                        - "dimensions" → cfg/dimensions.yml
+                        - "dimensions" → cfg/extraction/inference/dimensions.yml
                         - "case_studies/public_health/config/health_dimensions" → full path
                         - "/absolute/path/to/config.yml"
             auto_merge_base: If True and loading a non-base config, automatically merge
@@ -126,6 +197,8 @@ class DimensionConfigLoader:
         """
         Get all enabled dimensions from config.
 
+        Ensures mandatory temporal and spatial dimensions are always present.
+
         Args:
             config: Loaded config dict
 
@@ -135,9 +208,18 @@ class DimensionConfigLoader:
         dimensions = config.get("dimensions", {})
         enabled_dims = {}
 
+        # First, load explicitly configured dimensions
         for dim_name, dim_config in dimensions.items():
             if dim_config.get("enabled", True):
                 try:
+                    # Infer extraction_type if not specified
+                    if "extraction_type" not in dim_config:
+                        dim_config["extraction_type"] = self._infer_extraction_type(dim_name, dim_config)
+
+                    # Set default schema_type if not specified
+                    if "schema_type" not in dim_config:
+                        dim_config["schema_type"] = "GenericEntity"
+
                     dimension = DimensionConfig(
                         name=dim_name,
                         **dim_config
@@ -146,8 +228,79 @@ class DimensionConfigLoader:
                 except Exception as e:
                     logger.warning(f"Failed to parse dimension '{dim_name}': {e}")
 
+        # Ensure mandatory dimensions are present
+        enabled_dims = self._ensure_mandatory_dimensions(enabled_dims)
+
         logger.info(f"Loaded {len(enabled_dims)} enabled dimensions: {list(enabled_dims.keys())}")
         return enabled_dims
+
+    def _infer_extraction_type(self, dim_name: str, dim_config: Dict[str, Any]) -> str:
+        """
+        Infer extraction type from dimension name and config.
+
+        Args:
+            dim_name: Dimension name
+            dim_config: Dimension configuration
+
+        Returns:
+            Inferred extraction type
+        """
+        # Check for explicit indicators
+        if dim_name == "temporal":
+            return "normalized"
+        elif dim_name == "spatial":
+            return "geocoded"
+
+        # Check hierarchy for lat/lon (spatial)
+        hierarchy = dim_config.get("hierarchy", [])
+        if hierarchy:
+            hierarchy_levels = [h.get("level") for h in hierarchy if isinstance(h, dict)]
+            if any(level in ["latitude", "longitude", "lat", "lon"] for level in hierarchy_levels):
+                return "geocoded"
+
+        # Default to categorical for hierarchical dimensions
+        return "categorical"
+
+    def _ensure_mandatory_dimensions(
+        self,
+        dimensions: Dict[str, DimensionConfig]
+    ) -> Dict[str, DimensionConfig]:
+        """
+        Ensure temporal and spatial dimensions are present with predefined hierarchies.
+
+        Args:
+            dimensions: Current dimension dict
+
+        Returns:
+            Dimension dict with mandatory dimensions added if missing
+        """
+        # Add temporal if missing
+        if "temporal" not in dimensions:
+            logger.info("Adding mandatory temporal dimension with predefined hierarchy")
+            dimensions["temporal"] = DimensionConfig(
+                name="temporal",
+                enabled=True,
+                description="Extract temporal expressions (dates, times, timestamps)",
+                extraction_type="normalized",
+                schema_type="TemporalEntity",
+                hierarchy=MANDATORY_TEMPORAL_HIERARCHY,
+                fields=[]  # Will be auto-generated from hierarchy
+            )
+
+        # Add spatial if missing
+        if "spatial" not in dimensions:
+            logger.info("Adding mandatory spatial dimension with predefined hierarchy")
+            dimensions["spatial"] = DimensionConfig(
+                name="spatial",
+                enabled=True,
+                description="Extract spatial/location mentions",
+                extraction_type="geocoded",
+                schema_type="SpatialEntity",
+                hierarchy=MANDATORY_SPATIAL_HIERARCHY,
+                fields=[]  # Will be auto-generated from hierarchy
+            )
+
+        return dimensions
 
     def build_json_schema(
         self,
@@ -416,10 +569,12 @@ def validate_dimension_config(config: Dict[str, Any]) -> bool:
         raise ValueError("'dimensions' must be a dict")
 
     for dim_name, dim_config in dimensions.items():
-        required_dim_keys = ["enabled", "description", "extraction_type", "schema_type", "fields"]
-        for key in required_dim_keys:
-            if key not in dim_config:
-                raise ValueError(f"Dimension '{dim_name}' missing required key: {key}")
+        # Check for either fields or hierarchy (new format)
+        has_fields = "fields" in dim_config
+        has_hierarchy = "hierarchy" in dim_config
+
+        if not has_fields and not has_hierarchy:
+            raise ValueError(f"Dimension '{dim_name}' must have either 'fields' or 'hierarchy'")
 
     return True
 
@@ -439,6 +594,9 @@ if __name__ == "__main__":
     print("Enabled dimensions:")
     for dim_name, dim_config in dimensions.items():
         print(f"  - {dim_name}: {dim_config.description}")
+        if dim_config.hierarchy:
+            hierarchy_levels = [h.get("level") for h in dim_config.hierarchy]
+            print(f"    Hierarchy: {' → '.join(hierarchy_levels)}")
 
     # Build JSON schema
     schema = loader.build_json_schema(dimensions)

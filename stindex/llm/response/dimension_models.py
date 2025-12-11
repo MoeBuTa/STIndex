@@ -34,6 +34,10 @@ class BaseDimensionMention(BaseModel):
     """Base class for all dimension mentions."""
     text: str = Field(description="Original text from document")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    hierarchy: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Hierarchy level values (level_name → value)"
+    )
 
 
 class NormalizedDimensionMention(BaseDimensionMention):
@@ -160,6 +164,10 @@ class DimensionEntity(BaseModel):
     text: str
     dimension_name: str
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    hierarchy: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Hierarchy level values (level_name → value)"
+    )
 
 
 class NormalizedDimensionEntity(DimensionEntity):

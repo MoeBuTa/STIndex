@@ -8,6 +8,7 @@ supporting any combination of dimensions defined in YAML.
 import json
 from typing import Dict, List, Optional
 
+from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.dimension_loader import DimensionConfig
 
 
@@ -22,7 +23,7 @@ class DimensionalExtractionPrompt:
         self,
         dimensions: Dict[str, DimensionConfig],
         document_metadata: Optional[Dict] = None,
-        extraction_context: Optional[object] = None  # ExtractionContext (avoid circular import)
+        extraction_context: Optional[ExtractionContext] = None  # ExtractionContext (avoid circular import)
     ):
         """
         Initialize prompt builder.
@@ -34,7 +35,7 @@ class DimensionalExtractionPrompt:
         """
         self.dimensions = dimensions
         self.document_metadata = document_metadata or {}
-        self.extraction_context = extraction_context
+        self.extraction_context: ExtractionContext = extraction_context
 
     def system_prompt(self) -> str:
         """Generate system prompt with multi-dimensional extraction instructions."""
@@ -94,10 +95,20 @@ REMINDER: Return ONLY valid JSON, nothing else."""
         return ""
 
     def _build_dimension_tasks(self) -> str:
-        """Build extraction tasks for all dimensions."""
+        """
+        Build extraction tasks for all dimensions.
+
+        TODO: Optimize prompt by schema search
+        Future: Use semantic search to select only relevant hierarchy values
+        based on document chunk content, reducing prompt size and improving accuracy.
+        For now, we append the entire schema to ensure complete coverage.
+        """
         task_parts = []
 
         for i, (dim_name, dim_config) in enumerate(self.dimensions.items(), 1):
+            # Build hierarchy schema representation
+            hierarchy_schema = self._format_hierarchy_schema(dim_config)
+
             # Get dimension-specific instructions
             specific_instructions = ""
             if dim_config.extraction_type == "normalized":
@@ -109,12 +120,13 @@ REMINDER: Return ONLY valid JSON, nothing else."""
             elif dim_config.extraction_type == "structured":
                 specific_instructions = self._get_structured_instructions(dim_config)
 
-            task_template = "{index}. Extract {dimension_name} ({extraction_type}):\n   {description}\n{specific_instructions}"
+            task_template = "{index}. Extract {dimension_name} ({extraction_type}):\n   {description}\n{hierarchy_schema}\n{specific_instructions}"
             task_parts.append(task_template.format(
                 index=i,
                 dimension_name=dim_name.upper(),
                 extraction_type=dim_config.extraction_type,
                 description=dim_config.description,
+                hierarchy_schema=hierarchy_schema,
                 specific_instructions=specific_instructions
             ))
 
@@ -219,6 +231,50 @@ REMINDER: Return ONLY valid JSON, nothing else."""
             ))
 
         return "\n".join(instruction_parts) + "\n"
+
+    def _format_hierarchy_schema(self, dim_config: DimensionConfig) -> str:
+        """
+        Format dimension hierarchy as a tree structure for LLM prompt.
+
+        Shows the full hierarchical structure with all levels and values.
+        For dimensions with hierarchy field, displays complete schema.
+
+        Args:
+            dim_config: Dimension configuration
+
+        Returns:
+            Formatted hierarchy string
+        """
+        if not dim_config.hierarchy:
+            return ""
+
+        schema_parts = ["   Hierarchy:"]
+
+        for level_def in dim_config.hierarchy:
+            level_name = level_def.get("level", "")
+            level_desc = level_def.get("description", "")
+            level_values = level_def.get("values", [])
+
+            # Format level with description
+            level_line = "     - {name}: {desc}".format(
+                name=level_name,
+                desc=level_desc
+            )
+            schema_parts.append(level_line)
+
+            # If level has enum values, show them
+            if level_values:
+                if len(level_values) <= 10:
+                    # Show all values
+                    values_str = ", ".join(level_values)
+                else:
+                    # Show first 10 values with ellipsis
+                    values_str = ", ".join(level_values[:10]) + ", ... ({count} total)".format(
+                        count=len(level_values)
+                    )
+                schema_parts.append("       Values: {values}".format(values=values_str))
+
+        return "\n".join(schema_parts) + "\n"
 
     def _get_field_enum_values(self, dim_config: DimensionConfig, field_name: str) -> List[str]:
         """Get enum values for a specific field."""

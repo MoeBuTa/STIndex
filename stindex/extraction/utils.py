@@ -121,3 +121,79 @@ def extract_json_from_text(
 
     # If we get here, none of the candidates were valid
     raise ValueError(f"No valid JSON found. Last error: {last_error}")
+
+
+def extract_cot_and_json(llm_response: str) -> Dict:
+    """
+    Extract Chain-of-Thought reasoning and JSON from LLM response.
+
+    Handles different CoT formats:
+    - <think>...</think> tags (Qwen3, DeepSeek)
+    - Text before JSON (OpenAI, Anthropic)
+    - No reasoning (direct JSON output)
+
+    Args:
+        llm_response: Raw LLM response
+
+    Returns:
+        Dict with:
+            - 'reasoning': Extracted reasoning text (or empty string)
+            - 'data': Parsed JSON data (dict or list)
+            - 'raw_response': Original LLM response
+
+    Raises:
+        ValueError: If no valid JSON found
+    """
+    # Extract <think> tags (for Qwen3, DeepSeek, etc.)
+    think_pattern = r'<think>(.*?)</think>'
+    think_matches = re.findall(think_pattern, llm_response, re.DOTALL)
+
+    if think_matches:
+        # Join all <think> blocks
+        reasoning = '\n\n'.join(match.strip() for match in think_matches)
+
+        # Remove <think> tags from response for JSON extraction
+        json_text = re.sub(think_pattern, '', llm_response, flags=re.DOTALL)
+    else:
+        # No <think> tags - extract text before JSON
+        # Find first JSON opening brace/bracket
+        obj_start = llm_response.find('{')
+        arr_start = llm_response.find('[')
+
+        if obj_start == -1 and arr_start == -1:
+            reasoning = ""
+            json_text = llm_response
+        else:
+            # Determine which comes first
+            if obj_start == -1:
+                json_start = arr_start
+            elif arr_start == -1:
+                json_start = obj_start
+            else:
+                json_start = min(obj_start, arr_start)
+
+            # Text before JSON is reasoning
+            reasoning = llm_response[:json_start].strip()
+            json_text = llm_response[json_start:]
+
+            # Clean up common reasoning prefixes
+            reasoning = re.sub(r'^(here is|here\'s|the|output:?)\s*', '', reasoning, flags=re.IGNORECASE)
+            reasoning = reasoning.strip()
+
+    # Extract JSON data
+    try:
+        data = extract_json_from_text(json_text, return_dict=True)
+    except ValueError as e:
+        # Try extracting from full response if json_text extraction failed
+        try:
+            data = extract_json_from_text(llm_response, return_dict=True)
+        except ValueError:
+            # Re-raise original error
+            raise e
+
+    return {
+        'reasoning': reasoning,
+        'data': data,
+        'raw_response': llm_response
+    }
+
