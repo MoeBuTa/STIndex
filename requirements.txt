@@ -1,3 +1,54 @@
+# ========================================
+# Training Frameworks
+# ========================================
+omegaconf>=2.3.0  # Fix metadata issue with older versions
+ms-swift[all]>=3.0.0
+deepspeed==0.18.2
+transformers>=4.51.0
+accelerate>=0.30.0
+peft>=0.10.0  # For LoRA/QLoRA if needed in future
+
+# ========================================
+# Acceleration & Optimization
+# ========================================
+vllm==0.11.2
+# flash-attn>=2.0.0  # Install separately after environment setup: MAX_JOBS=4 pip install flash-attn --no-build-isolation
+flashinfer-python==0.5.2
+
+# ========================================
+# Monitoring & Logging
+# ========================================
+tensorboard>=2.14.0
+wandb>=0.15.0  # Optional: Weights & Biases for experiment tracking
+tensorboardX>=2.6.0  # Extended TensorBoard features
+
+# ========================================
+# Data Processing & Utilities
+# ========================================
+datasets>=2.18.0
+tokenizers>=0.15.0
+numpy>=1.24.0,<2.0  # Pin to 1.x for vLLM/transformers compatibility
+pandas>=2.0.0
+tqdm>=4.65.0
+sentencepiece>=0.2.0  # For some tokenizers
+protobuf>=3.20.0
+faiss-cpu==1.13.0
+jsonlines
+loguru
+sentence_transformers
+unstructured[local-inference]>=0.10.0
+beautifulsoup4>=4.12.0
+nltk>=3.8.0  # Required by unstructured
+
+# ========================================
+# Configuration & Development
+# ========================================
+pyyaml>=6.0
+hydra-core>=1.3.0  # Optional: Advanced config management
+python-dotenv>=1.0.0  # Environment variable management
+rich>=13.0.0
+typer>=0.9.0
+
 # Core dependencies
 instructor>=1.0.0
 openai>=1.0.0
@@ -18,37 +69,19 @@ geopy>=2.4.0
 folium>=0.20.0  # Required for map visualization
 geopandas>=0.14.0
 
-# Data processing
-pandas>=2.0.0
-numpy>=1.26.0,<2.0  # Pin to 1.x for vLLM/transformers compatibility
-unstructured[local-inference]>=0.10.0
-beautifulsoup4>=4.12.0
-nltk>=3.8.0  # Required by unstructured
+# ========================================
+# Distributed Training Utilities
+# ========================================
+mpi4py>=3.1.0  # For multi-node training
+ninja>=1.11.0  # Fast C++ builds (for custom kernels)
 
-# CLI and output
-rich>=13.0.0
-typer>=0.9.0
-python-dotenv>=1.0.0
-loguru>=0.7.0
-pyyaml
+# ========================================
+# Model Serving & Inference (Future Use)
+# ========================================
+fastapi>=0.100.0  # For API serving
+uvicorn>=0.23.0  # ASGI server
 
-# HuggingFace and distributed computing
-transformers>=4.30.0
-torch>=2.0.0
-accelerate>=0.25.0
-deepspeed>=0.14.0
-tqdm>=4.65.0
-datasets>=3.0.0  # Required by trl
 
-# vLLM server dependencies
-vllm>=0.11.0
-opencv-python-headless>=4.11.0  # Required by vllm
-fastapi>=0.100.0
-uvicorn>=0.20.0
-
-# MS-SWIFT framework (training with DeepSpeed + inference with vLLM)
-ms-swift
-addict>=2.4.0  # Required by ms-swift/modelscope
 
 # MCP (Model Context Protocol)
 mcp>=1.2.0
