@@ -12,13 +12,13 @@ from loguru import logger
 
 from stindex.llm.manager import LLMManager
 from stindex.llm.prompts.initial_schema_discovery import ClusterSchemaPrompt
-from stindex.schema_discovery.cot_logger import CoTLogger
-from stindex.schema_discovery.models import (
+from stindex.discovery.cot_logger import CoTLogger
+from stindex.discovery.models import (
     DiscoveredDimensionSchema,
     ClusterSchemaDiscoveryResult,
     HierarchicalEntity
 )
-from stindex.schema_discovery.cluster_entity_extractor import ClusterEntityExtractor
+from stindex.discovery.cluster_entity_extractor import ClusterEntityExtractor
 
 
 class ClusterSchemaDiscoverer:

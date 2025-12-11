@@ -1,198 +1,160 @@
-# Health Surveillance Dimension Configuration
-# Defines extractable dimensions for public health monitoring
-#
-# This config EXTENDS cfg/dimensions.yml by adding domain-specific dimensions:
-#   - event_type: Health event classification
-#   - venue_type: Healthcare facility types
-#   - disease: Disease/condition mentions
-#
-# Base dimensions (temporal, spatial) are inherited from cfg/dimensions.yml
-
-# Override base settings for health surveillance
 extraction:
-  use_few_shot: true           # Use examples for health-specific dimensions
-  enable_thinking: true         # For Qwen3 models with <think> tags
+  use_few_shot: true
+  enable_thinking: true
   max_retries: 3
-
-# Override geocoding for Australian context
 geocoding:
-  user_agent: "stindex-health-surveillance/1.0"
+  user_agent: stindex-health-surveillance/1.0
   enable_cache: true
   rate_limit: 1.0
-
-# Domain-specific metadata defaults
 document_metadata:
-  source_location: "Western Australia"  # Default context for disambiguation
-  language: "en"
-
-# Dimension definitions
+  source_location: Western Australia
+  language: en
 dimensions:
-  # Inherit temporal and spatial from cfg/dimensions.yml by enabling them
   temporal:
     enabled: true
-    # Override timezone for Australian context
     normalization:
-      timezone: "Australia/Perth"
-
+      timezone: Australia/Perth
   spatial:
     enabled: true
-    # All other settings inherited from cfg/dimensions.yml
-
-  # Health-specific dimensions
   event_type:
     enabled: true
-    description: "Type of health event (exposure site, case report, outbreak alert, etc.)"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original text mentioning the event type"
-      - name: category
-        type: enum
-        values:
-          - "exposure_site"       # Location where disease exposure occurred
-          - "case_report"         # Confirmed case announcement
-          - "outbreak_alert"      # Official outbreak declaration
-          - "risk_warning"        # General risk warning
-          - "surveillance_update" # Regular surveillance data
-          - "vaccination_clinic"  # Vaccination event/location
-          - "other"
-      - name: confidence
-        type: float
-        description: "Confidence score (0.0-1.0)"
-        default: 1.0
+    description: Type of health event (exposure site, case report, outbreak alert,
+      etc.)
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "exposure site at Margaret River Emergency Department"
-        category: "exposure_site"
-        confidence: 1.0
-      - text: "measles outbreak in the Pilbara"
-        category: "outbreak_alert"
-        confidence: 1.0
-
+    - text: exposure site at Margaret River Emergency Department
+      category: exposure_site
+      confidence: 1.0
+    - text: measles outbreak in the Pilbara
+      category: outbreak_alert
+      confidence: 1.0
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - exposure_site
+      - case_report
+      - outbreak_alert
+      - risk_warning
+      - surveillance_update
+      - vaccination_clinic
+      - other
   venue_type:
     enabled: true
-    description: "Type of venue/location where health event occurred"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Original venue description"
-      - name: category
-        type: enum
-        values:
-          - "hospital_emergency"    # Emergency department
-          - "hospital_inpatient"    # Hospital ward
-          - "clinic_gp"             # General practice clinic
-          - "clinic_specialist"     # Specialist clinic
-          - "pharmacy"              # Pharmacy/chemist
-          - "aged_care"             # Aged care facility
-          - "childcare"             # Childcare center
-          - "school"                # School
-          - "public_transport"      # Bus, train, etc.
-          - "shopping_center"       # Shopping mall
-          - "entertainment"         # Cinema, theater, etc.
-          - "workplace"             # Office, factory, etc.
-          - "community"             # Community center, church, etc.
-          - "outdoor"               # Park, beach, etc.
-          - "other"
-      - name: venue_name
-        type: string
-        description: "Specific name of the venue"
-        optional: true
+    description: Type of venue/location where health event occurred
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "Margaret River Emergency Department"
-        category: "hospital_emergency"
-        venue_name: "Margaret River Hospital"
-      - text: "Coles supermarket in Broome"
-        category: "shopping_center"
-        venue_name: "Coles Broome"
-
+    - text: Margaret River Emergency Department
+      category: hospital_emergency
+      venue_name: Margaret River Hospital
+    - text: Coles supermarket in Broome
+      category: shopping_center
+      venue_name: Coles Broome
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - hospital_emergency
+      - hospital_inpatient
+      - clinic_gp
+      - clinic_specialist
+      - pharmacy
+      - aged_care
+      - childcare
+      - school
+      - public_transport
+      - shopping_center
+      - entertainment
+      - workplace
+      - community
+      - outdoor
+      - other
+    - level: venue_name
+      description: Specific name of the venue
   disease:
     enabled: true
-    description: "Disease or health condition mentioned"
-    extraction_type: "categorical"
-    schema_type: "CategoricalMention"
-    fields:
-      - name: text
-        type: string
-        description: "Disease name as mentioned in text"
-      - name: category
-        type: enum
-        values:
-          - "measles"
-          - "influenza"
-          - "covid19"
-          - "pertussis"          # Whooping cough
-          - "meningococcal"
-          - "hepatitis"
-          - "gastroenteritis"
-          - "dengue"
-          - "ross_river_virus"
-          - "other"
-      - name: disease_code
-        type: string
-        description: "ICD-10 or SNOMED code if applicable"
-        optional: true
+    description: Disease or health condition mentioned
+    extraction_type: categorical
+    schema_type: GenericEntity
     examples:
-      - text: "measles"
-        category: "measles"
-        disease_code: "B05"  # ICD-10
-      - text: "flu"
-        category: "influenza"
-        disease_code: "J11"
-
+    - text: measles
+      category: measles
+      disease_code: B05
+    - text: flu
+      category: influenza
+      disease_code: J11
+    hierarchy:
+    - level: category
+      description: Category level
+      values:
+      - measles
+      - influenza
+      - covid19
+      - pertussis
+      - meningococcal
+      - hepatitis
+      - gastroenteritis
+      - dengue
+      - ross_river_virus
+      - other
+    - level: disease_code
+      description: ICD-10 or SNOMED code if applicable
   patient_demographics:
-    enabled: false  # Optional dimension, disabled by default
-    description: "Patient demographic information if mentioned (age, vaccination status)"
-    extraction_type: "structured"
-    schema_type: "StructuredMention"
-    fields:
-      - name: age_group
-        type: enum
-        values: ["infant", "child", "adolescent", "adult", "elderly", "unknown"]
-        optional: true
-      - name: vaccination_status
-        type: enum
-        values: ["vaccinated", "unvaccinated", "partially_vaccinated", "unknown"]
-        optional: true
-      - name: additional_info
-        type: string
-        optional: true
-    privacy_note: "This dimension should only be enabled for aggregated/anonymized data"
-
-# Post-processing rules
+    enabled: false
+    description: Patient demographic information if mentioned (age, vaccination status)
+    extraction_type: structured
+    schema_type: GenericEntity
+    privacy_note: This dimension should only be enabled for aggregated/anonymized
+      data
+    hierarchy:
+    - level: age_group
+      description: Age Group level
+      values:
+      - infant
+      - child
+      - adolescent
+      - adult
+      - elderly
+      - unknown
+    - level: vaccination_status
+      description: Vaccination Status level
+      values:
+      - vaccinated
+      - unvaccinated
+      - partially_vaccinated
+      - unknown
+    - level: additional_info
+      description: Additional Info level
 post_processing:
   temporal:
-    - resolve_relative_dates  # Convert "Monday" to ISO 8601 using document date
-    - validate_iso8601        # Ensure valid ISO 8601 format
-
+  - resolve_relative_dates
+  - validate_iso8601
   spatial:
-    - geocode_locations       # Convert to lat/lon coordinates
-    - validate_coordinates    # Ensure within bounds
-
+  - geocode_locations
+  - validate_coordinates
   categorical:
-    - normalize_case          # Lowercase for matching
-    - validate_categories     # Ensure in allowed values
-
-# Linking rules (for cross-dimensional relationships)
+  - normalize_case
+  - validate_categories
 linking:
   enabled: true
   rules:
-    - name: "event_location_time"
-      description: "Link event_type + spatial + temporal to create complete health event"
-      dimensions: ["event_type", "spatial", "temporal"]
-      output_schema: "HealthEvent"
-
-    - name: "disease_outbreak_location"
-      description: "Link disease + spatial for outbreak mapping"
-      dimensions: ["disease", "spatial"]
-      output_schema: "DiseaseLocation"
-
-# Output format
+  - name: event_location_time
+    description: Link event_type + spatial + temporal to create complete health event
+    dimensions:
+    - event_type
+    - spatial
+    - temporal
+    output_schema: HealthEvent
+  - name: disease_outbreak_location
+    description: Link disease + spatial for outbreak mapping
+    dimensions:
+    - disease
+    - spatial
+    output_schema: DiseaseLocation
 output:
-  format: "json"
+  format: json
   include_raw_llm_output: true
   include_confidence_scores: true
-  group_by_event: true  # Group linked dimensions into events
+  group_by_event: true

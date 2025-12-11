@@ -8,10 +8,10 @@ Main Components:
 - ClusterSchemaDiscoverer: Discovers dimensions from questions within a cluster
 - ClusterEntityExtractor: Extracts entities per cluster using discovered dimensions
 - SchemaMerger: Merges entity lists from all clusters with fuzzy deduplication
-- SchemaDiscoveryPipeline: End-to-end pipeline orchestration
+- SchemaDiscoveryPipeline: End-to-end pipeline orchestration (now in stindex.pipeline)
 
 Example Usage:
-    from stindex.schema_discovery import SchemaDiscoveryPipeline
+    from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
 
     # Run full pipeline
     pipeline = SchemaDiscoveryPipeline(
@@ -26,16 +26,14 @@ Example Usage:
     )
 """
 
-from stindex.schema_discovery.question_clusterer import QuestionClusterer
-from stindex.schema_discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
-from stindex.schema_discovery.cluster_entity_extractor import ClusterEntityExtractor
-from stindex.schema_discovery.schema_merger import SchemaMerger
-from stindex.schema_discovery.discover_schema import SchemaDiscoveryPipeline
+from stindex.discovery.question_clusterer import QuestionClusterer
+from stindex.discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
+from stindex.discovery.cluster_entity_extractor import ClusterEntityExtractor
+from stindex.discovery.schema_merger import SchemaMerger
 
 __all__ = [
     'QuestionClusterer',
     'ClusterSchemaDiscoverer',
     'ClusterEntityExtractor',
-    'SchemaMerger',
-    'SchemaDiscoveryPipeline'
+    'SchemaMerger'
 ]

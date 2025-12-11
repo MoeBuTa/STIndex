@@ -13,11 +13,11 @@ import pandas as pd
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from stindex.schema_discovery.question_clusterer import QuestionClusterer
-from stindex.schema_discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
-from stindex.schema_discovery.schema_merger import SchemaMerger
-from stindex.schema_discovery.cot_logger import CoTLogger
-from stindex.schema_discovery.models import FinalSchema
+from stindex.discovery.question_clusterer import QuestionClusterer
+from stindex.discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
+from stindex.discovery.schema_merger import SchemaMerger
+from stindex.discovery.cot_logger import CoTLogger
+from stindex.discovery.models import FinalSchema
 
 
 class SchemaDiscoveryPipeline:
@@ -328,20 +328,20 @@ def main():
         epilog="""
 Examples:
   # Full pipeline with MIRAGE data
-  python -m stindex.schema_discovery.discover_schema \\
+  python -m stindex.pipeline.discovery_pipeline \\
       --questions data/original/mirage/train.jsonl \\
       --output-dir data/schema_discovery \\
       --n-clusters 10 \\
       --n-samples 20
 
   # Reuse existing cluster results (faster)
-  python -m stindex.schema_discovery.discover_schema \\
+  python -m stindex.pipeline.discovery_pipeline \\
       --questions data/original/mirage/train.jsonl \\
       --output-dir data/schema_discovery \\
       --reuse-clusters
 
   # Smaller test run (3 clusters, faster)
-  python -m stindex.schema_discovery.discover_schema \\
+  python -m stindex.pipeline.discovery_pipeline \\
       --questions data/original/mirage/train.jsonl \\
       --output-dir data/schema_discovery_test \\
       --n-clusters 3 \\

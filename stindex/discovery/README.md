@@ -109,15 +109,14 @@ for dim_name in final_schema.get_dimension_names():
 
 ```bash
 # Discover schema from any QA dataset (pure cluster-level)
-python -m stindex.schema_discovery.discover_schema \
+python -m stindex.pipeline.discovery_pipeline \
     --questions data/original/mirage/train.jsonl \
     --output-dir data/schema_discovery_mirage \
     --n-clusters 10 \
-    --n-samples 20 \
-    --config cfg/schema_discovery.yml
+    --n-samples 20
 
 # Test with specific clusters
-python -m stindex.schema_discovery.discover_schema \
+python -m stindex.pipeline.discovery_pipeline \
     --questions data/original/mirage/train.jsonl \
     --output-dir data/schema_discovery_test \
     --n-clusters 3 \
@@ -125,7 +124,7 @@ python -m stindex.schema_discovery.discover_schema \
     --test-clusters "0,1"
 
 # Enable parallel processing (default)
-python -m stindex.schema_discovery.discover_schema \
+python -m stindex.pipeline.discovery_pipeline \
     --questions data/original/mirage/train.jsonl \
     --output-dir data/schema_discovery_mirage \
     --max-workers 5  # Process 5 clusters in parallel
@@ -134,25 +133,21 @@ python -m stindex.schema_discovery.discover_schema \
 ### Python API
 
 ```python
-from stindex.schema_discovery import SchemaDiscoveryPipeline
-from stindex.schema_discovery.models import FinalSchema
+from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
+from stindex.discovery.models import FinalSchema
 
 # Initialize pipeline
 pipeline = SchemaDiscoveryPipeline(
-    llm_config={'llm_provider': 'openai', 'model_name': 'gpt-4o-mini'},
+    questions_path='data/original/mirage/train.jsonl',
+    output_path='data/schema_discovery_mirage/final_schema.yml',
     n_clusters=10,
     n_samples_for_discovery=20,
-    n_schemas_per_cluster=10,
     enable_parallel=True,
     max_workers=5
 )
 
 # Run discovery
-final_schema: FinalSchema = pipeline.discover_schema(
-    questions_file='data/original/mirage/train.jsonl',
-    output_dir='data/schema_discovery_mirage',
-    reuse_clusters=True
-)
+final_schema: FinalSchema = pipeline.run()
 
 # Access results
 print(f"Discovered {len(final_schema.dimensions)} dimensions")
@@ -160,11 +155,8 @@ for dim_name in final_schema.get_dimension_names():
     dimension = final_schema.dimensions[dim_name]
     print(f"  • {dim_name}: {dimension.total_entity_count} entities")
 
-# Export to YAML
-import yaml
-yaml_dict = final_schema.to_yaml_dict()
-with open('output_schema.yml', 'w') as f:
-    yaml.dump(yaml_dict, f, sort_keys=False, indent=2)
+# Export to YAML (done automatically by pipeline)
+# Output saved to: data/schema_discovery_mirage/final_schema.yml
 ```
 
 ## Output Format (v2.0)
@@ -244,7 +236,7 @@ data/schema_discovery_mirage/
 1. **Question Clustering** (`question_clusterer.py`) - Semantic clustering with FAISS
 2. **Cluster Schema Discovery** (`cluster_schema_discoverer.py`) - Per-cluster dimension discovery + entity extraction
 3. **Schema Merging** (`schema_merger.py`) - Cross-cluster dimension alignment and deduplication
-4. **End-to-End Pipeline** (`discover_schema.py`) - CLI interface with parallel processing
+4. **End-to-End Pipeline** (`stindex/pipeline/discovery_pipeline.py`) - CLI interface with parallel processing
 
 ## Pydantic Models
 
@@ -292,12 +284,12 @@ See `MIGRATION_GUIDE.md` in project root for:
 
 Run unit tests:
 ```bash
-# Run all schema discovery tests
-python -m pytest tests/schema_discovery/ -v
+# Run all discovery module tests
+python -m pytest tests/discovery/ -v
 
 # Run specific test file
-python -m pytest tests/schema_discovery/test_models.py -v
-python -m pytest tests/schema_discovery/test_schema_merger.py -v
+python -m pytest tests/discovery/test_models.py -v
+python -m pytest tests/discovery/test_schema_merger.py -v
 ```
 
 Current test coverage: 44 tests, 100% pass rate

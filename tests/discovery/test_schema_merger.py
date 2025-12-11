@@ -5,8 +5,8 @@ Tests dimension alignment, entity deduplication, and schema merging.
 """
 
 import pytest
-from stindex.schema_discovery.schema_merger import SchemaMerger
-from stindex.schema_discovery.models import (
+from stindex.discovery.schema_merger import SchemaMerger
+from stindex.discovery.models import (
     ClusterSchemaDiscoveryResult,
     DiscoveredDimensionSchema,
     HierarchicalEntity,

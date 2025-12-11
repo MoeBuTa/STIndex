@@ -382,39 +382,81 @@ output:
 ```
 
 #### Dimension Config (`cfg/extraction/inference/dimensions.yml`)
+
+**Format**: Hierarchy-based (v0.6.0+)
+
 ```yaml
-temporal:
-  enabled: true
-  extraction_type: normalized
-  schema_type: single_field
-  fields:
-    - name: temporal_expression
-      type: string
-      description: Any temporal reference
+dimensions:
+  temporal:
+    enabled: true
+    description: "Extract temporal expressions"
+    extraction_type: normalized  # Auto-inferred
+    schema_type: TemporalEntity
+    hierarchy:
+      - level: timestamp
+        description: "Specific date and time (ISO 8601)"
+      - level: date
+        description: "Calendar date (YYYY-MM-DD)"
+      - level: month
+        description: "Year and month (YYYY-MM)"
+      - level: year
+        description: "Calendar year (YYYY)"
+    examples:
+      - input: "On March 15, 2022, a cyclone hit Broome"
+        output:
+          text: "March 15, 2022"
+          timestamp: "2022-03-15T00:00:00"
+          date: "2022-03-15"
+          month: "2022-03"
+          year: "2022"
 
-spatial:
-  enabled: true
-  extraction_type: geocoded
-  schema_type: multi_field
-  fields:
-    - name: location
-      type: string
-    - name: parent_region
-      type: string
+  spatial:
+    enabled: true
+    description: "Extract spatial/location mentions"
+    extraction_type: geocoded  # Auto-inferred
+    schema_type: SpatialEntity
+    hierarchy:
+      - level: location
+        description: "Specific location name"
+      - level: city
+        description: "City or municipality"
+      - level: state
+        description: "State, province, or region"
+      - level: country
+        description: "Country name"
+    examples:
+      - input: "a cyclone hit Broome, Western Australia"
+        output:
+          text: "Broome"
+          location: "Broome"
+          city: "Broome"
+          state: "Western Australia"
+          country: "Australia"
 
-# Custom dimensions
-disease:
-  enabled: true
-  extraction_type: categorical
-  schema_type: multi_field
-  fields:
-    - name: disease_name
-      type: string
-    - name: disease_category
-      type: string
-  examples:
-    - "COVID-19 (infectious disease)"
+  # Custom dimension with hierarchy
+  disease:
+    enabled: true
+    description: "Extract disease mentions"
+    extraction_type: categorical  # Auto-inferred
+    schema_type: GenericEntity
+    hierarchy:
+      - level: category
+        description: "Disease category"
+        values: ["infectious", "chronic", "genetic", "other"]
+      - level: disease_name
+        description: "Specific disease name"
+    examples:
+      - input: "COVID-19 outbreak"
+        output:
+          category: "infectious"
+          disease_name: "COVID-19"
 ```
+
+**Key features:**
+- Fields auto-generated from hierarchy levels
+- Extraction type auto-inferred from dimension name
+- Mandatory dimensions (temporal, spatial) always included
+- Full schema content provided to LLM prompts
 
 ---
 
@@ -424,7 +466,7 @@ disease:
 
 **Purpose**: Automatically discover dimensional schemas from Q&A datasets
 
-**Location**: `stindex/schema_discovery/discover_schema.py`
+**Location**: `stindex/pipeline/discovery_pipeline.py`
 
 **Key Capabilities**:
 - Data-driven dimension discovery (no predefined constraints)
@@ -918,60 +960,92 @@ parallel:
 
 **Use Case**: Discover dimensions from Q&A dataset, then use for extraction
 
+**Key Feature**: Schema discovery outputs hierarchy-based dimension configs (v0.6.0+) that are directly compatible with `STIndexPipeline` extraction.
+
 **Workflow**:
 ```bash
 # Step 1: Discover schema from Q&A dataset
-python scripts/regenerate_schemas.py --dataset mirage --full
+python -m stindex.pipeline.discovery_pipeline \
+    --questions data/original/mirage/train.jsonl \
+    --output-dir data/schema_discovery_mirage \
+    --n-clusters 10
 
-# Step 2: Copy discovered schema to extraction config
-cp data/schema_discovery_mirage_v2/final_schema.yml \
-   cfg/extraction/inference/discovered_dimensions.yml
+# Output: data/schema_discovery_mirage/final_schema.yml
 
-# Step 3: Use discovered dimensions for extraction
-stindex extract "Your text here" --config discovered_dimensions
+# Step 2: Use discovered schema for extraction
+stindex extract "Your text here" \
+    --dimension-config data/schema_discovery_mirage/final_schema.yml
 ```
 
 **Programmatic**:
 ```python
 # Step 1: Discover schema
-from stindex.schema_discovery import SchemaDiscoveryPipeline
+from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
 
 discovery_pipeline = SchemaDiscoveryPipeline(
-    llm_config={'llm_provider': 'openai', 'model_name': 'gpt-4o-mini'},
+    questions_path="data/original/mirage/train.jsonl",
+    output_path="data/schema_discovery_mirage/final_schema.yml",
     n_clusters=10
 )
 
-final_schema = discovery_pipeline.discover_schema(
-    questions_file="data/original/mirage/train.jsonl",
-    output_dir="data/schema_discovery"
-)
+final_schema = discovery_pipeline.run()
 
-# Step 2: Convert schema to dimension config
-from stindex.extraction.dimension_loader import DimensionLoader
-
-dimension_configs = {}
-for dim_name, dim_schema in final_schema.dimensions.items():
-    dimension_configs[dim_name] = {
-        'enabled': True,
-        'extraction_type': 'categorical',
-        'schema_type': 'hierarchical_categorical',
-        'hierarchy': dim_schema.hierarchy,
-        'description': dim_schema.description,
-        'examples': [e.text for e in dim_schema.entities[:5]]
-    }
-
-# Step 3: Use for extraction
+# Step 2: Use discovered schema for extraction
 from stindex.pipeline import STIndexPipeline
-from stindex.preprocess import InputDocument
+from stindex import InputDocument
 
 extraction_pipeline = STIndexPipeline(
-    extractor_config="extract",
-    dimension_config=dimension_configs  # Use discovered dimensions
+    dimension_config="data/schema_discovery_mirage/final_schema.yml"
 )
 
 docs = [InputDocument.from_text("Your text here")]
-results = extraction_pipeline.run_pipeline(docs)
+results = extraction_pipeline.run(docs)
 ```
+
+**Schema Format Compatibility**:
+
+Discovered schemas use the same hierarchy format as manually-defined dimensions:
+
+```yaml
+# Output from SchemaDiscoveryPipeline
+dimensions:
+  symptom:  # Discovered dimension
+    enabled: true
+    description: "Medical symptoms mentioned"
+    extraction_type: categorical  # Auto-inferred
+    schema_type: GenericEntity
+    hierarchy:
+      - level: category
+        description: "Symptom category"
+        values: ["respiratory", "neurological", "gastrointestinal"]
+      - level: symptom_name
+        description: "Specific symptom name"
+    examples:
+      - input: "Patient presented with persistent cough"
+        output:
+          category: "respiratory"
+          symptom_name: "cough"
+
+  temporal:  # Mandatory dimension (auto-added)
+    enabled: true
+    hierarchy:
+      - level: timestamp
+        description: "ISO 8601 timestamp"
+      # ... 4-level temporal hierarchy
+
+  spatial:  # Mandatory dimension (auto-added)
+    enabled: true
+    hierarchy:
+      - level: location
+        description: "Specific location"
+      # ... 4-level spatial hierarchy
+```
+
+**Integration Features**:
+- **Direct compatibility**: Discovered configs can be used immediately with `DimensionalExtractor`
+- **Mandatory dimensions**: Discovery pipeline automatically includes temporal and spatial dimensions
+- **Auto-generation**: Fields generated from hierarchy levels, extraction types inferred
+- **Zero code changes**: Discovered dimensions work with all downstream components (analysis, visualization, warehouse)
 
 ---
 
@@ -1046,11 +1120,20 @@ python scripts/merge_schemas.py \
 ## 5. References
 
 - **STIndexPipeline**: `stindex/pipeline/pipeline.py`
-- **SchemaDiscoveryPipeline**: `stindex/schema_discovery/discover_schema.py`
+- **SchemaDiscoveryPipeline**: `stindex/pipeline/discovery_pipeline.py`
+- **Discovery Module**: `stindex/discovery/`
+  - `cluster_schema_discoverer.py`: Per-cluster schema discovery
+  - `cluster_entity_extractor.py`: Entity extraction
+  - `question_clusterer.py`: Semantic clustering
+  - `schema_merger.py`: Cross-cluster merging
 - **Configuration Files**:
   - Extraction: `cfg/extraction/inference/extract.yml`
-  - Dimensions: `cfg/extraction/inference/dimensions.yml`
+  - Dimensions: `cfg/extraction/inference/dimensions.yml` (hierarchy format v0.6.0+)
   - Schema Discovery: `cfg/schema_discovery.yml`
 - **Migration Guides**:
   - `docs/MIGRATION_GUIDE.md`
   - `docs/QUICKSTART_MIGRATION.md`
+  - `scripts/migrate_dimension_configs.py`: Convert old field-based configs to hierarchy format
+- **Testing**:
+  - `tests/integration/`: Integration tests for hierarchy format
+  - `tests/discovery/`: Unit tests for discovery module

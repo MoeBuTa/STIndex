@@ -11,7 +11,7 @@ import difflib
 from typing import Dict, List, Tuple, Set
 from loguru import logger
 
-from stindex.schema_discovery.models import (
+from stindex.discovery.models import (
     ClusterSchemaDiscoveryResult,
     DiscoveredDimensionSchema,
     HierarchicalEntity,

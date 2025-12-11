@@ -11,8 +11,8 @@ from loguru import logger
 
 from stindex.llm.manager import LLMManager
 from stindex.llm.prompts.entity_extraction_with_discovery import ClusterEntityPrompt
-from stindex.schema_discovery.cot_logger import CoTLogger
-from stindex.schema_discovery.models import DiscoveredDimensionSchema, HierarchicalEntity
+from stindex.discovery.cot_logger import CoTLogger
+from stindex.discovery.models import DiscoveredDimensionSchema, HierarchicalEntity
 
 
 class ClusterEntityExtractor:

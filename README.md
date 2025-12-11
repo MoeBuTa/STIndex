@@ -51,6 +51,37 @@ pipeline = STIndexPipeline(
 results = pipeline.run_pipeline(docs)
 ```
 
+### Schema Discovery (NEW in v0.6.0)
+
+Automatically discover dimensional schemas from Q&A datasets:
+
+```python
+from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
+
+# Discover schema from medical Q&A dataset
+discovery = SchemaDiscoveryPipeline(
+    questions_path="data/original/mirage/train.jsonl",
+    corpus_path="data/original/medcorp/train.jsonl",
+    output_path="cfg/discovered_medical_schema.yml",
+    n_clusters=10
+)
+schema = discovery.run()
+
+# Use discovered schema for extraction
+pipeline = STIndexPipeline(
+    dimension_config="cfg/discovered_medical_schema.yml"
+)
+results = pipeline.run_pipeline(docs)
+```
+
+**Features:**
+- Domain-agnostic schema discovery from question-answer datasets
+- Two-phase approach: cluster-based initial discovery + refinement
+- Outputs hierarchy-based dimension configs compatible with extraction pipeline
+- Automatic mandatory dimension inclusion (temporal, spatial)
+
+**Supported datasets:** MIRAGE, MedCorp, HotpotQA, 2WikiMQA, MuSiQue
+
 ### Python API (Direct Extraction)
 
 ```python
@@ -137,12 +168,14 @@ STIndex uses a hierarchical configuration structure organized by module:
   - Context-aware extraction settings
   - Post-processing toggles (reflection, OSM context, relative temporal resolution)
 
-- **`dimensions.yml`**: Multi-dimensional extraction definitions
-  - **temporal**: ISO 8601 normalized dates (enabled by default)
-  - **spatial**: Geocoded locations with parent regions (enabled by default)
+- **`dimensions.yml`**: Multi-dimensional extraction definitions (hierarchy-based format v0.6.0+)
+  - **temporal**: ISO 8601 normalized dates with 4-level hierarchy (timestamp → date → month → year)
+  - **spatial**: Geocoded locations with 4-level hierarchy (location → city → state → country)
   - **event**: Optional categorical dimension for event types (disabled by default)
   - **entity**: Optional categorical dimension for named entities (disabled by default)
-  - Each dimension defines: `enabled`, `extraction_type`, `schema_type`, `fields`, `examples`
+  - Each dimension defines: `enabled`, `extraction_type`, `schema_type`, `hierarchy`, `examples`
+  - Custom dimensions: Add hierarchical dimensions for domain-specific extraction
+  - Migration: Use `scripts/migrate_dimension_configs.py` to convert old field-based configs
 
 - **`reflection.yml`**: Two-pass reflection settings
   - `enabled`: Enable LLM-based quality filtering (default: false)

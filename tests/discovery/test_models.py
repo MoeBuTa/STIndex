@@ -7,7 +7,7 @@ Tests validation, field validators, helper methods, and serialization.
 import pytest
 from pydantic import ValidationError
 
-from stindex.schema_discovery.models import (
+from stindex.discovery.models import (
     DiscoveredDimensionSchema,
     HierarchicalEntity,
     ClusterSchemaDiscoveryResult,
