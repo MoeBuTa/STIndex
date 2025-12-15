@@ -32,7 +32,8 @@ class ClusterSchemaDiscoverer:
 
     def __init__(
         self,
-        llm_config: Dict,
+        llm_manager: LLMManager = None,
+        llm_config: Dict = None,
         output_dir: str = None,
         batch_size: int = 50,
         cot_logger: CoTLogger = None
@@ -41,12 +42,20 @@ class ClusterSchemaDiscoverer:
         Initialize cluster schema discoverer.
 
         Args:
-            llm_config: LLM configuration dict (provider, model, etc.)
+            llm_manager: Shared LLM manager instance (preferred, for engine reuse)
+            llm_config: LLM configuration dict (fallback, creates new manager)
             output_dir: Output directory for CoT logging (optional, deprecated if cot_logger provided)
             batch_size: Batch size for entity extraction (default: 50)
             cot_logger: Shared CoT logger instance (optional, preferred over output_dir)
         """
-        self.llm_manager = LLMManager(llm_config)
+        # Use provided llm_manager or create new one from config
+        if llm_manager is not None:
+            self.llm_manager = llm_manager
+        elif llm_config is not None:
+            self.llm_manager = LLMManager(llm_config)
+        else:
+            raise ValueError("Must provide either llm_manager or llm_config")
+
         # Use provided cot_logger, or create new one from output_dir
         self.cot_logger = cot_logger if cot_logger else (CoTLogger(output_dir) if output_dir else None)
         self.batch_size = batch_size
@@ -196,7 +205,7 @@ class ClusterSchemaDiscoverer:
         # Start with empty global_dimensions - discovery from scratch
         extractor = ClusterEntityExtractor(
             global_dimensions={},  # Empty - will be discovered in first batch
-            llm_config=self.llm_manager.config,
+            llm_manager=self.llm_manager,  # Pass shared manager instance
             batch_size=self.batch_size,
             first_batch_size=first_batch_size,
             allow_new_dimensions=allow_new_dimensions,

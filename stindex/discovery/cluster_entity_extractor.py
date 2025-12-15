@@ -25,7 +25,8 @@ class ClusterEntityExtractor:
     def __init__(
         self,
         global_dimensions: Dict[str, DiscoveredDimensionSchema],
-        llm_config: Dict,
+        llm_manager: LLMManager = None,
+        llm_config: Dict = None,
         batch_size: int = 50,
         first_batch_size: int = None,
         output_dir: str = None,
@@ -40,7 +41,8 @@ class ClusterEntityExtractor:
         Args:
             global_dimensions: Dimensional schemas (either discovered globally or per-cluster)
                 Example: {'symptom': DiscoveredDimensionSchema(...), ...}
-            llm_config: LLM configuration dict (provider, model, etc.)
+            llm_manager: Shared LLM manager instance (preferred, for engine reuse)
+            llm_config: LLM configuration dict (fallback, creates new manager)
             batch_size: Number of questions to process per LLM call (default: 50)
             first_batch_size: Size of first batch (adaptive, default: same as batch_size)
             output_dir: Output directory for CoT logging (optional, deprecated if cot_logger provided)
@@ -50,7 +52,15 @@ class ClusterEntityExtractor:
             cot_logger: Shared CoT logger instance (optional, preferred over output_dir)
         """
         self.global_dimensions = global_dimensions
-        self.llm_manager = LLMManager(llm_config)
+
+        # Use provided llm_manager or create new one from config
+        if llm_manager is not None:
+            self.llm_manager = llm_manager
+        elif llm_config is not None:
+            self.llm_manager = LLMManager(llm_config)
+        else:
+            raise ValueError("Must provide either llm_manager or llm_config")
+
         self.batch_size = batch_size
         self.first_batch_size = first_batch_size if first_batch_size is not None else batch_size
         # Use provided cot_logger, or create new one from output_dir

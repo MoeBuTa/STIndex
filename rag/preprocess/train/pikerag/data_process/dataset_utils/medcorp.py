@@ -13,7 +13,9 @@ Total: 427,049 snippets (~7.4 GB)
 Note: StatPearls requires accepting license terms on HuggingFace.
 """
 
+import json
 import os
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import uuid
@@ -25,10 +27,16 @@ except ImportError:
     DATASETS_AVAILABLE = False
     print("Warning: 'datasets' package not found. Install with: pip install datasets")
 
+from loguru import logger
+
 
 def load_raw_data(dataset_dir: str, split: str) -> List[dict]:
     """
-    Load MedCorp corpus (Textbooks + StatPearls) from HuggingFace
+    Load MedCorp corpus (Textbooks + StatPearls)
+
+    Strategy:
+    - Textbooks: Load from HuggingFace (pre-chunked, available)
+    - StatPearls: Load from local preprocessed file (NCBI source, manual download required)
 
     Args:
         dataset_dir: Directory to cache downloaded data
@@ -37,10 +45,7 @@ def load_raw_data(dataset_dir: str, split: str) -> List[dict]:
     Returns:
         List of document dictionaries
     """
-    if not DATASETS_AVAILABLE:
-        raise ImportError("'datasets' package required. Install with: pip install datasets")
-
-    print(f"Loading MedCorp corpus (Textbooks + StatPearls)...")
+    logger.info("Loading MedCorp corpus (Textbooks + StatPearls)...")
 
     # Create cache directory
     cache_dir = os.path.join(dataset_dir, "cache")
@@ -48,53 +53,70 @@ def load_raw_data(dataset_dir: str, split: str) -> List[dict]:
 
     all_documents = []
 
-    # Load Textbooks corpus
-    print("  [1/2] Loading Textbooks corpus from HuggingFace...")
-    try:
-        textbooks_dataset = load_dataset(
-            "MedRAG/textbooks",
-            split="train",
-            cache_dir=cache_dir,
-            trust_remote_code=True
-        )
-        print(f"      ✓ Loaded {len(textbooks_dataset)} textbook snippets")
+    # ========== Load Textbooks from HuggingFace ==========
+    logger.info("  [1/2] Loading Textbooks corpus from HuggingFace...")
+    if not DATASETS_AVAILABLE:
+        logger.warning("      ✗ 'datasets' package not available")
+        logger.warning("      Install with: pip install datasets")
+    else:
+        try:
+            textbooks_dataset = load_dataset(
+                "MedRAG/textbooks",
+                split="train",
+                cache_dir=cache_dir,
+                trust_remote_code=True
+            )
+            logger.info(f"      ✓ Loaded {len(textbooks_dataset)} textbook snippets")
 
-        for doc in textbooks_dataset:
-            doc_entry = doc.copy()
-            doc_entry["source_corpus"] = "textbooks"
-            all_documents.append(doc_entry)
+            for doc in textbooks_dataset:
+                doc_entry = doc.copy()
+                doc_entry["source_corpus"] = "textbooks"
+                all_documents.append(doc_entry)
 
-    except Exception as e:
-        print(f"      ✗ Failed to load Textbooks: {e}")
-        print(f"      Note: Check HuggingFace access at https://huggingface.co/datasets/MedRAG/textbooks")
+        except Exception as e:
+            logger.error(f"      ✗ Failed to load Textbooks: {e}")
+            logger.error(f"      Check: https://huggingface.co/datasets/MedRAG/textbooks")
 
-    # Load StatPearls corpus
-    print("  [2/2] Loading StatPearls corpus from HuggingFace...")
-    print("      Note: StatPearls requires accepting license terms on HuggingFace")
-    print("      Visit: https://huggingface.co/datasets/MedRAG/statpearls")
-    try:
-        statpearls_dataset = load_dataset(
-            "MedRAG/statpearls",
-            split="train",
-            cache_dir=cache_dir,
-            trust_remote_code=True
-        )
-        print(f"      ✓ Loaded {len(statpearls_dataset)} StatPearls snippets")
+    # ========== Load StatPearls from local file ==========
+    logger.info("  [2/2] Loading StatPearls corpus from local file...")
+    statpearls_path = Path(dataset_dir) / "raw" / "statpearls_processed.jsonl"
 
-        for doc in statpearls_dataset:
-            doc_entry = doc.copy()
-            doc_entry["source_corpus"] = "statpearls"
-            all_documents.append(doc_entry)
+    if statpearls_path.exists():
+        logger.info(f"      Found: {statpearls_path}")
+        try:
+            statpearls_count = 0
+            with open(statpearls_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        doc = json.loads(line)
+                        # doc already has source_corpus="statpearls" from preprocessing
+                        all_documents.append(doc)
+                        statpearls_count += 1
 
-    except Exception as e:
-        print(f"      ✗ Failed to load StatPearls: {e}")
-        print(f"      This is likely due to license requirements.")
-        print(f"      Please:")
-        print(f"        1. Visit https://huggingface.co/datasets/MedRAG/statpearls")
-        print(f"        2. Accept the license terms")
-        print(f"        3. Login with: huggingface-cli login")
+            logger.info(f"      ✓ Loaded {statpearls_count} StatPearls snippets")
 
-    print(f"\n✓ MedCorp corpus loaded: {len(all_documents)} total snippets")
+        except Exception as e:
+            logger.error(f"      ✗ Failed to load StatPearls from {statpearls_path}: {e}")
+
+    else:
+        logger.warning(f"      ✗ StatPearls not found: {statpearls_path}")
+        logger.warning("      To download and preprocess StatPearls:")
+        logger.warning("        1. python -m rag.preprocess.corpus.download_statpearls")
+        logger.warning("        2. python -m rag.preprocess.corpus.preprocess_statpearls")
+        logger.warning("")
+        logger.warning("      StatPearls cannot be distributed via HuggingFace due to NCBI policy.")
+        logger.warning("      See: https://huggingface.co/datasets/MedRAG/statpearls")
+
+    logger.info("=" * 80)
+    logger.info(f"✓ MedCorp corpus loaded: {len(all_documents)} total snippets")
+
+    # Show breakdown
+    textbooks_count = sum(1 for d in all_documents if d.get("source_corpus") == "textbooks")
+    statpearls_count = sum(1 for d in all_documents if d.get("source_corpus") == "statpearls")
+    logger.info(f"  Textbooks: {textbooks_count:,} snippets")
+    logger.info(f"  StatPearls: {statpearls_count:,} snippets")
+    logger.info("=" * 80)
+
     return all_documents
 
 

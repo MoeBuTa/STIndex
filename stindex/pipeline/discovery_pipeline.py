@@ -10,9 +10,12 @@ from typing import Dict, List, Optional
 import json
 import yaml
 import pandas as pd
+import gc
+import torch
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from stindex.llm.manager import LLMManager
 from stindex.discovery.question_clusterer import QuestionClusterer
 from stindex.discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
 from stindex.discovery.schema_merger import SchemaMerger
@@ -56,6 +59,10 @@ class SchemaDiscoveryPipeline:
         """
         self.llm_config = llm_config
         self.test_clusters = test_clusters
+
+        # Create shared LLM manager for all clusters (singleton engine pattern)
+        self.llm_manager = LLMManager(llm_config)
+        logger.info(f"  ✓ Initialized shared LLM manager: {llm_config.get('llm_provider')}")
 
         # Load config if provided
         if config:
@@ -326,8 +333,9 @@ class SchemaDiscoveryPipeline:
             ClusterSchemaDiscoveryResult with discovered dimensions and entities
         """
         # Use ClusterSchemaDiscoverer for discovery + extraction
+        # Pass shared LLM manager (singleton engine pattern) instead of config
         discoverer = ClusterSchemaDiscoverer(
-            llm_config=self.llm_config,
+            llm_manager=self.llm_manager,
             batch_size=self.batch_size,
             cot_logger=cot_logger
         )

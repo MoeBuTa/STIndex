@@ -4,6 +4,10 @@
 
 set -e
 
+# Flash Attention settings
+export VLLM_ATTENTION_BACKEND="FLASH_ATTN"
+export VLLM_USE_TRITON_FLASH_ATTN="0"
+
 # Configuration
 CONFIG_FILE="cfg/extraction/inference/hf.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

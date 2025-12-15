@@ -50,6 +50,16 @@ class LLMManager:
         # Provider-specific kwargs
         if self.provider_name == "hf":
             provider_config["base_url"] = self.config.get("base_url", "http://localhost:8000")
+        elif self.provider_name == "hf_batch":
+            # Batch mode specific config
+            provider_config["model_path"] = self.config.get("model_path", provider_config["model_name"])
+            provider_config["tensor_parallel_size"] = self.config.get("tensor_parallel_size", "auto")
+            provider_config["gpu_memory_utilization"] = self.config.get("gpu_memory_utilization", 0.7)
+            provider_config["max_model_len"] = self.config.get("max_model_len", 32768)
+            provider_config["max_num_seqs"] = self.config.get("max_num_seqs", 256)
+            provider_config["dtype"] = self.config.get("dtype", "auto")
+            provider_config["use_hf"] = self.config.get("use_hf", True)
+            provider_config["infer_backend"] = self.config.get("infer_backend", "vllm")
 
         # Create provider instance
         if self.provider_name == "openai":
@@ -67,10 +77,16 @@ class LLMManager:
             logger.info(f"Creating HuggingFace (MS-SWIFT) provider with model: {provider_config['model_name']}")
             return MSSwiftLLM(provider_config)
 
+        elif self.provider_name == "hf_batch":
+            from stindex.llm.ms_swift_batch import MSSwiftBatchLLM
+            logger.info(f"Creating HuggingFace (MS-SWIFT Batch) provider with model: {provider_config['model_name']}")
+            logger.info(f"  Batch mode using infer_main() with tensor_parallel_size={provider_config.get('tensor_parallel_size')}")
+            return MSSwiftBatchLLM(provider_config)
+
         else:
             raise ValueError(
                 f"Unsupported provider: {self.provider_name}. "
-                f"Supported providers: openai, anthropic, hf"
+                f"Supported providers: openai, anthropic, hf, hf_batch"
             )
 
     def generate(self, messages: List[Dict[str, str]]) -> LLMResponse:

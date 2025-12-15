@@ -14,14 +14,14 @@ llm:
 
   # Model name as reported by MS-SWIFT server (not HuggingFace ID)
   # Must match the deployed model's name from the server
-  model_name: Qwen3-8B
+  model_name: Qwen3-4B-Instruct-2507
 
   # Server endpoint (must match deployment.port below)
   base_url: "http://localhost:8001"
 
   # Generation parameters
   temperature: 0.0  # Deterministic output (0.0 = greedy, higher = more random)
-  max_tokens: 32768  # Maximum tokens to generate per request (increased for thinking models)
+  max_tokens: 4096  # Maximum tokens to generate per request
 
   # Advanced sampling parameters
   seed: null  # Random seed for reproducibility (null = random)
@@ -33,7 +33,7 @@ llm:
 # ============================================================
 deployment:
   # Model to deploy (HuggingFace model ID or local path)
-  model: Qwen/Qwen3-8B
+  model: Qwen/Qwen3-4B-Instruct-2507
 
   # Inference backend (vllm recommended for efficiency)
   infer_backend: vllm
@@ -67,11 +67,11 @@ deployment:
   # vLLM backend settings
   vllm:
     # GPU configuration
-    tensor_parallel_size: auto  # Number of GPUs for tensor parallelism (auto = detect all available GPUs, or set to 1, 2, 4, etc.)
+    tensor_parallel_size: 1  # 4B model fits on 1 GPU
     gpu_memory_utilization: 0.7  # Fraction of GPU memory to use (0.0-1.0)
 
     # Model settings
-    max_model_len: 32768  # Maximum sequence length (tokens) - increased for reflection with thinking models
+    max_model_len: 8192  # Maximum sequence length (tokens)
     dtype: auto          # Data type: auto, float16, bfloat16, float32
 
     # Security

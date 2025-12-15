@@ -1,0 +1,42 @@
+# HuggingFace Batch Mode Configuration (MS-SWIFT infer_main)
+# For large-scale offline batch processing with tensor parallelism
+
+llm:
+  llm_provider: hf_batch
+  model_name: Qwen3-4B-Instruct-2507
+  model_path: Qwen/Qwen3-4B-Instruct-2507
+  temperature: 0.0
+  max_tokens: 4096
+  # vLLM batch inference settings (optimized for sequential + memory-limited)
+  tensor_parallel_size: 1  # 4B model fits on 1 GPU
+  gpu_memory_utilization: 0.3  # Low to allow multiple engines in memory
+  max_model_len: 8192  # Full context length
+  max_num_seqs: 64  # Reduced for lower memory usage
+  dtype: auto
+  infer_backend: vllm
+  use_hf: true
+  # Performance features
+  enable_prefix_caching: true  # Cache common prefixes
+  enforce_eager: false  # Use CUDA graphs for speed
+
+# Post-processing settings (same as extract.yml)
+spatial:
+  enable_osm_context: false
+  geocoder:
+    service: nominatim
+    rate_limit: 1.0
+    cache_enabled: true
+
+temporal:
+  enable_relative_resolution: true
+  timezone: UTC
+  min_year: 1900
+  max_year: 2100
+
+categorical:
+  enable_validation: true
+  fuzzy_matching_threshold: 0.8
+  strict_mode: false
+
+reflection:
+  enabled: false  # Disable for cost savings (adds extra LLM call per chunk)

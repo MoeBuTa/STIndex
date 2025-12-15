@@ -88,25 +88,35 @@ def regenerate_schema(
     # Configure pipeline
     if test_mode:
         n_clusters = 3
-        n_samples = 10
         test_clusters = [0, 1, 2]
-        print(f"  🧪 Test mode: 3 clusters, 10 samples per cluster")
+        print(f"  🧪 Test mode: 3 clusters with adaptive batching")
     else:
         n_clusters = 10
-        n_samples = 20
         test_clusters = None
-        print(f"  🚀 Full mode: 10 clusters, 20 samples per cluster")
+        print(f"  🚀 Full mode: 10 clusters with adaptive batching")
 
     # Initialize pipeline
-    llm_config = {
-        'llm_provider': llm_provider,
-        'model_name': model
-    }
+    # Load full config from provider-specific YAML file
+    from stindex.utils.config import load_config_from_file
+
+    try:
+        # Load config from provider file (e.g., hf_batch.yml)
+        full_config = load_config_from_file(llm_provider)
+        llm_config = full_config.get("llm", {})
+
+        # Override model if explicitly specified (not default None)
+        if model is not None:
+            llm_config['model_name'] = model
+    except FileNotFoundError:
+        # Fallback to simple config if provider file doesn't exist
+        llm_config = {
+            'llm_provider': llm_provider,
+            'model_name': model
+        }
 
     pipeline = SchemaDiscoveryPipeline(
         llm_config=llm_config,
         n_clusters=n_clusters,
-        n_samples_for_discovery=n_samples,
         enable_parallel=True,
         max_workers=max_workers,
         test_clusters=test_clusters
@@ -192,13 +202,13 @@ Available datasets:
     parser.add_argument(
         '--llm-provider',
         default='openai',
-        choices=['openai', 'anthropic', 'hf'],
+        choices=['openai', 'anthropic', 'hf', 'hf_batch'],
         help='LLM provider (default: openai)'
     )
     parser.add_argument(
         '--model',
-        default='gpt-4o-mini',
-        help='Model name (default: gpt-4o-mini)'
+        default=None,
+        help='Model name (default: use provider config)'
     )
     parser.add_argument(
         '--max-workers',
