@@ -11,7 +11,7 @@ Execution modes for STIndexPipeline:
 - visualization: Visualization only (requires extraction results)
 """
 
-from stindex.pipeline.pipeline import STIndexPipeline
+from stindex.pipeline.stindex_pipeline import STIndexPipeline
 from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
 
 __all__ = ["STIndexPipeline", "SchemaDiscoveryPipeline"]

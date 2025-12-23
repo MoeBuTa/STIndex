@@ -413,13 +413,13 @@ class STIndexPipeline:
                         section_hierarchy=chunk.section_hierarchy if hasattr(chunk, 'section_hierarchy') else ""
                     )
 
-                    logger.info(f"[{i+1}/{len(doc_chunk_list)}] Chunk {chunk.chunk_id}")
+                    logger.info(f"[{i+1}/{len(doc_chunk_list)}] Chunk {chunk.doc_id}")
 
                     try:
                         # Build metadata for extraction
                         extraction_metadata = {
                             **chunk.document_metadata,
-                            "chunk_id": chunk.chunk_id,
+                            "doc_id": chunk.doc_id,
                             "chunk_index": chunk.chunk_index,
                             "document_title": chunk.document_title,
                         }
@@ -470,7 +470,7 @@ class STIndexPipeline:
 
                         # Store result with chunk parameters (excluding start_char/end_char)
                         result_data = {
-                            "chunk_id": chunk.chunk_id,
+                            "doc_id": chunk.doc_id,
                             "chunk_index": chunk.chunk_index,
                             "document_id": chunk.document_id,
                             "document_title": chunk.document_title,
@@ -493,9 +493,9 @@ class STIndexPipeline:
                         results.append(result_data)
 
                     except Exception as e:
-                        logger.error(f"Extraction failed for chunk {chunk.chunk_id}: {e}")
+                        logger.error(f"Extraction failed for chunk {chunk.doc_id}: {e}")
                         result_data = {
-                            "chunk_id": chunk.chunk_id,
+                            "doc_id": chunk.doc_id,
                             "chunk_index": chunk.chunk_index,
                             "document_id": chunk.document_id,
                             "error": str(e)
@@ -523,13 +523,13 @@ class STIndexPipeline:
                 logger.debug(f"✓ Reflector initialized (non-context-aware)")
 
             for i, chunk in enumerate(chunks):
-                logger.info(f"\n[{i+1}/{len(chunks)}] Extracting from chunk: {chunk.chunk_id}")
+                logger.info(f"\n[{i+1}/{len(chunks)}] Extracting from chunk: {chunk.doc_id}")
 
                 try:
                     # Build metadata for extraction
                     extraction_metadata = {
                         **chunk.document_metadata,
-                        "chunk_id": chunk.chunk_id,
+                        "doc_id": chunk.doc_id,
                         "chunk_index": chunk.chunk_index,
                         "document_title": chunk.document_title,
                     }
@@ -578,7 +578,7 @@ class STIndexPipeline:
 
                     # Store result with chunk parameters (excluding start_char/end_char)
                     result_data = {
-                        "chunk_id": chunk.chunk_id,
+                        "doc_id": chunk.doc_id,
                         "chunk_index": chunk.chunk_index,
                         "document_id": chunk.document_id,
                         "document_title": chunk.document_title,
@@ -601,9 +601,9 @@ class STIndexPipeline:
                     results.append(result_data)
 
                 except Exception as e:
-                    logger.error(f"Extraction failed for chunk {chunk.chunk_id}: {e}")
+                    logger.error(f"Extraction failed for chunk {chunk.doc_id}: {e}")
                     result_data = {
-                        "chunk_id": chunk.chunk_id,
+                        "doc_id": chunk.doc_id,
                         "chunk_index": chunk.chunk_index,
                         "document_id": chunk.document_id,
                         "error": str(e)
