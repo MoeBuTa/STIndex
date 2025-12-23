@@ -132,9 +132,13 @@ class DimensionConfigLoader:
         """
         self.config_dir = Path(config_dir)
 
-    def load_dimension_config(self, config_path: str, auto_merge_base: bool = True) -> Dict[str, Any]:
+    def load_dimension_config(self, config_path: str, auto_merge_base: bool = True, override_config_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Load dimension configuration from YAML file.
+
+        Supports two formats:
+        1. Dimension config format: {"dimensions": {...}}
+        2. Discovered schema format: {"DimensionName": {...}} (auto-converted)
 
         Args:
             config_path: Path to config file (relative to config_dir or absolute)
@@ -142,11 +146,14 @@ class DimensionConfigLoader:
                         - "dimensions" → cfg/extraction/inference/dimensions.yml
                         - "case_studies/public_health/config/health_dimensions" → full path
                         - "/absolute/path/to/config.yml"
+                        - "data/schema_discovery_mirage_v2/final_schema" → discovered schema
             auto_merge_base: If True and loading a non-base config, automatically merge
                            with base cfg/dimensions.yml (default: True)
+            override_config_path: Optional path to override config that will be merged
+                                on top of the loaded config (e.g., to disable dimensions)
 
         Returns:
-            Parsed configuration dict
+            Parsed configuration dict in dimension config format
         """
         # Handle different path formats
         if not config_path.endswith('.yml') and not config_path.endswith('.yaml'):
@@ -171,6 +178,12 @@ class DimensionConfigLoader:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
 
+        # Auto-detect and convert discovered schema format
+        if self._is_discovered_schema(config):
+            logger.info("  Detected discovered schema format - auto-converting...")
+            config = self._convert_discovered_schema(config)
+            logger.info(f"  ✓ Converted {len(config['dimensions'])} dimensions from discovered schema")
+
         # Auto-merge with base config if this is not the base config itself
         if auto_merge_base and not config_path.startswith("dimensions"):
             try:
@@ -188,7 +201,166 @@ class DimensionConfigLoader:
             except Exception as e:
                 logger.warning(f"Failed to merge with base config: {e}")
 
+        # Apply override config if provided
+        if override_config_path:
+            try:
+                # Support both inline dict and file path
+                if isinstance(override_config_path, dict):
+                    # Inline override config (dict)
+                    logger.info("  Applying inline dimension overrides...")
+                    override_config = override_config_path
+                else:
+                    # File path (string)
+                    override_file = Path(override_config_path)
+                    if not override_file.is_absolute():
+                        override_file = self.config_dir / override_file
+                    if not override_file.exists():
+                        project_root = Path(__file__).parent.parent.parent
+                        override_file = project_root / override_config_path
+
+                    # Add .yml extension if not present
+                    if not str(override_file).endswith('.yml') and not str(override_file).endswith('.yaml'):
+                        override_file = Path(str(override_file) + '.yml')
+
+                    if not override_file.exists():
+                        raise FileNotFoundError(f"Override config not found: {override_config_path}")
+
+                    logger.info(f"  Applying dimension overrides from: {override_file}")
+                    with open(override_file, 'r') as f:
+                        override_config = yaml.safe_load(f)
+
+                config = merge_dimension_configs(config, override_config)
+                logger.info(f"  ✓ Overrides applied successfully")
+            except Exception as e:
+                logger.warning(f"Failed to apply override config: {e}")
+
         return config
+
+    def _is_discovered_schema(self, config: Dict[str, Any]) -> bool:
+        """
+        Check if config is in discovered schema format.
+
+        Discovered schema format has:
+        - No "dimensions" top-level key
+        - Keys are PascalCase dimension names (e.g., "Clinical Sign")
+        - Each dimension has: hierarchy (required), optionally description/count/entities
+
+        Supports both full schema (with entities) and slim extraction schema (hierarchy only).
+
+        Args:
+            config: Loaded config dict
+
+        Returns:
+            True if discovered schema format
+        """
+        if "dimensions" in config:
+            return False
+
+        # Check if keys look like discovered dimensions
+        for key, value in config.items():
+            if not isinstance(value, dict):
+                return False
+            # Discovered schema has hierarchy (required for both full and slim formats)
+            # Full schema also has: description, count, entities
+            # Slim schema only has: hierarchy (and optionally alternative_names)
+            if "hierarchy" in value:
+                return True
+
+        return False
+
+    def _convert_discovered_schema(self, discovered_schema: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert discovered schema format to dimension config format.
+
+        Discovered schema format:
+            {
+                "Clinical Sign": {
+                    "hierarchy": ["clinical_finding", "diagnostic_indicator"],
+                    "description": "...",
+                    "examples": ["example1", ...],
+                    "count": 8,
+                    "entities": [...],
+                    "sources": {...}
+                }
+            }
+
+        Dimension config format:
+            {
+                "dimensions": {
+                    "clinical_sign": {
+                        "name": "clinical_sign",
+                        "enabled": true,
+                        "extraction_type": "structured",
+                        "schema_type": "ClinicalSignEntity",
+                        "hierarchy": [...],
+                        "description": "...",
+                        "examples": [...]
+                    }
+                }
+            }
+
+        Args:
+            discovered_schema: Schema in discovered format
+
+        Returns:
+            Schema in dimension config format
+        """
+        dimensions = {}
+
+        for dimension_name, dimension_data in discovered_schema.items():
+            # Convert PascalCase to snake_case
+            snake_name = self._to_snake_case(dimension_name)
+
+            # Generate schema_type (PascalCase + "Entity")
+            schema_type = self._to_pascal_case(dimension_name) + "Entity"
+
+            # Extract examples from entities (limit to 5) or use provided examples
+            # Note: Discovered schema examples are simple strings, not in the {"input": "...", "output": {...}} format
+            # For simplicity, use empty list for discovered dimensions (examples are mainly for documentation)
+            examples = []
+            if "entities" in dimension_data and dimension_data["entities"]:
+                # Extract examples from discovered entities (limit to 3)
+                entities = dimension_data["entities"][:3]
+                # Convert to simple format compatible with DimensionConfig
+                examples = [
+                    {"example": entity.get("text", str(entity))}
+                    for entity in entities
+                ]
+
+            # Build dimension config
+            # Respect explicit enabled: false in discovered schema
+            is_enabled = dimension_data.get("enabled", True)
+            dimension_config = {
+                # "name" removed - passed as explicit parameter to DimensionConfig() on line 348
+                "enabled": is_enabled,
+                "extraction_type": "structured",  # Use structured for hierarchical dimensions
+                "schema_type": schema_type,
+                "description": dimension_data.get("description", f"Extracted {dimension_name} entities"),
+                "hierarchy": [
+                    {"level": level, "description": f"{level.replace('_', ' ').title()} level"}
+                    for level in dimension_data.get("hierarchy", [])
+                ],
+                "examples": examples
+            }
+
+            dimensions[snake_name] = dimension_config
+
+        return {"dimensions": dimensions}
+
+    def _to_snake_case(self, text: str) -> str:
+        """Normalize dimension name to lowercase with spaces."""
+        import re
+        # Insert space before uppercase letters (for camelCase/PascalCase)
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', text)
+        s2 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', s1)
+        # Replace underscores/hyphens with spaces, collapse multiple spaces, lowercase
+        s3 = s2.replace('_', ' ').replace('-', ' ')
+        return re.sub(' +', ' ', s3).lower().strip()
+
+    def _to_pascal_case(self, text: str) -> str:
+        """Convert text to PascalCase."""
+        words = text.replace('_', ' ').replace('-', ' ').split()
+        return ''.join(word.capitalize() for word in words)
 
     def get_enabled_dimensions(
         self,
@@ -228,8 +400,15 @@ class DimensionConfigLoader:
                 except Exception as e:
                     logger.warning(f"Failed to parse dimension '{dim_name}': {e}")
 
-        # Ensure mandatory dimensions are present
-        enabled_dims = self._ensure_mandatory_dimensions(enabled_dims)
+        # Ensure mandatory dimensions are present (unless explicitly disabled)
+        enabled_dims = self._ensure_mandatory_dimensions(enabled_dims, config)
+
+        # Validate at least one dimension is enabled
+        if not enabled_dims:
+            raise ValueError(
+                "No dimensions enabled! At least one dimension must be enabled for extraction. "
+                "Check your dimension config: ensure 'enabled: true' for desired dimensions."
+            )
 
         logger.info(f"Loaded {len(enabled_dims)} enabled dimensions: {list(enabled_dims.keys())}")
         return enabled_dims
@@ -263,19 +442,27 @@ class DimensionConfigLoader:
 
     def _ensure_mandatory_dimensions(
         self,
-        dimensions: Dict[str, DimensionConfig]
+        dimensions: Dict[str, DimensionConfig],
+        original_config: Dict[str, Any]
     ) -> Dict[str, DimensionConfig]:
         """
-        Ensure temporal and spatial dimensions are present with predefined hierarchies.
+        Ensure temporal and spatial dimensions are present with predefined hierarchies,
+        unless explicitly disabled in config.
 
         Args:
             dimensions: Current dimension dict
+            original_config: Original config dict to check for explicit disabled flags
 
         Returns:
             Dimension dict with mandatory dimensions added if missing
         """
-        # Add temporal if missing
-        if "temporal" not in dimensions:
+        # Check if temporal is explicitly disabled
+        temporal_config = original_config.get("dimensions", {}).get("temporal", {})
+        is_temporal_disabled = temporal_config.get("enabled") is False
+
+        if is_temporal_disabled:
+            logger.info("⊘ Skipping temporal dimension (explicitly disabled in config)")
+        elif "temporal" not in dimensions:
             logger.info("Adding mandatory temporal dimension with predefined hierarchy")
             dimensions["temporal"] = DimensionConfig(
                 name="temporal",
@@ -287,8 +474,13 @@ class DimensionConfigLoader:
                 fields=[]  # Will be auto-generated from hierarchy
             )
 
-        # Add spatial if missing
-        if "spatial" not in dimensions:
+        # Check if spatial is explicitly disabled
+        spatial_config = original_config.get("dimensions", {}).get("spatial", {})
+        is_spatial_disabled = spatial_config.get("enabled") is False
+
+        if is_spatial_disabled:
+            logger.info("⊘ Skipping spatial dimension (explicitly disabled in config)")
+        elif "spatial" not in dimensions:
             logger.info("Adding mandatory spatial dimension with predefined hierarchy")
             dimensions["spatial"] = DimensionConfig(
                 name="spatial",

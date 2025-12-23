@@ -109,50 +109,70 @@ class OpenAILLM:
         max_tokens: int = None,
         temperature: float = None,
     ) -> List[LLMResponse]:
-        """Internal async method for batch generation."""
+        """Internal async method for batch generation with rate limiting."""
+        # Rate limit concurrent requests to avoid overwhelming the server
+        max_concurrent = self.config.get("max_concurrent", 64)
+        sem = asyncio.Semaphore(max_concurrent)
+
         async def generate_one(messages: List[Dict[str, str]]) -> LLMResponse:
-            """Generate completion for a single message list."""
-            try:
-                response = await self.async_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    temperature=temperature if temperature is not None else self.config.get("temperature", 0.0),
-                    max_tokens=max_tokens or self.config.get("max_tokens", 2048),
-                )
-
-                content = response.choices[0].message.content or ""
-
-                # Extract usage metadata
-                usage = None
-                if response.usage:
-                    usage = TokenUsage(
-                        prompt_tokens=response.usage.prompt_tokens,
-                        completion_tokens=response.usage.completion_tokens,
-                        total_tokens=response.usage.total_tokens,
+            """Generate completion for a single message list with rate limiting."""
+            async with sem:  # Limit concurrent requests
+                try:
+                    response = await self.async_client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages,
+                        temperature=temperature if temperature is not None else self.config.get("temperature", 0.0),
+                        max_tokens=max_tokens or self.config.get("max_tokens", 2048),
                     )
 
-                return LLMResponse(
-                    model=self.model_name,
-                    input=messages,
-                    status="processed",
-                    content=content,
-                    usage=usage,
-                    success=True,
-                )
+                    content = response.choices[0].message.content or ""
 
-            except Exception as e:
-                logger.error(f"OpenAI batch generation failed for one request: {str(e)}")
-                return LLMResponse(
-                    model=self.model_name,
-                    input=messages,
-                    status="error",
-                    error_msg=str(e),
-                    success=False,
-                )
+                    # Extract usage metadata
+                    usage = None
+                    if response.usage:
+                        usage = TokenUsage(
+                            prompt_tokens=response.usage.prompt_tokens,
+                            completion_tokens=response.usage.completion_tokens,
+                            total_tokens=response.usage.total_tokens,
+                        )
 
-        # Run all requests concurrently
+                    return LLMResponse(
+                        model=self.model_name,
+                        input=messages,
+                        status="processed",
+                        content=content,
+                        usage=usage,
+                        success=True,
+                    )
+
+                except Exception as e:
+                    logger.error(f"OpenAI batch generation failed for one request: {str(e)}")
+                    return LLMResponse(
+                        model=self.model_name,
+                        input=messages,
+                        status="error",
+                        error_msg=str(e),
+                        success=False,
+                    )
+
+        # Run all requests concurrently with error handling
         tasks = [generate_one(messages) for messages in messages_batch]
-        results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        logger.info(f"Successfully generated {len(results)} completions in parallel")
-        return results
+        # Convert exceptions to error responses
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"OpenAI batch request {i} failed with exception: {result}")
+                processed_results.append(LLMResponse(
+                    model=self.model_name,
+                    input=messages_batch[i],
+                    status="error",
+                    error_msg=str(result),
+                    success=False,
+                ))
+            else:
+                processed_results.append(result)
+
+        logger.info(f"Generated {len(processed_results)} completions (max_concurrent={max_concurrent})")
+        return processed_results

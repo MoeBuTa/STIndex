@@ -23,7 +23,10 @@ class DimensionalExtractionPrompt:
         self,
         dimensions: Dict[str, DimensionConfig],
         document_metadata: Optional[Dict] = None,
-        extraction_context: Optional[ExtractionContext] = None  # ExtractionContext (avoid circular import)
+        extraction_context: Optional[ExtractionContext] = None,  # ExtractionContext (avoid circular import)
+        mode: str = "default",  # "default" or "corpus"
+        enable_dimension_discovery: bool = False,
+        discovery_confidence_threshold: float = 0.9
     ):
         """
         Initialize prompt builder.
@@ -32,10 +35,16 @@ class DimensionalExtractionPrompt:
             dimensions: Dict of dimension name → DimensionConfig
             document_metadata: Optional document metadata (publication_date, source_location, etc.)
             extraction_context: Optional ExtractionContext for context-aware prompts
+            mode: Prompt mode - "default" for general text, "corpus" for corpus/textbook documents
+            enable_dimension_discovery: Whether to allow LLM to propose new dimensions
+            discovery_confidence_threshold: Minimum confidence for proposed dimensions (0.0-1.0)
         """
         self.dimensions = dimensions
         self.document_metadata = document_metadata or {}
         self.extraction_context: ExtractionContext = extraction_context
+        self.mode = mode
+        self.enable_dimension_discovery = enable_dimension_discovery
+        self.discovery_confidence_threshold = discovery_confidence_threshold
 
     def system_prompt(self) -> str:
         """Generate system prompt with multi-dimensional extraction instructions."""
@@ -44,9 +53,33 @@ class DimensionalExtractionPrompt:
         extraction_context = self._build_extraction_context()
         document_context = self._build_document_context()
         dimension_tasks = self._build_dimension_tasks()
+        discovery_instructions = self._build_discovery_instructions()
 
-        # Template with placeholders
-        template = """You are a precise JSON extraction bot. Your ONLY output must be valid JSON.
+        # Choose template based on mode
+        if self.mode == "corpus":
+            base_template = """You are a precise dimensional entity extraction system. Extract entities from corpus content.
+
+CRITICAL OUTPUT RULES:
+- Output ONLY valid JSON, nothing else
+- Start with {{ and end with }}
+- NO explanations, NO reasoning, NO extra text before or after JSON
+
+EXTRACTION GUIDELINES:
+- PRIORITY: Extract at least ONE entity from any applicable dimension
+- Extract ALL relevant entities, not just the first occurrence
+- Interpret dimension definitions broadly to maximize coverage
+- Fill in all hierarchy levels for each entity
+- Be precise with domain-specific terminology
+- Only return empty list [] if NO concepts match any dimension
+
+{extraction_context}{document_context}EXTRACTION TASKS:
+
+{dimension_tasks}
+{discovery_instructions}
+REMINDER: Return ONLY valid JSON. Every text should have at least one extracted entity."""
+        else:
+            # Default template for general text
+            base_template = """You are a precise JSON extraction bot. Your ONLY output must be valid JSON.
 
 CRITICAL RULES:
 - Output ONLY the JSON object, nothing else
@@ -57,12 +90,14 @@ CRITICAL RULES:
 {extraction_context}{document_context}EXTRACTION TASKS:
 
 {dimension_tasks}
+{discovery_instructions}
 REMINDER: Return ONLY valid JSON, nothing else."""
 
-        return template.format(
+        return base_template.format(
             extraction_context=extraction_context,
             document_context=document_context,
-            dimension_tasks=dimension_tasks
+            dimension_tasks=dimension_tasks,
+            discovery_instructions=discovery_instructions
         )
 
     def _build_extraction_context(self) -> str:
@@ -93,6 +128,40 @@ REMINDER: Return ONLY valid JSON, nothing else."""
             return context_template.format(context=context_content)
 
         return ""
+
+    def _build_discovery_instructions(self) -> str:
+        """Build dimension discovery instructions when enabled."""
+        if not self.enable_dimension_discovery:
+            return ""
+
+        return """
+=== CRITICAL: DIMENSION DISCOVERY ===
+The dimensions above are LIMITED. Medical text contains many entity types NOT covered.
+
+YOU MUST propose new dimensions for entities that do NOT fit temporal/spatial:
+- Drugs/medications (aspirin, metoprolol, etc.)
+- Symptoms (chest pain, fever, etc.)
+- Lab values (troponin, pH, etc.)
+- Procedures (PCI, intubation, etc.)
+- Vital signs (blood pressure, heart rate, etc.)
+- Diagnoses (STEMI, metabolic acidosis, etc.)
+
+Add "_proposed_dimensions" to your JSON:
+{{
+  "temporal": [],
+  "spatial": [],
+  "_proposed_dimensions": {{
+    "drug": {{
+      "hierarchy": ["drug_name", "drug_class"],
+      "confidence": 0.95,
+      "justification": "Text mentions medications",
+      "entities": [{{"text": "aspirin", "drug_name": "aspirin", "drug_class": "NSAID"}}]
+    }}
+  }}
+}}
+
+Confidence must be >= {threshold}. ALWAYS check for drugs, symptoms, labs, procedures!
+""".format(threshold=self.discovery_confidence_threshold)
 
     def _build_dimension_tasks(self) -> str:
         """

@@ -226,6 +226,10 @@ class MultiDimensionalResult(BaseModel):
     success: bool = True
     error: Optional[str] = None
     processing_time: float = 0.0
+    component_timings: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="Timing breakdown for extraction components (geocoding, temporal, validation, etc.)"
+    )
 
     # Document metadata (for context)
     document_metadata: Optional[Dict[str, Any]] = Field(

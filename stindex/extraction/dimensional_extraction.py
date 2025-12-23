@@ -42,9 +42,14 @@ class DimensionalExtractor:
         self,
         config_path: str = "extract",
         dimension_config_path: Optional[str] = None,
+        dimension_overrides: Optional[str] = None,
         model_name: Optional[str] = None,
         auto_start: bool = True,
         extraction_context: Optional[ExtractionContext] = None,
+        prompt_mode: str = "default",  # "default" or "corpus"
+        enable_dimension_discovery: bool = False,
+        discovery_confidence_threshold: float = 0.9,
+        schema_output_path: Optional[str] = None,
     ):
         """
         Initialize dimensional extractor.
@@ -53,13 +58,19 @@ class DimensionalExtractor:
             config_path: Path to main config file (llm provider, geocoding, etc.)
             dimension_config_path: Path to dimension config file (default: cfg/dimensions.yml)
                                   Can be domain-specific: "case_studies/public_health/extraction/config/health_dimensions"
+            dimension_overrides: Optional path to override config (e.g., to disable dimensions)
             model_name: Override model name from config
             auto_start: Auto-start servers if not running (vLLM only)
             extraction_context: Optional ExtractionContext for context-aware extraction
+            prompt_mode: Prompt template mode - "default" for general text, "corpus" for corpus/textbook documents
+            enable_dimension_discovery: Whether to allow LLM to propose new dimensions during extraction
+            discovery_confidence_threshold: Minimum confidence (0.0-1.0) for accepting proposed dimensions
+            schema_output_path: Path to schema file for auto-update when new dimensions discovered
         """
         # Load main configuration
         config = load_config_from_file(config_path)
         self.config = config
+        self.prompt_mode = prompt_mode
 
         # Create LLM manager
         llm_config = config.get("llm", {})
@@ -112,8 +123,18 @@ class DimensionalExtractor:
         # Load dimension configuration
         dimension_config_path = dimension_config_path or "dimensions"
         self.dimension_loader = DimensionConfigLoader()
-        self.dimension_config = self.dimension_loader.load_dimension_config(dimension_config_path)
+        self.dimension_config = self.dimension_loader.load_dimension_config(
+            dimension_config_path,
+            override_config_path=dimension_overrides
+        )
         self.dimensions = self.dimension_loader.get_enabled_dimensions(self.dimension_config)
+        self.dimension_overrides_path = dimension_overrides
+
+        # Dimension discovery settings
+        self.enable_dimension_discovery = enable_dimension_discovery
+        self.discovery_confidence_threshold = discovery_confidence_threshold
+        self.schema_output_path = schema_output_path
+        self.proposed_dimensions: Dict[str, Any] = {}  # Accumulated proposed dimensions
 
         # Context manager for context-aware extraction
         self.extraction_context = extraction_context
@@ -122,6 +143,10 @@ class DimensionalExtractor:
         logger.info(f"  Dimensions: {list(self.dimensions.keys())}")
         if self.extraction_context:
             logger.info("  Context-aware extraction: ENABLED")
+        if self.enable_dimension_discovery:
+            logger.info(f"  Dimension discovery: ENABLED (threshold: {self.discovery_confidence_threshold})")
+            if self.schema_output_path:
+                logger.info(f"  Schema auto-update: {self.schema_output_path}")
 
     def extract(
         self,
@@ -148,6 +173,7 @@ class DimensionalExtractor:
         start_time = time.time()
         raw_output = None
         document_metadata = document_metadata or {}
+        component_timings = {}  # Track component timing
 
         # Update extraction context if available
         if self.extraction_context:
@@ -164,7 +190,10 @@ class DimensionalExtractor:
             prompt_builder = DimensionalExtractionPrompt(
                 dimensions=self.dimensions,
                 document_metadata=document_metadata,
-                extraction_context=self.extraction_context  # Pass context
+                extraction_context=self.extraction_context,  # Pass context
+                mode=self.prompt_mode,  # Pass corpus/default mode
+                enable_dimension_discovery=self.enable_dimension_discovery,
+                discovery_confidence_threshold=self.discovery_confidence_threshold
             )
 
             # Build JSON schema for all dimensions
@@ -194,8 +223,19 @@ class DimensionalExtractor:
 
             logger.info(f"✓ LLM extracted dimensions: {list(extraction_dict.keys())}")
 
+            # Step 3.25: Validate extracted dimensions against schema
+            extraction_dict = self._validate_and_filter_extraction(extraction_dict)
+
+            # Step 3.5: Process proposed dimensions if discovery enabled
+            proposed_dimensions_result = {}
+            if self.enable_dimension_discovery:
+                proposed = extraction_dict.pop("_proposed_dimensions", {})
+                if proposed:
+                    proposed_dimensions_result = self._process_proposed_dimensions(proposed, raw_output)
+
             # Step 4: Process each dimension
             processed_entities = {}
+            postprocess_start = time.time()  # Start tracking postprocessing
 
             for dim_name, dim_config in self.dimensions.items():
                 mentions = extraction_dict.get(dim_name, [])
@@ -208,18 +248,97 @@ class DimensionalExtractor:
                 extraction_type = DimensionType(dim_config.extraction_type)
 
                 if extraction_type == DimensionType.NORMALIZED:
+                    # Track temporal resolution time if this is the temporal dimension
+                    if dim_name == "temporal":
+                        temporal_start = time.time()
                     entities = self._process_normalized(mentions, dim_name, dim_config, document_metadata)
+                    if dim_name == "temporal":
+                        component_timings["temporal_resolution_seconds"] = round(time.time() - temporal_start, 3)
                 elif extraction_type == DimensionType.GEOCODED:
+                    # Track geocoding time
+                    geocoding_start = time.time()
                     entities = self._process_geocoded(mentions, dim_name, text, document_metadata)
+                    component_timings["geocoding_seconds"] = round(time.time() - geocoding_start, 3)
                 elif extraction_type == DimensionType.CATEGORICAL:
+                    # Track categorical validation time
+                    validation_start = time.time()
                     entities = self._process_categorical(mentions, dim_name, dim_config)
+                    component_timings["categorical_validation_seconds"] = round(time.time() - validation_start, 3)
                 elif extraction_type == DimensionType.STRUCTURED:
                     entities = self._process_structured(mentions, dim_name)
                 else:
                     entities = self._process_free_text(mentions, dim_name)
 
                 if entities:
-                    processed_entities[dim_name] = [e.model_dump() for e in entities]
+                    # Handle both Pydantic models and dicts
+                    if entities and hasattr(entities[0], 'model_dump'):
+                        # Pydantic models (from _process_geocoded, _process_normalized, _process_categorical)
+                        processed_entities[dim_name] = [e.model_dump() for e in entities]
+                    else:
+                        # Already dicts (from _process_structured, _process_free_text)
+                        processed_entities[dim_name] = entities
+
+            # Track total postprocessing time
+            component_timings["postprocessing_seconds"] = round(time.time() - postprocess_start, 3)
+
+            # Step 4.5: Retry if no entities extracted (aggressive extraction)
+            MAX_RETRIES = 2
+            retry_count = 0
+
+            while not processed_entities and retry_count < MAX_RETRIES:
+                retry_count += 1
+                logger.warning(f"No entities extracted, retrying ({retry_count}/{MAX_RETRIES})...")
+
+                # Add error message to prompt
+                retry_msg = "\n\nPREVIOUS ATTEMPT FAILED: No entities were extracted. You MUST extract at least one entity. Look more carefully at the text and identify concepts that match any dimension."
+
+                # Rebuild messages with error appended
+                messages_with_retry = prompt_builder.build_messages_with_schema(
+                    text.strip() + retry_msg,
+                    json_schema=json_schema,
+                    use_few_shot=use_few_shot
+                )
+
+                # Retry LLM call
+                retry_response = self.llm_manager.generate(messages_with_retry)
+                if retry_response.success:
+                    raw_output = retry_response.content
+                    logger.debug(f"Retry {retry_count} raw output: {raw_output[:200]}...")
+
+                    try:
+                        extraction_dict = extract_json_from_text(raw_output, None, return_dict=True)
+                        logger.info(f"Retry {retry_count} extracted: {list(extraction_dict.keys())}")
+
+                        # Re-process entities
+                        for dim_name, dim_config in self.dimensions.items():
+                            mentions = extraction_dict.get(dim_name, [])
+                            if not mentions:
+                                continue
+
+                            extraction_type = DimensionType(dim_config.extraction_type)
+
+                            if extraction_type == DimensionType.NORMALIZED:
+                                entities = self._process_normalized(mentions, dim_name, dim_config, document_metadata)
+                            elif extraction_type == DimensionType.GEOCODED:
+                                entities = self._process_geocoded(mentions, dim_name, text, document_metadata)
+                            elif extraction_type == DimensionType.CATEGORICAL:
+                                entities = self._process_categorical(mentions, dim_name, dim_config)
+                            elif extraction_type == DimensionType.STRUCTURED:
+                                entities = self._process_structured(mentions, dim_name)
+                            else:
+                                entities = self._process_free_text(mentions, dim_name)
+
+                            if entities:
+                                if hasattr(entities[0], 'model_dump'):
+                                    processed_entities[dim_name] = [e.model_dump() for e in entities]
+                                else:
+                                    processed_entities[dim_name] = entities
+                    except Exception as e:
+                        logger.warning(f"Retry {retry_count} failed to parse JSON: {e}")
+                        continue
+
+            if not processed_entities:
+                logger.warning(f"No entities extracted after {MAX_RETRIES} retries")
 
             # Step 5: Update extraction context memory if requested
             # Note: Set update_context=False if reflection will be applied afterward
@@ -238,14 +357,25 @@ class DimensionalExtractor:
                 "raw_llm_output": raw_output,
                 "dimension_config_path": self.dimension_config.get("config_path", "dimensions"),
                 "enabled_dimensions": list(self.dimensions.keys()),
-                "context_aware": self.extraction_context is not None
+                "context_aware": self.extraction_context is not None,
+                "proposed_dimensions": proposed_dimensions_result if proposed_dimensions_result else None
             }
 
             # Build dimension metadata
-            dimension_metadata = {
-                dim_name: dim_config.to_metadata().model_dump()
-                for dim_name, dim_config in self.dimensions.items()
-            }
+            dimension_metadata = {}
+            for dim_name, dim_config in self.dimensions.items():
+                try:
+                    # Handle DimensionConfig objects
+                    if hasattr(dim_config, 'to_metadata'):
+                        dimension_metadata[dim_name] = dim_config.to_metadata().model_dump()
+                    elif isinstance(dim_config, dict):
+                        # Handle dict case (shouldn't happen but be defensive)
+                        dimension_metadata[dim_name] = dim_config
+                    else:
+                        logger.warning(f"Unexpected dimension config type for {dim_name}: {type(dim_config)}")
+                except Exception as e:
+                    logger.warning(f"Failed to build metadata for dimension {dim_name}: {e}")
+                    # Continue without this dimension's metadata
 
             return MultiDimensionalResult(
                 input_text=text,
@@ -254,6 +384,7 @@ class DimensionalExtractor:
                 spatial_entities=processed_entities.get("spatial", []),    # Backward compat
                 success=True,
                 processing_time=processing_time,
+                component_timings=component_timings,  # Add component timing breakdown
                 document_metadata=document_metadata,
                 extraction_config=extraction_config,
                 dimension_configs=dimension_metadata
@@ -292,9 +423,21 @@ class DimensionalExtractor:
         entities = []
 
         for mention in mentions:
+            # Skip if mention is not a dict (malformed LLM output)
+            if not isinstance(mention, dict):
+                logger.warning(f"Skipping non-dict mention in {dim_name}: {type(mention)}")
+                continue
+
             text = mention.get("text", "")
             normalized = mention.get("normalized", "")
-            normalization_type = mention.get(list(mention.keys())[2] if len(mention) > 2 else "type", "")
+            # Get normalization type - try 'type' first, then third key if available
+            normalization_type = mention.get("type", "")
+            if not normalization_type and len(mention) > 2:
+                keys = list(mention.keys())
+                for key in keys:
+                    if key not in ("text", "normalized", "confidence"):
+                        normalization_type = mention.get(key, "")
+                        break
 
             # Apply relative temporal resolution if available and dimension is temporal
             if self.temporal_resolver and dim_name == "temporal" and normalized:
@@ -341,6 +484,11 @@ class DimensionalExtractor:
         entities = []
 
         for mention in mentions:
+            # Skip if mention is not a dict (malformed LLM output)
+            if not isinstance(mention, dict):
+                logger.warning(f"Skipping non-dict mention in {dim_name}: {type(mention)}")
+                continue
+
             location_text = mention.get("text", "")
             parent_region = mention.get("parent_region")
 
@@ -407,6 +555,11 @@ class DimensionalExtractor:
         entities = []
 
         for mention in mentions:
+            # Skip if mention is not a dict (malformed LLM output)
+            if not isinstance(mention, dict):
+                logger.warning(f"Skipping non-dict mention in {dim_name}: {type(mention)}")
+                continue
+
             entity = CategoricalDimensionEntity(
                 text=mention.get("text", ""),
                 dimension_name=dim_name,
@@ -441,16 +594,30 @@ class DimensionalExtractor:
         mentions: List[Dict],
         dim_name: str
     ) -> List:
-        """Process structured dimensions."""
-        # For now, return as-is (will be enhanced later)
+        """
+        Process structured dimensions with hierarchy fields.
+
+        Flattens all hierarchy fields to top level for labeler compatibility.
+        The labeler expects entity.get("level_name") not entity["fields"]["level_name"].
+        """
         entities = []
         for mention in mentions:
-            entities.append({
+            # Skip if mention is not a dict (malformed LLM output)
+            if not isinstance(mention, dict):
+                logger.warning(f"Skipping non-dict mention in {dim_name}: {type(mention)}")
+                continue
+
+            # Start with base fields
+            entity = {
                 "text": mention.get("text", ""),
                 "dimension_name": dim_name,
-                "fields": mention.get("fields", mention),
                 "confidence": mention.get("confidence", 1.0)
-            })
+            }
+            # Flatten all hierarchy fields to top level for labeler compatibility
+            for key, value in mention.items():
+                if key not in ["text", "confidence"]:
+                    entity[key] = value
+            entities.append(entity)
         return entities
 
     def _process_free_text(
@@ -467,6 +634,86 @@ class DimensionalExtractor:
                 "confidence": mention.get("confidence", 1.0)
             })
         return entities
+
+    def _validate_and_filter_extraction(
+        self,
+        extraction_dict: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Validate extracted dimensions and hierarchy fields against schema.
+
+        - Filters out dimensions not in schema
+        - Filters out invalid hierarchy fields per entity
+        - Logs warnings for mismatches
+
+        Args:
+            extraction_dict: Raw LLM extraction output
+
+        Returns:
+            Filtered extraction dict with only valid dimensions and fields
+        """
+        valid_dim_names = set(self.dimensions.keys())
+        validated = {}
+
+        for dim_name, entities in extraction_dict.items():
+            # Skip internal keys
+            if dim_name.startswith("_"):
+                validated[dim_name] = entities
+                continue
+
+            # Check if dimension exists in schema
+            if dim_name not in valid_dim_names:
+                logger.warning(f"⚠ Invalid dimension '{dim_name}' not in schema - skipping")
+                continue
+
+            if not entities or not isinstance(entities, list):
+                validated[dim_name] = entities
+                continue
+
+            # Get valid hierarchy fields for this dimension
+            dim_config = self.dimensions[dim_name]
+            valid_fields = {"text", "confidence"}  # Always valid
+
+            # Add hierarchy level names as valid fields
+            if dim_config.hierarchy:
+                for level in dim_config.hierarchy:
+                    if isinstance(level, dict):
+                        valid_fields.add(level.get("level", ""))
+                    else:
+                        valid_fields.add(str(level))
+
+            # Also add fields from config
+            if dim_config.fields:
+                for field in dim_config.fields:
+                    if isinstance(field, dict):
+                        valid_fields.add(field.get("name", ""))
+                    else:
+                        valid_fields.add(str(field))
+
+            # Validate each entity
+            validated_entities = []
+            for entity in entities:
+                if not isinstance(entity, dict):
+                    continue
+
+                validated_entity = {}
+                for key, value in entity.items():
+                    if key in valid_fields:
+                        validated_entity[key] = value
+                    else:
+                        logger.debug(f"⚠ Invalid field '{key}' for dimension '{dim_name}' - removing")
+
+                if validated_entity:
+                    validated_entities.append(validated_entity)
+
+            validated[dim_name] = validated_entities
+
+        # Log summary
+        removed_dims = set(extraction_dict.keys()) - set(validated.keys()) - {"_proposed_dimensions"}
+        if removed_dims:
+            logger.info(f"Schema validation: removed {len(removed_dims)} invalid dimensions: {removed_dims}")
+
+        return validated
 
     def update_context_memory(self, entities: Dict[str, List[Dict]]):
         """
@@ -493,3 +740,149 @@ class DimensionalExtractor:
             logger.debug(f"✓ Updated extraction context with {sum(len(v) for v in entities.values())} entities")
         else:
             logger.warning("Cannot update context: extraction_context is not initialized")
+
+    def _process_proposed_dimensions(
+        self,
+        proposed: Dict[str, Any],
+        raw_output: str
+    ) -> Dict[str, Any]:
+        """
+        Process and validate proposed dimensions from LLM.
+
+        Args:
+            proposed: Dict of proposed dimensions from LLM output
+            raw_output: Raw LLM output (for logging)
+
+        Returns:
+            Dict with accepted/rejected dimension info
+        """
+        from stindex.discovery.models import DiscoveredDimensionSchema
+
+        result = {}
+
+        for dim_name, dim_data in proposed.items():
+            confidence = dim_data.get("confidence", 0.0)
+            justification = dim_data.get("justification", "")
+            hierarchy = dim_data.get("hierarchy", [])
+            entities = dim_data.get("entities", [])
+
+            # Log proposal (always, even if rejected)
+            logger.info(f"Proposed dimension '{dim_name}': confidence={confidence:.2f}")
+            logger.debug(f"  Hierarchy: {hierarchy}")
+            logger.debug(f"  Justification: {justification}")
+            logger.debug(f"  Entities: {len(entities)}")
+
+            # Filter by confidence threshold
+            if confidence < self.discovery_confidence_threshold:
+                logger.info(f"  ✗ Rejected (confidence {confidence:.2f} < {self.discovery_confidence_threshold})")
+                result[dim_name] = {
+                    "accepted": False,
+                    "confidence": confidence,
+                    "reason": f"confidence below threshold ({self.discovery_confidence_threshold})"
+                }
+                continue
+
+            # Check if dimension already exists
+            if dim_name in self.dimensions:
+                logger.info(f"  ✗ Rejected (dimension '{dim_name}' already exists)")
+                result[dim_name] = {
+                    "accepted": False,
+                    "confidence": confidence,
+                    "reason": "dimension already exists"
+                }
+                continue
+
+            # Accept dimension
+            logger.info(f"  ✓ Accepted (confidence {confidence:.2f})")
+
+            # Create schema from proposed dimension
+            try:
+                schema = DiscoveredDimensionSchema(
+                    hierarchy=hierarchy if hierarchy else [dim_name.lower().replace(' ', '_')],
+                    description=f"Auto-discovered: {dim_name}",
+                    examples=[e.get("text", "") for e in entities[:5]]
+                )
+
+                # Store in accumulated proposed dimensions
+                self.proposed_dimensions[dim_name] = schema
+
+                result[dim_name] = {
+                    "accepted": True,
+                    "confidence": confidence,
+                    "hierarchy": schema.hierarchy,
+                    "entities_count": len(entities)
+                }
+
+                # Update schema file if path provided
+                if self.schema_output_path:
+                    self._update_schema_file(dim_name, schema)
+
+            except Exception as e:
+                logger.error(f"  ✗ Failed to create schema for '{dim_name}': {e}")
+                result[dim_name] = {
+                    "accepted": False,
+                    "confidence": confidence,
+                    "reason": f"schema creation failed: {str(e)}"
+                }
+
+        return result
+
+    def _update_schema_file(self, dim_name: str, schema: 'DiscoveredDimensionSchema'):
+        """
+        Append new dimension to extraction schema YAML file.
+
+        Args:
+            dim_name: Name of the new dimension
+            schema: DiscoveredDimensionSchema for the dimension
+        """
+        import yaml
+        from pathlib import Path
+
+        schema_path = Path(self.schema_output_path)
+        if not schema_path.suffix:
+            schema_path = schema_path.with_suffix('.yml')
+
+        # Load existing schema
+        if schema_path.exists():
+            with open(schema_path) as f:
+                existing = yaml.safe_load(f) or {}
+        else:
+            existing = {}
+
+        # Add new dimension (use snake_case key)
+        dim_key = dim_name.lower().replace(' ', '_')
+        existing[dim_key] = {
+            'hierarchy': schema.hierarchy
+        }
+
+        # Write back
+        with open(schema_path, 'w') as f:
+            yaml.dump(existing, f, default_flow_style=False, sort_keys=False)
+
+        logger.info(f"  → Updated schema file: {schema_path}")
+
+        # Also update in-memory dimensions for next extraction
+        self._reload_dimensions()
+
+    def _reload_dimensions(self):
+        """Reload dimensions from updated schema file."""
+        if self.schema_output_path:
+            try:
+                self.dimension_config = self.dimension_loader.load_dimension_config(
+                    self.schema_output_path,
+                    override_config_path=self.dimension_overrides_path
+                )
+                self.dimensions = self.dimension_loader.get_enabled_dimensions(self.dimension_config)
+                logger.info(f"  → Reloaded {len(self.dimensions)} dimensions")
+            except Exception as e:
+                logger.warning(f"  → Failed to reload dimensions: {e}")
+
+    def get_proposed_dimensions(self) -> Dict[str, Any]:
+        """
+        Get all proposed dimensions accumulated during extraction.
+
+        Returns:
+            Dict of dimension_name → DiscoveredDimensionSchema
+        """
+        return self.proposed_dimensions.copy()
+

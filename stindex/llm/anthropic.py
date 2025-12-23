@@ -130,70 +130,90 @@ class AnthropicLLM:
         max_tokens: int = None,
         temperature: float = None,
     ) -> List[LLMResponse]:
-        """Internal async method for batch generation."""
+        """Internal async method for batch generation with rate limiting."""
+        # Rate limit concurrent requests to avoid overwhelming the server
+        max_concurrent = self.config.get("max_concurrent", 64)
+        sem = asyncio.Semaphore(max_concurrent)
+
         async def generate_one(messages: List[Dict[str, str]]) -> LLMResponse:
-            """Generate completion for a single message list."""
-            try:
-                # Separate system message from messages
-                system_message = None
-                filtered_messages = []
+            """Generate completion for a single message list with rate limiting."""
+            async with sem:  # Limit concurrent requests
+                try:
+                    # Separate system message from messages
+                    system_message = None
+                    filtered_messages = []
 
-                for msg in messages:
-                    if msg["role"] == "system":
-                        system_message = msg["content"]
-                    else:
-                        filtered_messages.append(msg)
+                    for msg in messages:
+                        if msg["role"] == "system":
+                            system_message = msg["content"]
+                        else:
+                            filtered_messages.append(msg)
 
-                # Build request parameters
-                kwargs = {
-                    "model": self.model_name,
-                    "messages": filtered_messages,
-                    "temperature": temperature if temperature is not None else self.config.get("temperature", 0.0),
-                    "max_tokens": max_tokens or self.config.get("max_tokens", 2048),
-                }
+                    # Build request parameters
+                    kwargs = {
+                        "model": self.model_name,
+                        "messages": filtered_messages,
+                        "temperature": temperature if temperature is not None else self.config.get("temperature", 0.0),
+                        "max_tokens": max_tokens or self.config.get("max_tokens", 2048),
+                    }
 
-                if system_message:
-                    kwargs["system"] = system_message
+                    if system_message:
+                        kwargs["system"] = system_message
 
-                response = await self.async_client.messages.create(**kwargs)
+                    response = await self.async_client.messages.create(**kwargs)
 
-                # Extract text content from response
-                content = ""
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        content += block.text
+                    # Extract text content from response
+                    content = ""
+                    for block in response.content:
+                        if hasattr(block, "text"):
+                            content += block.text
 
-                # Extract usage metadata
-                usage = None
-                if response.usage:
-                    usage = TokenUsage(
-                        prompt_tokens=response.usage.input_tokens,
-                        completion_tokens=response.usage.output_tokens,
-                        total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                    # Extract usage metadata
+                    usage = None
+                    if response.usage:
+                        usage = TokenUsage(
+                            prompt_tokens=response.usage.input_tokens,
+                            completion_tokens=response.usage.output_tokens,
+                            total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                        )
+
+                    return LLMResponse(
+                        model=self.model_name,
+                        input=messages,
+                        status="processed",
+                        content=content,
+                        usage=usage,
+                        success=True,
                     )
 
-                return LLMResponse(
-                    model=self.model_name,
-                    input=messages,
-                    status="processed",
-                    content=content,
-                    usage=usage,
-                    success=True,
-                )
+                except Exception as e:
+                    logger.error(f"Anthropic batch generation failed for one request: {str(e)}")
+                    return LLMResponse(
+                        model=self.model_name,
+                        input=messages,
+                        status="error",
+                        error_msg=str(e),
+                        success=False,
+                    )
 
-            except Exception as e:
-                logger.error(f"Anthropic batch generation failed for one request: {str(e)}")
-                return LLMResponse(
-                    model=self.model_name,
-                    input=messages,
-                    status="error",
-                    error_msg=str(e),
-                    success=False,
-                )
-
-        # Run all requests concurrently
+        # Run all requests concurrently with error handling
         tasks = [generate_one(messages) for messages in messages_batch]
-        results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        logger.info(f"Successfully generated {len(results)} completions in parallel")
-        return results
+        # Convert exceptions to error responses
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Anthropic batch request {i} failed with exception: {result}")
+                processed_results.append(LLMResponse(
+                    model=self.model_name,
+                    input=messages_batch[i],
+                    status="error",
+                    error_msg=str(result),
+                    success=False,
+                ))
+            else:
+                processed_results.append(result)
+
+        logger.info(f"Generated {len(processed_results)} completions (max_concurrent={max_concurrent})")
+        return processed_results

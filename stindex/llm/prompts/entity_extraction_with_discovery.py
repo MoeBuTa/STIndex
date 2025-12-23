@@ -75,23 +75,26 @@ Before providing the JSON output, think step-by-step through:
 
 CRITICAL OUTPUT RULES:
 - Output valid JSON with reasoning (optional) before it
-- Use dimension names EXACTLY as shown below (with spaces, not underscores)
 - Entity names should be the primary keys
+- **DIMENSION FIELD: Use broad, parent-level dimension names**
+  - Use the top-level category names (e.g., "Product", "Location", "Event")
+  - DO NOT use fine-grained subcategories as dimension names
+  - Fine-grained classifications go in hierarchy fields, NOT the dimension field
 
 OUTPUT FORMAT:
 Return JSON with entity names as keys and their dimensional properties as values:
 
 {{
   "entities": {{
-    "entity_name_1": {{
-      "dimension": "Dimension Name",
-      "field1": "value1",
-      "field2": "value2"
+    "apple": {{
+      "dimension": "Product",         // Use parent dimension name
+      "specific_item": "apple",       // Hierarchy level 1: specific value
+      "item_category": "fruit"        // Hierarchy level 2: category
     }},
-    "entity_name_2": {{
-      "dimension": "Another Dimension",
-      "field_a": "value_a",
-      "field_b": "value_b"
+    "tokyo": {{
+      "dimension": "Location",        // Use parent dimension name
+      "specific_place": "tokyo",
+      "place_type": "city"
     }}
   }}
 }}
@@ -129,119 +132,53 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
         )
 
     def _build_discovery_instructions(self) -> str:
-        """Build instructions for schema discovery during extraction."""
+        """Build instructions for dimension naming during extraction.
 
+        Note: Dimensions are now derived from entities by post-processing code,
+        not proposed by the LLM. This method provides guidance on consistent
+        dimension naming.
+        """
         # Batch-aware instructions
-        if self.batch_idx is not None and self.decay_threshold is not None:
-            batch_num = self.batch_idx + 1
-
+        if self.batch_idx is not None:
             if self.batch_idx == 0:
                 # First batch - discovery mode
-                template = """
+                return """
 
-5. NEW DIMENSION DISCOVERY (Primary Task for First Batch):
-   This is the FIRST BATCH - your primary task is to discover the dimensional schema.
+5. DIMENSION NAMING GUIDANCE (First Batch - Discovery Mode):
+   This is the FIRST BATCH. Focus on discovering natural categories:
 
-   **DISCOVERY MODE:**
-   - Analyze the questions to identify natural dimensions
-   - Extract entities AND propose dimensions simultaneously
-   - Think about what types of information are being asked about
-   - Consider hierarchical relationships (e.g., specific → category → broader_category)
+   **Guidelines:**
+   - Use broad, parent-level dimension names (e.g., "Product" not "Fruit")
+   - Be consistent with dimension names across entities
+   - Include hierarchical fields from specific to general
+   - Think about what top-level categories naturally emerge from the text
 
-   **Requirements for new dimensions:**
-   - Must include a "confidence" field (float 0.0-1.0) indicating your confidence in this dimension
-   - Confidence threshold for acceptance: {threshold:.1f}
-   - Provide a clear hierarchical structure (2-4 levels recommended)
-   - Include example entities from the questions
-   - Explain why this dimension is useful
-
-   New dimension format:
-   "new_dimensions": {{
-       "proposed_dimension_name": {{
-           "confidence": 0.95,  // REQUIRED: Your confidence in proposing this dimension
-           "hierarchy": ["level1", "level2", "level3"],
-           "description": "What this dimension captures",
-           "example_entities": ["entity1", "entity2", "entity3"],
-           "rationale": "Why this dimension is needed and how it helps organize the data"
-       }}
-   }}
-
-   **Guidance:**
-   - In this first batch, err on the side of discovering more dimensions
-   - Any dimension with confidence ≥ {threshold:.1f} will be accepted
-   - Focus on dimensions that appear consistently across questions"""
-
-                return template.format(threshold=self.decay_threshold)
+   **Example:**
+   For "apple" and "banana", use:
+   - dimension: "Product" (broad category)
+   - specific_item: "apple" or "banana" (specific value)
+   - item_category: "fruit" (subcategory - goes in hierarchy, NOT dimension)"""
 
             else:
-                # Subsequent batches - refinement mode with decay
-                if batch_num <= 2:
-                    stage = "Early Refinement"
-                    guidance = "You can still propose new dimensions relatively easily"
-                elif batch_num <= 5:
-                    stage = "Medium Refinement"
-                    guidance = "New dimensions should be well-justified and clearly distinct"
-                else:
-                    stage = "Late Refinement"
-                    guidance = "New dimensions should be rare and exceptionally important"
+                # Subsequent batches - use existing dimension names
+                return """
 
-                template = """
+5. DIMENSION NAMING GUIDANCE (Batch {batch_num}):
+   **Use existing dimension names when possible.**
 
-5. NEW DIMENSION DISCOVERY (Refinement Mode - Batch {batch_num}, {stage}):
-   **REFINEMENT MODE:**
-   - Primary task: Extract entities using existing dimensions
-   - Secondary task: Propose new dimensions only if highly confident
-
-   **Requirements for new dimensions:**
-   - Must include "confidence" field (float 0.0-1.0)
-   - Confidence threshold for acceptance: {threshold:.1f} ({guidance})
-   - Must be clearly distinct from existing dimensions
-   - Must appear consistently across multiple questions in this batch
-   - Should fill a gap that existing dimensions don't cover
-
-   New dimension format:
-   "new_dimensions": {{
-       "proposed_dimension_name": {{
-           "confidence": 0.95,  // REQUIRED: Must be ≥ {threshold:.1f} to be accepted
-           "hierarchy": ["level1", "level2"],
-           "description": "What this dimension captures",
-           "example_entities": ["entity1", "entity2"],
-           "rationale": "Why existing dimensions are insufficient"
-       }}
-   }}
-
-   **Note:** Most batches should NOT propose new dimensions. Only propose if you find a clear gap in the schema."""
-
-                return template.format(
-                    batch_num=batch_num,
-                    stage=stage,
-                    threshold=self.decay_threshold,
-                    guidance=guidance
+   - Check the context for dimension names used in previous batches
+   - Maintain consistency with established naming conventions
+   - Only introduce new dimension names if truly distinct from existing ones""".format(
+                    batch_num=self.batch_idx + 1
                 )
 
         # Default instructions (no batch context)
-        template = """
+        return """
 
-5. NEW DIMENSION DISCOVERY (Optional):
-   If you encounter important entities that don't fit existing dimensions:
-   - Add a "new_dimensions" field to your JSON output
-   - Propose new dimension(s) with hierarchical structure
-   - Include a "confidence" field (0.0-1.0) for each proposed dimension
-   - This should be RARE - try to fit entities into existing dimensions first
-   - Only propose dimensions for information types that appear frequently/are clearly important
-
-   New dimension format:
-   "new_dimensions": {{
-       "proposed_dimension_name": {{
-           "confidence": 0.90,  // REQUIRED: Your confidence in proposing this dimension
-           "hierarchy": ["level1", "level2", "level3"],
-           "description": "What this dimension captures",
-           "example_entities": ["entity1", "entity2", "entity3"],
-           "rationale": "Why this dimension is needed"
-       }}
-   }}"""
-
-        return template
+5. DIMENSION NAMING GUIDANCE:
+   - Use broad, parent-level dimension names
+   - Include hierarchical fields for categorization (specific to general)
+   - Be consistent across entities"""
 
     def _build_extraction_context(self) -> str:
         """Build extraction context with cluster information."""
@@ -269,7 +206,7 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
         """
         Build expected JSON schema for output validation.
 
-        Returns:ex
+        Returns:
             JSON schema dict
         """
         schema = {
@@ -296,18 +233,17 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
 
                 schema["properties"][dim_name]["items"]["properties"][field["name"]] = field_schema
 
-        # Add new_dimensions property if discovery is enabled
-        if self.allow_new_dimensions:
-            schema["properties"]["new_dimensions"] = {
-                "type": "object",
-                "description": "Optional: Proposed new dimensions for entities that don't fit existing schemas"
-            }
+        # Note: new_dimensions is no longer part of schema
+        # Dimensions are derived from entities by post-processing code
 
         return schema
 
     def parse_response_with_discovery(self, llm_response: str) -> Dict:
         """
-        Parse LLM response and extract both entities and newly discovered dimensions.
+        Parse LLM response and extract entities.
+
+        Note: Dimensions are now derived from entities by post-processing code,
+        so new_dimensions is always empty in the return value.
 
         Args:
             llm_response: Raw LLM response (may include reasoning + JSON)
@@ -315,7 +251,7 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
         Returns:
             Dict with:
                 - 'entities': Entity-first dict {entity_name: {dimension: "X", field: "val"}}
-                - 'new_dimensions': Newly discovered dimensions (if any)
+                - 'new_dimensions': Always empty dict (dimensions derived by post-processing)
                 - 'reasoning': Extracted CoT reasoning (if any)
                 - 'raw_response': Original LLM response
         """
@@ -327,9 +263,8 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
         if not isinstance(result['data'], dict):
             raise ValueError(f"Expected dict, got {type(result['data'])}")
 
-        # Extract entity-first data and new dimensions
+        # Extract entity-first data
         entities = result['data'].get('entities', {})
-        new_dimensions = result['data'].get('new_dimensions', {})
 
         # Validate entity-first structure
         if not isinstance(entities, dict):
@@ -349,7 +284,7 @@ REMINDER: Return entity-first JSON format. Each entity name is a key, with "dime
 
         return {
             'entities': entities,
-            'new_dimensions': new_dimensions,
+            'new_dimensions': {},  # Always empty - dimensions derived from entities
             'reasoning': result['reasoning'],
             'raw_response': result['raw_response']
         }
