@@ -165,13 +165,23 @@ class ClusterSchemaDiscoverer:
         extraction_time = time.time() - start_time
         logger.info(f"Cluster {cluster_id}: Complete in {extraction_time:.2f}s")
 
+        # Build timing info
+        timing_info = {
+            "cluster_id": cluster_id,
+            "duration_seconds": round(extraction_time, 3),
+            "num_questions": len(cluster_questions),
+            # Note: LLM call tracking would require passing timing context through extraction
+            # For now, we record total time - can be enhanced later
+        }
+
         return ClusterSchemaDiscoveryResult(
             cluster_id=cluster_id,
             n_questions=len(cluster_questions),
             discovered_dimensions=discovered_dims,
             entities=entities,
             reasoning=reasoning,
-            extraction_time=extraction_time
+            extraction_time=extraction_time,
+            timing=timing_info
         )
 
     def _extract_entities_unified(

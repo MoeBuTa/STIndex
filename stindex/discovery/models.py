@@ -9,7 +9,7 @@ Provides type-safe data structures for:
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from pydantic import BaseModel, Field, field_validator
 import difflib
 
@@ -124,6 +124,10 @@ class ClusterSchemaDiscoveryResult(BaseModel):
     # Metadata
     reasoning: Optional[str] = Field(default=None, description="LLM reasoning for schema discovery")
     extraction_time: float = Field(default=0.0, ge=0.0, description="Time taken for discovery + extraction (seconds)")
+    timing: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Detailed timing breakdown (cluster_id, duration, llm_time, num_llm_calls)"
+    )
 
     def get_entity_count(self, dimension: str) -> int:
         """Get number of entities for a dimension."""
@@ -237,7 +241,7 @@ class FinalSchema(BaseModel):
         }
 
     def to_yaml_dict(self) -> Dict:
-        """Convert to YAML-friendly dict for saving."""
+        """Convert to YAML-friendly dict for saving (full schema with entities)."""
         output = {}
         for dim_name, dim_schema in self.dimensions.items():
             output[dim_name] = {
@@ -257,6 +261,30 @@ class FinalSchema(BaseModel):
                     for cid in sorted(dim_schema.sources.cluster_ids)
                 }
             }
+        return output
+
+    def to_extraction_schema(self) -> Dict:
+        """
+        Convert to slim schema for corpus extraction.
+
+        Only includes fields needed for extraction:
+        - dimension names (dict keys)
+        - hierarchy (defines extraction structure)
+        - alternative_names (for dimension matching/normalization)
+
+        Excludes: description, entities, examples, count, sources
+
+        Returns:
+            Dict suitable for saving as YAML and loading by DimensionConfigLoader
+        """
+        output = {}
+        for dim_name, dim_schema in self.dimensions.items():
+            output[dim_name] = {
+                'hierarchy': dim_schema.hierarchy,
+            }
+            # Only include alternative_names if there are any
+            if dim_schema.alternative_names:
+                output[dim_name]['alternative_names'] = sorted(dim_schema.alternative_names)
         return output
 
 
@@ -331,3 +359,129 @@ def merge_dimension_schemas(
         description=merged_description,
         examples=merged_examples
     )
+
+
+def derive_dimensions_from_entities(
+    entities: Dict[str, Dict],
+    existing_dimensions: Dict[str, 'DiscoveredDimensionSchema'] = None
+) -> Tuple[Dict[str, 'DiscoveredDimensionSchema'], Dict[str, List[str]]]:
+    """
+    Derive dimension schemas from extracted entities.
+
+    Aggregates unique dimension values and infers hierarchy structure from
+    common hierarchy_values keys across entities of same dimension.
+
+    Args:
+        entities: Entity-first dict from LLM: {entity_name: {dimension: "X", field1: "val1", ...}}
+        existing_dimensions: Optional existing dimension schemas to extend
+
+    Returns:
+        Tuple of:
+            - Dict[str, DiscoveredDimensionSchema]: Derived/merged dimension schemas
+            - Dict[str, List[str]]: Warnings/info messages per dimension
+
+    Example:
+        Input entities:
+        {
+            "apple": {"dimension": "Product", "specific_item": "apple", "item_category": "fruit"},
+            "banana": {"dimension": "Product", "specific_item": "banana", "item_category": "fruit"},
+            "tokyo": {"dimension": "Location", "specific_place": "tokyo", "place_type": "city"}
+        }
+
+        Output dimensions:
+        {
+            "Product": DiscoveredDimensionSchema(
+                hierarchy=["specific_item", "item_category"],
+                description="Entities of type Product (e.g., apple, banana)",
+                examples=["apple", "banana"]
+            ),
+            "Location": DiscoveredDimensionSchema(
+                hierarchy=["specific_place", "place_type"],
+                description="Entities of type Location (e.g., tokyo)",
+                examples=["tokyo"]
+            )
+        }
+    """
+    from collections import defaultdict, Counter
+
+    existing_dimensions = existing_dimensions or {}
+    derived_dimensions = {}
+    warnings = defaultdict(list)
+
+    # Group entities by dimension
+    entities_by_dimension: Dict[str, List[Tuple[str, Dict]]] = defaultdict(list)
+    for entity_name, entity_data in entities.items():
+        if not isinstance(entity_data, dict):
+            continue
+        dimension = entity_data.get('dimension')
+        if dimension:
+            entities_by_dimension[dimension].append((entity_name, entity_data))
+
+    # Derive schema for each dimension
+    for dim_name, dim_entities in entities_by_dimension.items():
+        # Collect all hierarchy fields (exclude 'dimension' and 'text')
+        field_counts = Counter()
+        field_order_votes = defaultdict(list)
+
+        for idx, (entity_name, entity_data) in enumerate(dim_entities):
+            hierarchy_fields = [k for k in entity_data.keys() if k not in ('dimension', 'text')]
+            for pos, field in enumerate(hierarchy_fields):
+                field_counts[field] += 1
+                field_order_votes[field].append(pos)
+
+        # Determine hierarchy: use fields present in majority of entities
+        total_entities = len(dim_entities)
+        majority_threshold = total_entities * 0.5
+
+        # Filter to fields present in majority
+        common_fields = [f for f, count in field_counts.items() if count >= majority_threshold]
+
+        # Sort by average position (lower = more specific = earlier in hierarchy)
+        def avg_position(field):
+            positions = field_order_votes[field]
+            return sum(positions) / len(positions) if positions else 0
+
+        hierarchy = sorted(common_fields, key=avg_position)
+
+        # Log warnings for inconsistent fields
+        rare_fields = [f for f, count in field_counts.items() if count < majority_threshold]
+        if rare_fields:
+            warnings[dim_name].append(
+                f"Fields {rare_fields} appear in <50% of entities, excluded from hierarchy"
+            )
+
+        # Generate description
+        example_entities = [name for name, _ in dim_entities[:5]]
+        description = f"Entities of type {dim_name}"
+        if example_entities:
+            description += f" (e.g., {', '.join(example_entities[:3])})"
+
+        # Check if dimension already exists
+        if dim_name in existing_dimensions:
+            # Merge with existing: extend hierarchy if new fields discovered
+            existing = existing_dimensions[dim_name]
+            merged_hierarchy = list(existing.hierarchy)
+            for field in hierarchy:
+                if field not in merged_hierarchy:
+                    merged_hierarchy.append(field)
+                    warnings[dim_name].append(f"Extended hierarchy with new field: {field}")
+
+            merged_examples = list(existing.examples)
+            for ex in example_entities:
+                if ex not in merged_examples:
+                    merged_examples.append(ex)
+
+            derived_dimensions[dim_name] = DiscoveredDimensionSchema(
+                hierarchy=merged_hierarchy if merged_hierarchy else [dim_name.lower().replace(' ', '_')],
+                description=existing.description or description,
+                examples=merged_examples[:10]  # Limit examples
+            )
+        else:
+            # Create new dimension
+            derived_dimensions[dim_name] = DiscoveredDimensionSchema(
+                hierarchy=hierarchy if hierarchy else [dim_name.lower().replace(' ', '_')],
+                description=description,
+                examples=example_entities[:5]
+            )
+
+    return derived_dimensions, dict(warnings)

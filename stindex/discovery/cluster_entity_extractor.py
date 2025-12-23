@@ -220,11 +220,10 @@ class ClusterEntityExtractor:
                     n_entities=len(entity_first)
                 )
 
-            # Handle newly discovered dimensions with decay filtering
-            if new_dimensions and self.allow_new_dimensions:
-                self._process_new_dimensions(
-                    new_dimensions=new_dimensions,
-                    decay_threshold=decay_threshold,
+            # Derive dimensions from extracted entities (post-processing)
+            if self.allow_new_dimensions:
+                self._derive_dimensions_from_entities(
+                    entity_first=entity_first,
                     batch_idx=batch_idx,
                     cluster_id=cluster_id,
                     dim_name_mapping=dim_name_mapping
@@ -321,56 +320,58 @@ class ClusterEntityExtractor:
 
         return 1 + remaining_batches
 
-    def _process_new_dimensions(
+    def _derive_dimensions_from_entities(
         self,
-        new_dimensions: Dict,
-        decay_threshold: float,
+        entity_first: Dict[str, Dict],
         batch_idx: int,
         cluster_id: int,
         dim_name_mapping: Dict
-    ):
+    ) -> None:
         """
-        Process new dimensions with confidence-based decay filtering.
+        Derive dimension schemas from extracted entities.
+
+        Post-processes entity extractions to discover dimension schemas by
+        aggregating unique dimension values and inferring hierarchy structure
+        from entity fields.
 
         Args:
-            new_dimensions: New dimensions proposed by LLM
-            decay_threshold: Confidence threshold for this batch
+            entity_first: Entity-first dict from LLM
             batch_idx: Current batch index
             cluster_id: Cluster ID for logging
             dim_name_mapping: Dimension name mapping for normalization
         """
-        for dim_name, dim_schema in new_dimensions.items():
-            if dim_name in self.global_dimensions:
-                continue  # Already exists
+        from stindex.discovery.models import derive_dimensions_from_entities
 
-            # Get confidence score (default to 1.0 if not provided)
-            confidence = dim_schema.get('confidence', 1.0)
+        # Derive dimensions from entities
+        derived_dims, warnings = derive_dimensions_from_entities(
+            entities=entity_first,
+            existing_dimensions=self.global_dimensions
+        )
 
-            # Apply decay threshold
-            if confidence < decay_threshold:
-                logger.info(f"  ✗ Cluster {cluster_id} Batch {batch_idx+1}: Rejected dimension '{dim_name}' "
-                           f"(confidence={confidence:.2f} < threshold={decay_threshold:.2f})")
-                continue
+        # Add new dimensions to global_dimensions
+        for dim_name, dim_schema in derived_dims.items():
+            if dim_name not in self.global_dimensions:
+                logger.info(
+                    f"  📝 Cluster {cluster_id} Batch {batch_idx+1}: "
+                    f"Derived new dimension '{dim_name}' from entities"
+                )
+                logger.info(f"     Hierarchy: {' → '.join(dim_schema.hierarchy)}")
 
-            # Accept dimension
-            logger.info(f"  📝 Cluster {cluster_id} Batch {batch_idx+1}: Discovered new dimension '{dim_name}' "
-                       f"(confidence={confidence:.2f})")
-            logger.info(f"     Hierarchy: {' → '.join(dim_schema.get('hierarchy', []))}")
+                self.global_dimensions[dim_name] = dim_schema
+                self.entity_lists[dim_name] = []
 
-            # Add to global dimensions - create DiscoveredDimensionSchema
-            self.global_dimensions[dim_name] = DiscoveredDimensionSchema(
-                hierarchy=dim_schema.get('hierarchy', []),
-                description=dim_schema.get('description', ''),
-                examples=dim_schema.get('example_entities', [])
-            )
+                # Update dimension name mapping
+                normalized_key = dim_name.lower().replace(' ', '_')
+                dim_name_mapping[normalized_key] = dim_name
+                dim_name_mapping[dim_name.lower()] = dim_name
+            else:
+                # Update existing dimension with merged schema info
+                self.global_dimensions[dim_name] = dim_schema
 
-            # Initialize tracking for new dimension
-            self.entity_lists[dim_name] = []
-
-            # Update dimension name mapping
-            normalized_key = dim_name.lower().replace(' ', '_')
-            dim_name_mapping[normalized_key] = dim_name
-            dim_name_mapping[dim_name.lower()] = dim_name
+        # Log warnings
+        for dim_name, dim_warnings in warnings.items():
+            for warning in dim_warnings:
+                logger.debug(f"  ⚠ Cluster {cluster_id} Batch {batch_idx+1}: {dim_name}: {warning}")
 
     def _build_context(self) -> str:
         """
