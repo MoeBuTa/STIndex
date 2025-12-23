@@ -133,7 +133,7 @@ class StoryArcDetector:
         graph = nx.DiGraph()
 
         # Create event index
-        event_index = {e['chunk_id']: e for e in events if 'chunk_id' in e}
+        event_index = {e.get('doc_id', e.get('chunk_id', '')): e for e in events if e.get('doc_id') or e.get('chunk_id')}
 
         # Add nodes from clusters
         for cluster in clusters:
@@ -146,7 +146,7 @@ class StoryArcDetector:
                 else:
                     base_event = cluster_event
 
-                node_id = base_event.get('chunk_id', f"event_{len(graph.nodes)}")
+                node_id = base_event.get('doc_id', base_event.get('chunk_id', f"event_{len(graph.nodes)}"))
 
                 if not graph.has_node(node_id):
                     graph.add_node(
@@ -315,7 +315,7 @@ class StoryArcDetector:
         key_dimensions = self._extract_key_dimensions(arc_events_sorted)
 
         return {
-            'story_id': f"story_{hash(tuple(sorted([e.get('chunk_id', '') for e in arc_events]))) % 10000}",
+            'story_id': f"story_{hash(tuple(sorted([e.get('doc_id', e.get('chunk_id', '')) for e in arc_events]))) % 10000}",
             'length': len(arc_events),
             'events': arc_events_sorted,
             'progression_type': progression_type,

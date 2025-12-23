@@ -39,9 +39,17 @@ class SpatialFilter:
 
 
 @dataclass
+class DimensionFilter:
+    """Filter criteria for any generic dimension (drug, procedure, etc.)."""
+    dimension_name: str
+    values: List[str] = field(default_factory=list)  # Labels to filter by
+    match_mode: str = "any"  # "any" (OR) or "all" (AND)
+
+
+@dataclass
 class DimensionalFilterResult:
     """Result of dimensional filtering."""
-    chunk_ids: Set[str]
+    doc_ids: Set[str]
     applied_filters: Dict[str, Any]
     filter_stats: Dict[str, int] = field(default_factory=dict)
 
@@ -58,6 +66,7 @@ class DimensionalFilter:
         warehouse_path: str,
         temporal_index_path: Optional[str] = None,
         spatial_index_path: Optional[str] = None,
+        dimension_index_path: Optional[str] = None,
     ):
         """
         Initialize dimensional filter.
@@ -66,6 +75,7 @@ class DimensionalFilter:
             warehouse_path: Path to STIndex warehouse
             temporal_index_path: Path to temporal index (default: warehouse/indexes/temporal_index.json)
             spatial_index_path: Path to spatial index (default: warehouse/indexes/spatial_index.json)
+            dimension_index_path: Path to generic dimension index (default: warehouse/indexes/dimension_index.json)
         """
         self.warehouse_path = Path(warehouse_path)
 
@@ -74,22 +84,38 @@ class DimensionalFilter:
             self.warehouse_path / "indexes" / "temporal_index.json"
         self.spatial_index_path = Path(spatial_index_path) if spatial_index_path else \
             self.warehouse_path / "indexes" / "spatial_index.json"
+        self.dimension_index_path = Path(dimension_index_path) if dimension_index_path else \
+            self.warehouse_path / "indexes" / "dimension_index.json"
 
         # Load indexes
         self.temporal_index = self._load_index(self.temporal_index_path)
         self.spatial_index = self._load_index(self.spatial_index_path)
+        self.dimension_index = self._load_dimension_index(self.dimension_index_path)
 
         # Load enriched chunks for additional filtering
         self._chunks_cache = None
 
         logger.info(f"DimensionalFilter initialized with "
                    f"{len(self.temporal_index)} temporal keys, "
-                   f"{len(self.spatial_index)} spatial keys")
+                   f"{len(self.spatial_index)} spatial keys, "
+                   f"{len(self.dimension_index)} generic dimensions")
 
     def _load_index(self, path: Path) -> Dict[str, List[str]]:
         """Load inverted index from JSON file."""
         if not path.exists():
             logger.warning(f"Index not found: {path}")
+            return {}
+
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _load_dimension_index(self, path: Path) -> Dict[str, Dict[str, List[str]]]:
+        """Load generic dimension index from JSON file.
+
+        Format: {dimension_name: {label: [doc_ids]}}
+        """
+        if not path.exists():
+            logger.warning(f"Dimension index not found: {path}")
             return {}
 
         with open(path, "r", encoding="utf-8") as f:
@@ -175,7 +201,7 @@ class DimensionalFilter:
                     continue
                 if end_date and normalized > end_date:
                     continue
-                range_ids.add(chunk.get("chunk_id", ""))
+                range_ids.add(chunk.get("doc_id", chunk.get("chunk_id", "")))
 
             result_ids = range_ids if result_ids is None else result_ids & range_ids
 
@@ -225,7 +251,7 @@ class DimensionalFilter:
                 if lat is None or lon is None:
                     continue
                 if min_lon <= lon <= max_lon and min_lat <= lat <= max_lat:
-                    bbox_ids.add(chunk.get("chunk_id", ""))
+                    bbox_ids.add(chunk.get("doc_id", chunk.get("chunk_id", "")))
 
             result_ids = bbox_ids if result_ids is None else result_ids & bbox_ids
 
@@ -241,11 +267,52 @@ class DimensionalFilter:
                     continue
                 dist = self._haversine_distance(center_lat, center_lon, lat, lon)
                 if dist <= radius_km:
-                    radius_ids.add(chunk.get("chunk_id", ""))
+                    radius_ids.add(chunk.get("doc_id", chunk.get("chunk_id", "")))
 
             result_ids = radius_ids if result_ids is None else result_ids & radius_ids
 
         return result_ids or set()
+
+    def filter_dimension(
+        self,
+        dimension_name: str,
+        values: List[str],
+        match_mode: str = "any",
+    ) -> Set[str]:
+        """
+        Filter chunks by any generic dimension (drug, procedure, etc.).
+
+        Args:
+            dimension_name: Name of dimension (e.g., "drug", "procedure")
+            values: List of labels to filter by (e.g., ["aspirin", "NSAID"])
+            match_mode: "any" (OR, match any value) or "all" (AND, match all values)
+
+        Returns:
+            Set of matching chunk IDs
+        """
+        dim_index = self.dimension_index.get(dimension_name, {})
+
+        if not dim_index:
+            logger.warning(f"No index found for dimension: {dimension_name}")
+            return set()
+
+        if match_mode == "any":
+            # Union: chunks matching ANY of the values
+            result_ids = set()
+            for value in values:
+                result_ids.update(dim_index.get(value, []))
+        else:
+            # Intersection: chunks matching ALL values
+            result_ids = None
+            for value in values:
+                value_ids = set(dim_index.get(value, []))
+                if result_ids is None:
+                    result_ids = value_ids
+                else:
+                    result_ids &= value_ids
+            result_ids = result_ids or set()
+
+        return result_ids
 
     @staticmethod
     def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -267,14 +334,16 @@ class DimensionalFilter:
         self,
         temporal_filter: Optional[Union[TemporalFilter, Dict[str, Any]]] = None,
         spatial_filter: Optional[Union[SpatialFilter, Dict[str, Any]]] = None,
+        dimension_filters: Optional[List[Union[DimensionFilter, Dict[str, Any]]]] = None,
         combine_mode: str = "AND",
     ) -> DimensionalFilterResult:
         """
-        Apply combined temporal and spatial filters.
+        Apply combined temporal, spatial, and dimension filters.
 
         Args:
             temporal_filter: Temporal filter criteria
             spatial_filter: Spatial filter criteria
+            dimension_filters: List of generic dimension filters (drug, procedure, etc.)
             combine_mode: How to combine filters: 'AND' (intersection) or 'OR' (union)
 
         Returns:
@@ -282,15 +351,13 @@ class DimensionalFilter:
         """
         applied_filters = {}
         filter_stats = {}
+        all_filter_ids = []
 
         # Convert dict to dataclass if needed
         if isinstance(temporal_filter, dict):
             temporal_filter = TemporalFilter(**temporal_filter)
         if isinstance(spatial_filter, dict):
             spatial_filter = SpatialFilter(**spatial_filter)
-
-        temporal_ids = None
-        spatial_ids = None
 
         # Apply temporal filter
         if temporal_filter is not None:
@@ -305,6 +372,7 @@ class DimensionalFilter:
                 k: v for k, v in temporal_filter.__dict__.items() if v is not None
             }
             filter_stats["temporal_matches"] = len(temporal_ids)
+            all_filter_ids.append(temporal_ids)
 
         # Apply spatial filter
         if spatial_filter is not None:
@@ -319,25 +387,46 @@ class DimensionalFilter:
                 k: v for k, v in spatial_filter.__dict__.items() if v is not None
             }
             filter_stats["spatial_matches"] = len(spatial_ids)
+            all_filter_ids.append(spatial_ids)
+
+        # Apply generic dimension filters
+        if dimension_filters is not None:
+            for dim_filter in dimension_filters:
+                if isinstance(dim_filter, dict):
+                    dim_filter = DimensionFilter(**dim_filter)
+
+                dim_ids = self.filter_dimension(
+                    dimension_name=dim_filter.dimension_name,
+                    values=dim_filter.values,
+                    match_mode=dim_filter.match_mode,
+                )
+                applied_filters[dim_filter.dimension_name] = {
+                    "values": dim_filter.values,
+                    "match_mode": dim_filter.match_mode,
+                }
+                filter_stats[f"{dim_filter.dimension_name}_matches"] = len(dim_ids)
+                all_filter_ids.append(dim_ids)
 
         # Combine results
-        if temporal_ids is not None and spatial_ids is not None:
-            if combine_mode == "AND":
-                result_ids = temporal_ids & spatial_ids
-            else:  # OR
-                result_ids = temporal_ids | spatial_ids
-        elif temporal_ids is not None:
-            result_ids = temporal_ids
-        elif spatial_ids is not None:
-            result_ids = spatial_ids
-        else:
+        if not all_filter_ids:
             result_ids = set()
+        elif len(all_filter_ids) == 1:
+            result_ids = all_filter_ids[0]
+        else:
+            if combine_mode == "AND":
+                result_ids = all_filter_ids[0]
+                for ids in all_filter_ids[1:]:
+                    result_ids = result_ids & ids
+            else:  # OR
+                result_ids = set()
+                for ids in all_filter_ids:
+                    result_ids = result_ids | ids
 
         filter_stats["final_matches"] = len(result_ids)
         filter_stats["combine_mode"] = combine_mode
 
         return DimensionalFilterResult(
-            chunk_ids=result_ids,
+            doc_ids=result_ids,
             applied_filters=applied_filters,
             filter_stats=filter_stats,
         )
@@ -349,3 +438,11 @@ class DimensionalFilter:
     def get_available_spatial_keys(self) -> List[str]:
         """Get available spatial filter keys from index."""
         return sorted(self.spatial_index.keys())
+
+    def get_available_dimensions(self) -> List[str]:
+        """Get available generic dimension names from index."""
+        return sorted(self.dimension_index.keys())
+
+    def get_available_dimension_keys(self, dimension_name: str) -> List[str]:
+        """Get available filter keys for a specific dimension."""
+        return sorted(self.dimension_index.get(dimension_name, {}).keys())

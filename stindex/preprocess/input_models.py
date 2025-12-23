@@ -189,7 +189,7 @@ class DocumentChunk:
     Output of chunking step, ready for dimensional extraction.
     """
 
-    chunk_id: str  # e.g., "doc1_chunk_0"
+    doc_id: str  # Unique identifier, e.g., "doc1_chunk_0"
     chunk_index: int
     total_chunks: int
     text: str
@@ -220,7 +220,7 @@ class DocumentChunk:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
-            "chunk_id": self.chunk_id,
+            "doc_id": self.doc_id,
             "chunk_index": self.chunk_index,
             "total_chunks": self.total_chunks,
             "text": self.text,

@@ -126,7 +126,7 @@ class DimensionAnalyzer:
                     entity_with_context.update({
                         'document_id': result.get('document_id'),
                         'document_title': result.get('document_title'),
-                        'chunk_id': result.get('chunk_id'),
+                        'doc_id': result.get('doc_id', result.get('chunk_id')),
                         'source': result.get('source')
                     })
                     dimension_data[dim_name].append(entity_with_context)
@@ -371,7 +371,7 @@ class DimensionAnalyzer:
                 # Index dim1 by document
                 dim1_by_doc = defaultdict(set)
                 for entity in dimension_data[dim1]:
-                    doc_id = entity.get('chunk_id', entity.get('document_id'))
+                    doc_id = entity.get('doc_id', entity.get('chunk_id', entity.get('document_id')))
                     if doc_id:
                         value = entity.get('category') or entity.get('text')
                         if value:
@@ -380,7 +380,7 @@ class DimensionAnalyzer:
                 # Index dim2 by document
                 dim2_by_doc = defaultdict(set)
                 for entity in dimension_data[dim2]:
-                    doc_id = entity.get('chunk_id', entity.get('document_id'))
+                    doc_id = entity.get('doc_id', entity.get('chunk_id', entity.get('document_id')))
                     if doc_id:
                         value = entity.get('category') or entity.get('text')
                         if value:

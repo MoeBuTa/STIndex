@@ -145,7 +145,7 @@ class AnalysisDataExporter:
             serialized_result = {
                 'document_id': result.get('document_id'),
                 'document_title': result.get('document_title'),
-                'chunk_id': result.get('chunk_id'),
+                'doc_id': result.get('doc_id', result.get('chunk_id')),
                 'source': result.get('source'),
                 'text': result.get('text', '')[:500],  # Truncate long text
                 'extraction': {
@@ -179,7 +179,7 @@ class AnalysisDataExporter:
                 'dimension': cluster.get('dimension'),  # For categorical clusters
                 # Store minimal event references
                 'event_ids': [
-                    e['event'].get('chunk_id', '')
+                    e['event'].get('doc_id', e['event'].get('chunk_id', ''))
                     for e in cluster.get('events', [])
                     if 'event' in e
                 ]
@@ -294,7 +294,7 @@ class AnalysisDataExporter:
         """Create a single flattened event."""
         event = {
             'id': event_id,
-            'chunk_id': result.get('chunk_id'),
+            'doc_id': result.get('doc_id', result.get('chunk_id')),
             'document_id': result.get('document_id'),
             'document_title': result.get('document_title'),
             'source': result.get('source'),

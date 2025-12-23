@@ -21,6 +21,7 @@ from stindex.discovery.cluster_schema_discoverer import ClusterSchemaDiscoverer
 from stindex.discovery.schema_merger import SchemaMerger
 from stindex.discovery.cot_logger import CoTLogger
 from stindex.discovery.models import FinalSchema
+from stindex.utils.timing import TimingStats
 
 
 class SchemaDiscoveryPipeline:
@@ -38,7 +39,7 @@ class SchemaDiscoveryPipeline:
         llm_config: Dict,
         config: Optional[Dict] = None,
         n_clusters: int = 10,
-        similarity_threshold: float = 0.85,
+        similarity_threshold: float = 0.60,
         batch_size: int = 50,
         enable_parallel: bool = True,
         max_workers: int = 5,
@@ -134,6 +135,9 @@ class SchemaDiscoveryPipeline:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
+        # Initialize timing statistics
+        timing_stats = TimingStats(name="schema_discovery")
+
         # Create shared CoT logger for all components
         cot_logger = CoTLogger(output_dir)
 
@@ -145,24 +149,28 @@ class SchemaDiscoveryPipeline:
         logger.info("\nStep 1: Question Clustering")
         cluster_samples_path = output_path / "cluster_samples.json"
 
-        if reuse_clusters and cluster_samples_path.exists():
-            logger.info("  ✓ Reusing existing cluster samples")
-            with open(cluster_samples_path) as f:
-                cluster_samples = json.load(f)
-                # Convert string keys to int keys if needed
-                cluster_samples = {int(k): v for k, v in cluster_samples.items()}
-        else:
-            logger.info(f"  Clustering questions from {questions_file}...")
-            clusterer = QuestionClusterer()
-            cluster_result = clusterer.cluster_questions_from_file(
-                questions_file=questions_file,
-                output_dir=str(output_path),
-                n_clusters=self.n_clusters
-            )
-            with open(cluster_samples_path) as f:
-                cluster_samples = json.load(f)
-                cluster_samples = {int(k): v for k, v in cluster_samples.items()}
-            logger.info(f"  ✓ Clustered into {self.n_clusters} clusters")
+        with timing_stats.timer("clustering"):
+            if reuse_clusters and cluster_samples_path.exists():
+                logger.info("  ✓ Reusing existing cluster samples")
+                with open(cluster_samples_path) as f:
+                    cluster_samples = json.load(f)
+                    # Convert string keys to int keys if needed
+                    cluster_samples = {int(k): v for k, v in cluster_samples.items()}
+            else:
+                logger.info(f"  Clustering questions from {questions_file}...")
+                clusterer = QuestionClusterer()
+                cluster_result = clusterer.cluster_questions_from_file(
+                    questions_file=questions_file,
+                    output_dir=str(output_path),
+                    n_clusters=self.n_clusters
+                )
+                with open(cluster_samples_path) as f:
+                    cluster_samples = json.load(f)
+                    cluster_samples = {int(k): v for k, v in cluster_samples.items()}
+                logger.info(f"  ✓ Clustered into {self.n_clusters} clusters")
+
+            # Add counters for clustering
+            timing_stats.add_counter("num_clusters", self.n_clusters)
 
         # Step 2: Unified Discovery + Extraction (no separate discovery phase)
         logger.info("\nStep 2: Unified Discovery + Extraction")
@@ -181,6 +189,7 @@ class SchemaDiscoveryPipeline:
             all_questions = [q['question'] for q in all_questions_data]
 
         logger.info(f"  Loaded {len(all_questions)} questions")
+        timing_stats.add_counter("num_questions", len(all_questions))
 
         # Load cluster assignments
         cluster_assignments_path = output_path / "cluster_assignments.csv"
@@ -214,63 +223,64 @@ class SchemaDiscoveryPipeline:
         # Process clusters (parallel or sequential)
         cluster_results = []
 
-        if self.enable_parallel and len(cluster_data) > 1:
-            # Parallel processing
-            logger.info(f"\n  Processing {len(cluster_data)} clusters in parallel...")
+        with timing_stats.timer("extraction"):
+            if self.enable_parallel and len(cluster_data) > 1:
+                # Parallel processing
+                logger.info(f"\n  Processing {len(cluster_data)} clusters in parallel...")
 
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                # Submit all cluster processing tasks
-                future_to_cluster = {
-                    executor.submit(
-                        self._process_cluster,
-                        cluster_info['cluster_id'],
-                        cluster_info['questions'],
-                        output_path,
-                        cot_logger
-                    ): cluster_info['cluster_id']
-                    for cluster_info in cluster_data
-                }
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    # Submit all cluster processing tasks
+                    future_to_cluster = {
+                        executor.submit(
+                            self._process_cluster,
+                            cluster_info['cluster_id'],
+                            cluster_info['questions'],
+                            output_path,
+                            cot_logger
+                        ): cluster_info['cluster_id']
+                        for cluster_info in cluster_data
+                    }
 
-                # Collect results as they complete
-                for future in as_completed(future_to_cluster):
-                    cluster_id = future_to_cluster[future]
+                    # Collect results as they complete
+                    for future in as_completed(future_to_cluster):
+                        cluster_id = future_to_cluster[future]
+                        try:
+                            result = future.result()
+                            cluster_results.append(result)
+
+                            # Log stats
+                            total_entities = result.get_total_entities()
+                            logger.info(f"  ✓ Cluster {cluster_id} complete: {total_entities} unique entities")
+                        except Exception as e:
+                            logger.error(f"  ✗ Cluster {cluster_id} failed: {e}")
+
+            else:
+                # Sequential processing
+                logger.info(f"\n  Processing {len(cluster_data)} clusters sequentially...")
+
+                for cluster_info in cluster_data:
+                    cluster_id = cluster_info['cluster_id']
+                    logger.info(f"\n  Processing Cluster {cluster_id}...")
+                    logger.info(f"    Questions in cluster: {len(cluster_info['questions'])}")
+
                     try:
-                        result = future.result()
+                        result = self._process_cluster(
+                            cluster_id,
+                            cluster_info['questions'],
+                            output_path,
+                            cot_logger
+                        )
                         cluster_results.append(result)
 
                         # Log stats
                         total_entities = result.get_total_entities()
-                        logger.info(f"  ✓ Cluster {cluster_id} complete: {total_entities} unique entities")
+                        logger.info(f"    ✓ Extracted {total_entities} unique entities")
+                        for dim_name, count in sorted(result.get_dimension_stats().items()):
+                            logger.info(f"      - {dim_name}: {count}")
                     except Exception as e:
-                        logger.error(f"  ✗ Cluster {cluster_id} failed: {e}")
+                        logger.error(f"    ✗ Failed: {e}")
 
-        else:
-            # Sequential processing
-            logger.info(f"\n  Processing {len(cluster_data)} clusters sequentially...")
-
-            for cluster_info in cluster_data:
-                cluster_id = cluster_info['cluster_id']
-                logger.info(f"\n  Processing Cluster {cluster_id}...")
-                logger.info(f"    Questions in cluster: {len(cluster_info['questions'])}")
-
-                try:
-                    result = self._process_cluster(
-                        cluster_id,
-                        cluster_info['questions'],
-                        output_path,
-                        cot_logger
-                    )
-                    cluster_results.append(result)
-
-                    # Log stats
-                    total_entities = result.get_total_entities()
-                    logger.info(f"    ✓ Extracted {total_entities} unique entities")
-                    for dim_name, count in sorted(result.get_dimension_stats().items()):
-                        logger.info(f"      - {dim_name}: {count}")
-                except Exception as e:
-                    logger.error(f"    ✗ Failed: {e}")
-
-        logger.info(f"\n  ✓ Completed discovery + extraction for all {len(cluster_results)} clusters")
+            logger.info(f"\n  ✓ Completed discovery + extraction for all {len(cluster_results)} clusters")
 
         # Save CoT reasoning summary
         if cot_logger:
@@ -279,23 +289,44 @@ class SchemaDiscoveryPipeline:
         # Step 3: Cross-Cluster Merging (no global baseline)
         logger.info("\nStep 3: Cross-Cluster Schema Merging")
 
-        merger = SchemaMerger(similarity_threshold=self.similarity_threshold)
-        final_schema = merger.merge_clusters(cluster_results)
+        with timing_stats.timer("merging"):
+            merger = SchemaMerger(fuzzy_threshold=self.similarity_threshold)
+            final_schema = merger.merge_clusters(cluster_results)
 
-        # Save final schema (YAML format)
-        final_schema_path = output_path / "final_schema.yml"
-        final_schema_dict = final_schema.to_yaml_dict()
-        with open(final_schema_path, 'w') as f:
-            yaml.dump(final_schema_dict, f, sort_keys=False, indent=2, allow_unicode=True)
+            # Add counter for final dimensions
+            timing_stats.add_counter("final_dimensions", len(final_schema.dimensions))
 
-        logger.info("  ✓ Final schema saved to: final_schema.yml")
+            # Save final schema (YAML format)
+            final_schema_path = output_path / "final_schema.yml"
+            final_schema_dict = final_schema.to_yaml_dict()
+            with open(final_schema_path, 'w') as f:
+                yaml.dump(final_schema_dict, f, sort_keys=False, indent=2, allow_unicode=True)
 
-        # Also save as JSON for easier programmatic access
-        final_schema_json_path = output_path / "final_schema.json"
-        with open(final_schema_json_path, 'w') as f:
-            json.dump(final_schema.model_dump(mode='json'), f, indent=2)
+            logger.info("  ✓ Final schema saved to: final_schema.yml")
 
-        logger.info("  ✓ Final schema saved to: final_schema.json")
+            # Also save as JSON for easier programmatic access
+            final_schema_json_path = output_path / "final_schema.json"
+            with open(final_schema_json_path, 'w') as f:
+                json.dump(final_schema.model_dump(mode='json'), f, indent=2)
+
+            logger.info("  ✓ Final schema saved to: final_schema.json")
+
+            # Save slim extraction schema (for corpus extraction)
+            extraction_schema_path = output_path / "extraction_schema.yml"
+            extraction_schema_dict = final_schema.to_extraction_schema()
+            with open(extraction_schema_path, 'w') as f:
+                yaml.dump(extraction_schema_dict, f, sort_keys=False, indent=2, allow_unicode=True)
+
+            logger.info("  ✓ Extraction schema saved to: extraction_schema.yml")
+
+        # Save timing statistics
+        timing_output = output_path / "discovery_timing.json"
+        timing_stats.save_json(timing_output)
+
+        logger.info(f"\n⏱️  Timing Summary:")
+        logger.info(f"  Total: {timing_stats.get_summary()['total_duration_seconds']:.1f}s")
+        for phase, stats in timing_stats.get_summary()["timings"].items():
+            logger.info(f"  {phase}: {stats['total_seconds']:.1f}s")
 
         # Summary
         logger.info("\n" + "=" * 80)
@@ -409,8 +440,8 @@ Examples:
     parser.add_argument(
         '--similarity-threshold',
         type=float,
-        default=0.85,
-        help='Fuzzy matching threshold for deduplication (default: 0.85)'
+        default=0.60,
+        help='Fuzzy matching threshold for deduplication (default: 0.60)'
     )
     parser.add_argument(
         '--reuse-clusters',

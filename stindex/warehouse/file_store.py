@@ -123,7 +123,7 @@ class FileBasedWarehouse:
     def _get_chunk_schema(self) -> Dict[str, str]:
         """Get schema for chunks table."""
         return {
-            "chunk_id": "string",
+            "doc_id": "string",
             "document_id": "string",
             "chunk_index": "integer",
             "chunk_text": "string",
@@ -160,7 +160,7 @@ class FileBasedWarehouse:
         """Get schema for events (GeoJSON features)."""
         return {
             "id": "integer",
-            "chunk_id": "string",
+            "doc_id": "string",
             "document_id": "string",
             "timestamp": "string",
             "location": "string",
@@ -224,7 +224,7 @@ class FileBasedWarehouse:
             event_record = self._create_event_record(
                 event_id=len(events_data),
                 document_id=document_id,
-                chunk_id=chunk_record["chunk_id"],
+                doc_id=chunk_record["doc_id"],
                 extraction_result=result,
             )
             if event_record:
@@ -270,7 +270,7 @@ class FileBasedWarehouse:
         labels: ChunkDimensionalLabels,
     ) -> Dict[str, Any]:
         """Create a chunk record for storage."""
-        chunk_id = f"{document_id}_{chunk_index:04d}"
+        doc_id = f"{document_id}_{chunk_index:04d}"
 
         # Extract temporal info
         temporal_entity = (
@@ -304,12 +304,12 @@ class FileBasedWarehouse:
 
         # Build chunk record
         record = {
-            "chunk_id": chunk_id,
+            "doc_id": doc_id,
             "document_id": document_id,
             "chunk_index": chunk_index,
             "chunk_text": extraction_result.input_text,
             "chunk_hash": labels.chunk_hash,
-            # Temporal
+            # Temporal (flat for backward compatibility)
             "temporal_text": temporal_entity.get("text"),
             "temporal_normalized": temporal_normalized,
             "temporal_type": temporal_entity.get("normalization_type"),
@@ -318,7 +318,7 @@ class FileBasedWarehouse:
             "temporal_month": temporal_month,
             "temporal_labels": labels.temporal_labels,
             "temporal_path": labels.temporal_path,
-            # Spatial
+            # Spatial (flat for backward compatibility)
             "spatial_text": spatial_entity.get("text"),
             "latitude": spatial_entity.get("latitude"),
             "longitude": spatial_entity.get("longitude"),
@@ -326,11 +326,8 @@ class FileBasedWarehouse:
             "parent_region": spatial_entity.get("parent_region"),
             "spatial_labels": labels.spatial_labels,
             "spatial_path": labels.spatial_path,
-            # Other dimensions
-            "dimensions": {
-                k: v for k, v in extraction_result.entities.items()
-                if k not in ("temporal", "spatial")
-            },
+            # NEW: Unified dimensions in RAG-optimized format
+            "dimensions": labels.to_dict().get("dimensions", {}),
             # Metadata
             "confidence_score": labels.confidence_score,
             "dimension_confidences": labels.dimension_confidences,
@@ -352,7 +349,7 @@ class FileBasedWarehouse:
         self,
         event_id: int,
         document_id: str,
-        chunk_id: str,
+        doc_id: str,
         extraction_result: MultiDimensionalResult,
     ) -> Optional[Dict[str, Any]]:
         """Create an event record for GeoJSON."""
@@ -380,7 +377,7 @@ class FileBasedWarehouse:
 
         return {
             "id": event_id,
-            "chunk_id": chunk_id,
+            "doc_id": doc_id,
             "document_id": document_id,
             "timestamp": temporal_entity.get("normalized"),
             "temporal_text": temporal_entity.get("text"),
@@ -436,42 +433,65 @@ class FileBasedWarehouse:
 
     def _update_indexes(self, chunks: List[Dict[str, Any]]) -> None:
         """Update inverted indexes for fast filtering."""
-        # Temporal index: year/month/quarter -> chunk_ids
+        # Temporal index: year/month/quarter -> doc_ids
         temporal_index_path = self.base_dir / "indexes" / "temporal_index.json"
         temporal_index = self._load_index(temporal_index_path)
 
-        # Spatial index: region/country -> chunk_ids
+        # Spatial index: region/country -> doc_ids
         spatial_index_path = self.base_dir / "indexes" / "spatial_index.json"
         spatial_index = self._load_index(spatial_index_path)
 
-        for chunk in chunks:
-            chunk_id = chunk["chunk_id"]
+        # Generic dimension indexes (drug, procedure, etc.)
+        dimension_index_path = self.base_dir / "indexes" / "dimension_index.json"
+        dimension_index = self._load_index(dimension_index_path)
 
-            # Update temporal index
+        for chunk in chunks:
+            doc_id = chunk["doc_id"]
+
+            # Update temporal index (flat fields for backward compatibility)
             if chunk.get("temporal_year"):
                 year_key = str(chunk["temporal_year"])
                 if year_key not in temporal_index:
                     temporal_index[year_key] = []
-                temporal_index[year_key].append(chunk_id)
+                temporal_index[year_key].append(doc_id)
 
             if chunk.get("temporal_labels"):
                 for label in chunk["temporal_labels"]:
                     if label not in temporal_index:
                         temporal_index[label] = []
-                    if chunk_id not in temporal_index[label]:
-                        temporal_index[label].append(chunk_id)
+                    if doc_id not in temporal_index[label]:
+                        temporal_index[label].append(doc_id)
 
-            # Update spatial index
+            # Update spatial index (flat fields for backward compatibility)
             if chunk.get("spatial_labels"):
                 for label in chunk["spatial_labels"]:
                     if label not in spatial_index:
                         spatial_index[label] = []
-                    if chunk_id not in spatial_index[label]:
-                        spatial_index[label].append(chunk_id)
+                    if doc_id not in spatial_index[label]:
+                        spatial_index[label].append(doc_id)
+
+            # Update generic dimension index from new unified format
+            dims = chunk.get("dimensions", {})
+            for dim_name, entities in dims.items():
+                # Skip temporal/spatial (already indexed above)
+                if dim_name in ("temporal", "spatial"):
+                    continue
+
+                if dim_name not in dimension_index:
+                    dimension_index[dim_name] = {}
+
+                # Iterate over entity hierarchies: [[label1, label2], [label3, label4]]
+                for entity_labels in entities:
+                    for label in entity_labels:
+                        if label not in dimension_index[dim_name]:
+                            dimension_index[dim_name][label] = []
+                        if doc_id not in dimension_index[dim_name][label]:
+                            dimension_index[dim_name][label].append(doc_id)
 
         # Save indexes
         self._save_index(temporal_index_path, temporal_index)
         self._save_index(spatial_index_path, spatial_index)
+        self._save_index(dimension_index_path, dimension_index)
 
     def _load_index(self, path: Path) -> Dict[str, List[str]]:
         """Load an inverted index."""
@@ -546,9 +566,9 @@ class FileBasedWarehouse:
         # Try to use index first
         if year and not (quarter or month or date_range):
             index = self._load_index(self.base_dir / "indexes" / "temporal_index.json")
-            chunk_ids = index.get(str(year), [])
-            if chunk_ids:
-                return self._load_chunks_by_ids(chunk_ids)
+            doc_ids = index.get(str(year), [])
+            if doc_ids:
+                return self._load_chunks_by_ids(doc_ids)
 
         # Fall back to full scan
         chunks = self.load_all_chunks()
@@ -591,9 +611,9 @@ class FileBasedWarehouse:
         # Try to use index first for region filter
         if region and not (bbox or radius_km):
             index = self._load_index(self.base_dir / "indexes" / "spatial_index.json")
-            chunk_ids = index.get(region, [])
-            if chunk_ids:
-                return self._load_chunks_by_ids(chunk_ids)
+            doc_ids = index.get(region, [])
+            if doc_ids:
+                return self._load_chunks_by_ids(doc_ids)
 
         # Fall back to full scan
         chunks = self.load_all_chunks()
@@ -622,13 +642,13 @@ class FileBasedWarehouse:
 
         return filtered
 
-    def _load_chunks_by_ids(self, chunk_ids: List[str]) -> List[Dict[str, Any]]:
+    def _load_chunks_by_ids(self, doc_ids: List[str]) -> List[Dict[str, Any]]:
         """Load specific chunks by their IDs."""
-        chunk_ids_set = set(chunk_ids)
+        doc_ids_set = set(doc_ids)
         chunks = []
 
         for chunk in self.load_all_chunks():
-            if chunk.get("chunk_id") in chunk_ids_set:
+            if chunk.get("doc_id") in doc_ids_set:
                 chunks.append(chunk)
 
         return chunks

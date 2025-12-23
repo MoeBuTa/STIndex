@@ -73,10 +73,11 @@ def load_config_from_file(config_path: str = "extract") -> Dict[str, Any]:
             merged_config = {**main_config}
 
             # Merge llm section from provider config
+            # Provider config provides defaults, main config overrides
             if "llm" in provider_config:
                 merged_config["llm"] = {
-                    **merged_config.get("llm", {}),
-                    **provider_config["llm"]
+                    **provider_config["llm"],
+                    **merged_config.get("llm", {})
                 }
         else:
             # If no provider config exists, use main config

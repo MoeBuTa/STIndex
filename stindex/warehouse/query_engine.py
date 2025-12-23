@@ -152,7 +152,7 @@ class STIndexQueryEngine:
             # Create empty view
             con.execute("""
                 CREATE OR REPLACE VIEW chunks AS
-                SELECT NULL as chunk_id WHERE 1=0
+                SELECT NULL as doc_id WHERE 1=0
             """)
 
         # Register GeoJSON for events
@@ -164,7 +164,7 @@ class STIndexQueryEngine:
                     CREATE OR REPLACE VIEW events AS
                     SELECT
                         properties.id as event_id,
-                        properties.chunk_id as chunk_id,
+                        coalesce(properties.doc_id, properties.chunk_id) as doc_id,
                         properties.document_id as document_id,
                         properties.timestamp as timestamp,
                         properties.location as location,
@@ -179,7 +179,7 @@ class STIndexQueryEngine:
                     CREATE OR REPLACE VIEW events AS
                     SELECT
                         f.properties.id as event_id,
-                        f.properties.chunk_id as chunk_id,
+                        coalesce(f.properties.doc_id, f.properties.chunk_id) as doc_id,
                         f.properties.document_id as document_id,
                         f.properties.timestamp as timestamp,
                         f.properties.location as location,
@@ -207,7 +207,7 @@ class STIndexQueryEngine:
 
         Example:
             results = (
-                engine.select("chunk_id", "temporal_normalized", "spatial_text")
+                engine.select("doc_id", "temporal_normalized", "spatial_text")
                 .where_temporal(year=2022)
                 .where_spatial(region="Australia")
                 .limit(10)

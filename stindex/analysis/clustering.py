@@ -168,7 +168,7 @@ class EventClusterAnalyzer:
             event = {
                 'document_id': result.get('document_id', 'unknown'),
                 'document_title': result.get('document_title', 'Unknown'),
-                'chunk_id': result.get('chunk_id', ''),
+                'doc_id': result.get('doc_id', result.get('chunk_id', '')),
                 'source': result.get('source', 'Unknown'),
                 'text': result.get('text', ''),
                 'dimensions': {}

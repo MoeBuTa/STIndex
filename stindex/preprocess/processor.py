@@ -126,7 +126,7 @@ class Preprocessor:
         if skip_chunking:
             # Return single chunk with full content
             chunks = [DocumentChunk(
-                chunk_id=f"{parsed_doc.document_id}_chunk_0",
+                doc_id=f"{parsed_doc.document_id}_chunk_0",
                 chunk_index=0,
                 total_chunks=1,
                 text=parsed_doc.content,

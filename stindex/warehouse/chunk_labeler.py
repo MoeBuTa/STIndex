@@ -30,7 +30,7 @@ class ChunkDimensionalLabels:
     and paths for each dimension to enable efficient warehouse queries.
 
     Attributes:
-        chunk_id: Unique identifier for chunk (generated from hash)
+        doc_id: Unique identifier for document/chunk (string UUID from extraction)
         chunk_text: Original chunk text
         chunk_hash: SHA-256 hash of chunk text
 
@@ -72,7 +72,7 @@ class ChunkDimensionalLabels:
     """
 
     # Chunk identification
-    chunk_id: Optional[int] = None
+    doc_id: Optional[str] = None
     chunk_text: str = ""
     chunk_hash: str = ""
 
@@ -112,6 +112,17 @@ class ChunkDimensionalLabels:
     # Section hierarchy
     section_hierarchy: Optional[str] = None
 
+    # Generic dimensions (for discovered dimensions beyond the 4 hardcoded ones)
+    # NEW: Store per-entity hierarchies as list of lists for RAG-optimized output
+    generic_dimension_entities: Dict[str, List[List[str]]] = field(default_factory=dict)
+    # Legacy: flat labels for backward compatibility
+    generic_dimension_labels: Dict[str, List[str]] = field(default_factory=dict)
+    generic_dimension_paths: Dict[str, str] = field(default_factory=dict)
+    generic_dimension_confidences: Dict[str, float] = field(default_factory=dict)
+
+    # Enabled dimensions (for filtering output fields)
+    enabled_dimensions: Optional[set] = field(default=None)
+
     def compute_chunk_hash(self) -> str:
         """Compute SHA-256 hash of chunk text."""
         return hashlib.sha256(self.chunk_text.encode('utf-8')).hexdigest()
@@ -123,23 +134,88 @@ class ChunkDimensionalLabels:
 
         return sum(self.dimension_confidences.values()) / len(self.dimension_confidences)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert labels to RAG-optimized dictionary.
+
+        Output format:
+        {
+            "temporal": [["2022", "2022-Q1", "2022-03"]],
+            "spatial": [["Australia", "Western Australia", "Broome"]],
+            "drug": [["aspirin", "NSAID"], ["morphine", "opioid"]],
+            ...
+        }
+
+        Returns:
+            Dict with dimensional labels only (no metadata, no null values)
+        """
+        result = {}
+
+        # Temporal (only if has values)
+        if self.temporal_labels:
+            result["temporal"] = [self.temporal_labels]
+
+        # Spatial (only if has values)
+        if self.spatial_labels:
+            result["spatial"] = [self.spatial_labels]
+
+        # Generic dimensions (drug, procedure, diagnosis, etc.)
+        for dim_name, entities in self.generic_dimension_entities.items():
+            if entities:
+                result[dim_name] = entities
+
+        return result
+
 
 class DimensionalChunkLabeler:
     """
     Generate hierarchical dimensional labels from extraction results.
 
     Converts extraction results into warehouse-compatible labels and paths.
-    Handles temporal, spatial, event, and entity hierarchies.
+    Handles temporal, spatial, event, entity hierarchies (hardcoded),
+    plus arbitrary discovered dimensions with hierarchy support.
     """
 
-    def __init__(self, dimension_config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        dimension_config: Optional[Dict[str, Any]] = None,
+        enabled_dimensions: Optional[set] = None
+    ):
         """
         Initialize chunk labeler.
 
         Args:
-            dimension_config: Optional dimension configuration
+            dimension_config: Optional dimension configuration dict
+                            Can include discovered dimensions with hierarchies
+                            Supports both formats:
+                              - {"dimensions": {"drug": {...}}}  (from DimensionConfigLoader)
+                              - {"drug": {"hierarchy": [...]}}   (flat discovered schema)
+            enabled_dimensions: Set of enabled dimension names (e.g., {'temporal', 'spatial', 'vaccine'})
+                              If None, defaults to all hardcoded dimensions for backward compatibility
         """
         self.dimension_config = dimension_config or {}
+        self.dimensions = {}
+        self.enabled_dimensions = enabled_dimensions or {'temporal', 'spatial', 'event', 'entity'}
+
+        # Handle both config formats
+        dims_dict = None
+        if dimension_config:
+            if "dimensions" in dimension_config:
+                # Format: {"dimensions": {"drug": {...}}}
+                dims_dict = dimension_config["dimensions"]
+            else:
+                # Flat format: {"drug": {"hierarchy": [...]}} (discovered schema)
+                # Filter out metadata keys
+                dims_dict = {k: v for k, v in dimension_config.items()
+                           if isinstance(v, dict) and k not in ['config_path', 'base_config_path']}
+
+        # Load dimensions
+        if dims_dict:
+            for dim_name, dim_dict in dims_dict.items():
+                if isinstance(dim_dict, dict):
+                    # Store hierarchy info for generic dimensions
+                    # Don't require full DimensionConfig validation
+                    self.dimensions[dim_name] = dim_dict
 
     def label_chunk(
         self,
@@ -167,16 +243,24 @@ class DimensionalChunkLabeler:
             chunk_index=chunk_index,
             document_id=document_id,
             section_hierarchy=section_hierarchy,
+            enabled_dimensions=self.enabled_dimensions,  # Pass enabled dimensions for output filtering
         )
 
         # Compute chunk hash
         labels.chunk_hash = labels.compute_chunk_hash()
 
-        # Process each dimension
+        # Process hardcoded dimensions
         self._process_temporal_dimension(extraction_result, labels)
         self._process_spatial_dimension(extraction_result, labels)
         self._process_event_dimension(extraction_result, labels)
         self._process_entity_dimension(extraction_result, labels)
+
+        # Process discovered dimensions (generic dimensions beyond the 4 hardcoded)
+        if self.dimensions:
+            for dim_name, dim_config in self.dimensions.items():
+                # Skip hardcoded dimensions (already processed above)
+                if dim_name not in ['temporal', 'spatial', 'event', 'entity']:
+                    self._process_generic_dimension(dim_name, dim_config, extraction_result, labels)
 
         # Compute overall confidence score
         labels.confidence_score = labels.compute_confidence_score()
@@ -185,10 +269,97 @@ class DimensionalChunkLabeler:
             f"Chunk labeled: {len(labels.temporal_labels)} temporal, "
             f"{len(labels.spatial_labels)} spatial, "
             f"{len(labels.event_labels)} event, "
-            f"{len(labels.entity_labels)} entity labels"
+            f"{len(labels.entity_labels)} entity labels, "
+            f"{len(labels.generic_dimension_labels)} generic dimensions"
         )
 
         return labels
+
+    def _process_generic_dimension(
+        self,
+        dim_name: str,
+        dim_config: Any,
+        extraction_result: MultiDimensionalResult,
+        labels: ChunkDimensionalLabels,
+    ) -> None:
+        """
+        Process a discovered dimension with hierarchy support.
+
+        Stores per-entity hierarchies as list of lists for RAG-optimized output.
+
+        Args:
+            dim_name: Dimension name (snake_case)
+            dim_config: DimensionConfig object or dict with hierarchy
+            extraction_result: Multi-dimensional extraction result
+            labels: ChunkDimensionalLabels to populate
+        """
+        # Get entities for this dimension from extraction result
+        dimension_entities = extraction_result.entities.get(dim_name, [])
+
+        if not dimension_entities:
+            return
+
+        # Get hierarchy levels from config (handle both dict and DimensionConfig)
+        hierarchy_levels = []
+        if isinstance(dim_config, dict):
+            # Dict format: {"hierarchy": ["drug_name", "drug_class"]}
+            hierarchy_levels = dim_config.get('hierarchy', [])
+        elif hasattr(dim_config, 'hierarchy') and dim_config.hierarchy:
+            hierarchy_levels = dim_config.hierarchy
+        elif hasattr(dim_config, 'fields') and dim_config.fields:
+            # Fallback: extract hierarchy from fields (skip 'text' field)
+            hierarchy_levels = [
+                f.get("name")
+                for f in dim_config.fields
+                if f.get("name") != "text"
+            ]
+
+        # Collect per-entity hierarchies (list of lists)
+        entity_hierarchies = []
+        for entity in dimension_entities:
+            entity_labels = []
+
+            for level_name in hierarchy_levels:
+                # Handle both string level names and dict {"level": "name"} format
+                if isinstance(level_name, dict):
+                    level_name = level_name.get("level", "")
+
+                # Get value for this hierarchy level from entity
+                value = entity.get(level_name)
+                if value and isinstance(value, str):
+                    entity_labels.append(value)
+
+            if entity_labels:
+                entity_hierarchies.append(entity_labels)
+
+        # Store in generic_dimension_entities (new format for RAG)
+        if entity_hierarchies:
+            labels.generic_dimension_entities[dim_name] = entity_hierarchies
+
+            # Also store flat labels for backward compatibility
+            flat_labels = []
+            for entity_labels in entity_hierarchies:
+                for label in entity_labels:
+                    if label not in flat_labels:
+                        flat_labels.append(label)
+
+            labels.generic_dimension_labels[dim_name] = flat_labels
+            labels.generic_dimension_paths[dim_name] = " > ".join(flat_labels[:3])
+
+            # Store average confidence
+            confidences = [e.get("confidence", 1.0) for e in dimension_entities]
+            avg_confidence = sum(confidences) / len(confidences) if confidences else 1.0
+            labels.generic_dimension_confidences[dim_name] = avg_confidence
+            labels.dimension_confidences[dim_name] = avg_confidence
+
+        # Store entity count
+        labels.entity_counts[dim_name] = len(dimension_entities)
+
+        logger.debug(
+            f"Processed generic dimension '{dim_name}': "
+            f"{len(entity_hierarchies)} entities, "
+            f"{len(labels.generic_dimension_labels.get(dim_name, []))} unique labels"
+        )
 
     def _process_temporal_dimension(
         self,

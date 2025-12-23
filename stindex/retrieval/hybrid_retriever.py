@@ -19,13 +19,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 from loguru import logger
 
-from .dimensional_filter import DimensionalFilter, SpatialFilter, TemporalFilter
+from .dimensional_filter import DimensionalFilter, DimensionFilter, SpatialFilter, TemporalFilter
 
 
 @dataclass
 class RetrievalResult:
     """Single retrieval result."""
-    chunk_id: str
+    doc_id: str
     text: str
     score: float
     vector_score: Optional[float] = None
@@ -34,7 +34,7 @@ class RetrievalResult:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "chunk_id": self.chunk_id,
+            "doc_id": self.doc_id,
             "text": self.text,
             "score": self.score,
             "vector_score": self.vector_score,
@@ -145,9 +145,9 @@ class HybridRetriever:
         with open(id_mapping_path, "r") as f:
             self.id_mapping = json.load(f)
 
-        # Create reverse mapping (chunk_id -> faiss_idx)
+        # Create reverse mapping (doc_id -> faiss_idx)
         self.reverse_id_mapping = {
-            chunk_id: idx for idx, chunk_id in enumerate(self.id_mapping)
+            doc_id: idx for idx, doc_id in enumerate(self.id_mapping)
         }
 
         # Initialize encoder
@@ -179,9 +179,9 @@ class HybridRetriever:
             import jsonlines
             with jsonlines.open(metadata_path, "r") as reader:
                 for chunk in reader:
-                    chunk_id = chunk.get("chunk_id", "")
+                    doc_id = chunk.get("doc_id", "")
                     text = chunk.get("text", "")
-                    self._chunk_texts[chunk_id] = text
+                    self._chunk_texts[doc_id] = text
 
         # Fall back to enriched chunks in warehouse
         if not self._chunk_texts and self.stindex_warehouse_path:
@@ -190,9 +190,9 @@ class HybridRetriever:
                 import jsonlines
                 with jsonlines.open(enriched_path, "r") as reader:
                     for chunk in reader:
-                        chunk_id = chunk.get("chunk_id", "")
+                        doc_id = chunk.get("doc_id", "")
                         text = chunk.get("text", "")
-                        self._chunk_texts[chunk_id] = text
+                        self._chunk_texts[doc_id] = text
 
         return self._chunk_texts
 
@@ -210,6 +210,7 @@ class HybridRetriever:
         k: int = 10,
         temporal_filter: Optional[Union[TemporalFilter, Dict[str, Any]]] = None,
         spatial_filter: Optional[Union[SpatialFilter, Dict[str, Any]]] = None,
+        dimension_filters: Optional[List[Union[DimensionFilter, Dict[str, Any]]]] = None,
         filter_mode: str = "post",
         expand_factor: int = 3,
     ) -> RetrievalResponse:
@@ -221,6 +222,7 @@ class HybridRetriever:
             k: Number of results to return
             temporal_filter: Temporal filter criteria
             spatial_filter: Spatial filter criteria
+            dimension_filters: List of generic dimension filters (e.g., drug, procedure)
             filter_mode: 'pre' (filter first) or 'post' (search first then filter)
             expand_factor: For post-filtering, retrieve k*expand_factor candidates
 
@@ -228,7 +230,11 @@ class HybridRetriever:
             RetrievalResponse with results
         """
         # Check if filtering is needed
-        has_filters = (temporal_filter is not None or spatial_filter is not None)
+        has_filters = (
+            temporal_filter is not None or
+            spatial_filter is not None or
+            dimension_filters is not None
+        )
 
         if not has_filters:
             # Pure vector search
@@ -239,9 +245,9 @@ class HybridRetriever:
             return self._vector_search(query, k)
 
         if filter_mode == "pre":
-            return self._pre_filter_search(query, k, temporal_filter, spatial_filter)
+            return self._pre_filter_search(query, k, temporal_filter, spatial_filter, dimension_filters)
         else:
-            return self._post_filter_search(query, k, temporal_filter, spatial_filter, expand_factor)
+            return self._post_filter_search(query, k, temporal_filter, spatial_filter, dimension_filters, expand_factor)
 
     def _vector_search(self, query: str, k: int) -> RetrievalResponse:
         """Pure vector similarity search."""
@@ -258,11 +264,11 @@ class HybridRetriever:
             if idx < 0:
                 continue
 
-            chunk_id = self.id_mapping[idx]
-            text = chunk_texts.get(chunk_id, "")
+            doc_id = self.id_mapping[idx]
+            text = chunk_texts.get(doc_id, "")
 
             results.append(RetrievalResult(
-                chunk_id=chunk_id,
+                doc_id=doc_id,
                 text=text,
                 score=float(score),
                 vector_score=float(score),
@@ -280,15 +286,17 @@ class HybridRetriever:
         k: int,
         temporal_filter: Optional[Union[TemporalFilter, Dict[str, Any]]],
         spatial_filter: Optional[Union[SpatialFilter, Dict[str, Any]]],
+        dimension_filters: Optional[List[Union[DimensionFilter, Dict[str, Any]]]] = None,
     ) -> RetrievalResponse:
         """Filter first, then search within filtered set."""
         # Apply dimensional filters
         filter_result = self.dimensional_filter.filter(
             temporal_filter=temporal_filter,
             spatial_filter=spatial_filter,
+            dimension_filters=dimension_filters,
         )
 
-        filtered_ids = filter_result.chunk_ids
+        filtered_ids = filter_result.doc_ids
 
         if not filtered_ids:
             logger.warning("No chunks match the filters")
@@ -302,9 +310,9 @@ class HybridRetriever:
 
         # Get FAISS indices for filtered chunks
         filtered_faiss_indices = [
-            self.reverse_id_mapping[chunk_id]
-            for chunk_id in filtered_ids
-            if chunk_id in self.reverse_id_mapping
+            self.reverse_id_mapping[doc_id]
+            for doc_id in filtered_ids
+            if doc_id in self.reverse_id_mapping
         ]
 
         if not filtered_faiss_indices:
@@ -341,11 +349,11 @@ class HybridRetriever:
         retrieval_results = []
 
         for score, idx in results:
-            chunk_id = self.id_mapping[idx]
-            text = chunk_texts.get(chunk_id, "")
+            doc_id = self.id_mapping[idx]
+            text = chunk_texts.get(doc_id, "")
 
             retrieval_results.append(RetrievalResult(
-                chunk_id=chunk_id,
+                doc_id=doc_id,
                 text=text,
                 score=float(score),
                 vector_score=float(score),
@@ -392,6 +400,7 @@ class HybridRetriever:
         k: int,
         temporal_filter: Optional[Union[TemporalFilter, Dict[str, Any]]],
         spatial_filter: Optional[Union[SpatialFilter, Dict[str, Any]]],
+        dimension_filters: Optional[List[Union[DimensionFilter, Dict[str, Any]]]] = None,
         expand_factor: int = 3,
     ) -> RetrievalResponse:
         """Search first, then filter results."""
@@ -399,8 +408,9 @@ class HybridRetriever:
         filter_result = self.dimensional_filter.filter(
             temporal_filter=temporal_filter,
             spatial_filter=spatial_filter,
+            dimension_filters=dimension_filters,
         )
-        filtered_ids = filter_result.chunk_ids
+        filtered_ids = filter_result.doc_ids
 
         # Search with expanded k
         search_k = k * expand_factor
@@ -415,15 +425,15 @@ class HybridRetriever:
             if idx < 0:
                 continue
 
-            chunk_id = self.id_mapping[idx]
+            doc_id = self.id_mapping[idx]
 
             # Apply filter
-            if chunk_id not in filtered_ids:
+            if doc_id not in filtered_ids:
                 continue
 
-            text = chunk_texts.get(chunk_id, "")
+            text = chunk_texts.get(doc_id, "")
             results.append(RetrievalResult(
-                chunk_id=chunk_id,
+                doc_id=doc_id,
                 text=text,
                 score=float(score),
                 vector_score=float(score),
@@ -466,16 +476,16 @@ class HybridRetriever:
             for query in queries
         ]
 
-    def get_chunk_by_id(self, chunk_id: str) -> Optional[Dict[str, Any]]:
+    def get_chunk_by_id(self, doc_id: str) -> Optional[Dict[str, Any]]:
         """Get full chunk data by ID."""
         chunk_texts = self._load_chunk_texts()
-        text = chunk_texts.get(chunk_id)
+        text = chunk_texts.get(doc_id)
 
         if text is None:
             return None
 
         return {
-            "chunk_id": chunk_id,
+            "doc_id": doc_id,
             "text": text,
         }
 
@@ -494,5 +504,9 @@ class HybridRetriever:
             "spatial_keys": (
                 len(self.dimensional_filter.spatial_index)
                 if self.dimensional_filter else 0
+            ),
+            "generic_dimensions": (
+                self.dimensional_filter.get_available_dimensions()
+                if self.dimensional_filter else []
             ),
         }

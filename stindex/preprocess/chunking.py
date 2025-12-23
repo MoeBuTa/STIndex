@@ -66,7 +66,7 @@ class DocumentChunker:
         if len(text) <= self.max_chunk_size:
             # No chunking needed
             return [DocumentChunk(
-                chunk_id=f"{document_id}_chunk_0",
+                doc_id=f"{document_id}_chunk_0",
                 chunk_index=0,
                 total_chunks=1,
                 text=text,
@@ -146,7 +146,7 @@ class DocumentChunker:
 
             if chunk_text:  # Skip empty chunks
                 chunks.append(DocumentChunk(
-                    chunk_id=f"{document_id}_chunk_{chunk_index}",
+                    doc_id=f"{document_id}_chunk_{chunk_index}",
                     chunk_index=chunk_index,
                     total_chunks=-1,  # Will update later
                     text=chunk_text,
@@ -200,7 +200,7 @@ class DocumentChunker:
                 if current_chunk:
                     chunk_text = '\n\n'.join(current_chunk)
                     chunks.append(DocumentChunk(
-                        chunk_id=f"{document_id}_chunk_{chunk_index}",
+                        doc_id=f"{document_id}_chunk_{chunk_index}",
                         chunk_index=chunk_index,
                         total_chunks=-1,
                         text=chunk_text,
@@ -219,7 +219,7 @@ class DocumentChunker:
                 # Split large paragraph using sliding window
                 para_chunks = self._chunk_sliding_window(para, f"{document_id}_para", title, metadata)
                 for pc in para_chunks:
-                    pc.chunk_id = f"{document_id}_chunk_{chunk_index}"
+                    pc.doc_id = f"{document_id}_chunk_{chunk_index}"
                     pc.chunk_index = chunk_index
                     pc.document_id = document_id
                     chunks.append(pc)
@@ -235,7 +235,7 @@ class DocumentChunker:
                 if current_chunk:
                     chunk_text = '\n\n'.join(current_chunk)
                     chunks.append(DocumentChunk(
-                        chunk_id=f"{document_id}_chunk_{chunk_index}",
+                        doc_id=f"{document_id}_chunk_{chunk_index}",
                         chunk_index=chunk_index,
                         total_chunks=-1,
                         text=chunk_text,
@@ -258,7 +258,7 @@ class DocumentChunker:
         if current_chunk:
             chunk_text = '\n\n'.join(current_chunk)
             chunks.append(DocumentChunk(
-                chunk_id=f"{document_id}_chunk_{chunk_index}",
+                doc_id=f"{document_id}_chunk_{chunk_index}",
                 chunk_index=chunk_index,
                 total_chunks=-1,
                 text=chunk_text,
@@ -448,7 +448,7 @@ class DocumentChunker:
         hierarchy_str = " > ".join(section_hierarchy) if section_hierarchy else None
 
         return DocumentChunk(
-            chunk_id=f"{document_id}_chunk_{chunk_index}",
+            doc_id=f"{document_id}_chunk_{chunk_index}",
             chunk_index=chunk_index,
             total_chunks=-1,  # Will be updated later
             text=chunk_text,
