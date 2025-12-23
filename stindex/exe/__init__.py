@@ -1,8 +1,13 @@
 """
 Execution module for CLI commands.
 
-This module contains the execution logic for CLI commands,
-separated from the CLI interface definition.
+This module contains CLI executables for STIndex operations:
+- extract: Simple text extraction
+- extract_corpus: Large-scale corpus extraction
+- discover_schema: Schema discovery from Q&A datasets
+- evaluate: Evaluation pipelines
+
+Core pipeline classes are in stindex.pipeline module.
 """
 
 from .extract import execute_extract

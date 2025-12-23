@@ -244,38 +244,38 @@ def evaluate_extraction_result(
     return temporal_metrics, spatial_metrics, predicted_temporal, predicted_spatial, llm_raw_output
 
 
-def get_category_for_chunk(chunk_id: str) -> str:
+def get_category_for_chunk(doc_id: str) -> str:
     """
-    Determine test case category based on chunk_id/document_id.
+    Determine test case category based on doc_id/document_id.
 
     Categories:
-    - simple: Documents 6-8 (chunk_ids with mining_accident, school_opening, product_launch)
+    - simple: Documents 6-8 (doc_ids with mining_accident, school_opening, product_launch)
     - normal: Documents 9-11 (festival, transport, climate_research)
     - ambiguous: Documents 12-16 (hospital, university_conference, beach_closure, shopping_center, community_meeting)
     - relative: Documents 17-20 (political_rally, art_exhibition, construction_timeline, emergency_response)
     """
-    chunk_id_lower = chunk_id.lower()
+    doc_id_lower = doc_id.lower()
 
     # Simple cases
-    if any(x in chunk_id_lower for x in ["mining_accident", "school_opening", "product_launch"]):
+    if any(x in doc_id_lower for x in ["mining_accident", "school_opening", "product_launch"]):
         return "simple"
 
     # Normal cases
-    elif any(x in chunk_id_lower for x in ["festival", "transport", "climate_research"]):
+    elif any(x in doc_id_lower for x in ["festival", "transport", "climate_research"]):
         return "normal"
 
     # Ambiguous cases
-    elif any(x in chunk_id_lower for x in ["hospital_emergency", "university_conference", "beach_closure",
+    elif any(x in doc_id_lower for x in ["hospital_emergency", "university_conference", "beach_closure",
                                              "shopping_center", "community_meeting"]):
         return "ambiguous"
 
     # Relative cases
-    elif any(x in chunk_id_lower for x in ["political_rally", "art_exhibition", "construction_timeline",
+    elif any(x in doc_id_lower for x in ["political_rally", "art_exhibition", "construction_timeline",
                                              "emergency_response"]):
         return "relative"
 
     # First 5 documents (existing in dataset)
-    elif any(x in chunk_id_lower for x in ["cyclone_wa", "uwa_research", "health_outbreak",
+    elif any(x in doc_id_lower for x in ["cyclone_wa", "uwa_research", "health_outbreak",
                                              "afl_finals", "bushfire_nsw"]):
         return "mixed"
 
@@ -303,7 +303,7 @@ def evaluate_single_chunk_baseline(
     )
 
     # Get category
-    category = get_category_for_chunk(chunk["chunk_id"])
+    category = get_category_for_chunk(chunk.get("doc_id", chunk.get("chunk_id", "")))
 
     # Build result dict
     return {
@@ -316,7 +316,7 @@ def evaluate_single_chunk_baseline(
         "pred_spatial": pred_spatial,
         "category": category,
         "csv_row": {
-            "chunk_id": chunk["chunk_id"],
+            "doc_id": chunk.get("doc_id", chunk.get("chunk_id", "")),
             "document_id": chunk["document_id"],
             "category": category,
             "text": chunk["text"],
@@ -412,7 +412,7 @@ def evaluate_single_document_context_aware(
         )
 
         # Get category
-        category = get_category_for_chunk(chunk["chunk_id"])
+        category = get_category_for_chunk(chunk.get("doc_id", chunk.get("chunk_id", "")))
 
         # Build result dict
         doc_results.append({
@@ -425,7 +425,7 @@ def evaluate_single_document_context_aware(
             "pred_spatial": pred_spatial,
             "category": category,
             "csv_row": {
-                "chunk_id": chunk["chunk_id"],
+                "doc_id": chunk.get("doc_id", chunk.get("chunk_id", "")),
                 "document_id": doc_id,
                 "category": category,
                 "text": chunk["text"],
@@ -700,7 +700,7 @@ def execute_context_aware_evaluation(
 
         # CSV columns
         csv_columns = [
-            "chunk_id", "document_id", "category", "text",
+            "doc_id", "document_id", "category", "text",
             "temporal_predicted", "temporal_ground_truth",
             "temporal_precision", "temporal_recall", "temporal_f1",
             "spatial_predicted", "spatial_ground_truth",
