@@ -1,0 +1,32 @@
+# Corpus Extraction Configuration (Textbook - Test)
+# Test extraction with small sample for validation
+
+input:
+  corpus_path: "data/original/medcorp/train_textbooks_only.jsonl"  # Use full textbook corpus!
+
+extraction:
+  dimension_config: "data/schema_discovery_textbook_filtered/extraction_schema"  # Slim schema (64 dims, 14KB)
+  dimension_overrides:  # Disable base temporal/spatial dimensions
+    dimensions:
+      temporal:
+        enabled: false
+      spatial:
+        enabled: false
+      event:
+        enabled: false
+      entity:
+        enabled: false
+  batch_size: 10
+  sample_limit: 100  # Test with 100 documents
+  resume: true  # Auto-resume from previous progress if interrupted
+
+indexing:
+  corpus_name: "medcorp_textbooks"  # Corpus identifier for metadata
+
+llm:
+  llm_provider: "hf"
+  model_name: null  # Use config default
+
+output:
+  output_dir: "data/extraction_results_textbook_test"
+  format: "jsonl"  # One document per line

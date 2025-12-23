@@ -39,14 +39,14 @@ dimensions:
   spatial:
     enabled: true
     description: Extract spatial/location mentions with parent regions for disambiguation
-    extraction_type: geocoded
+    extraction_type: structured
     schema_type: SpatialEntity
     disambiguation:
       use_parent_region: true
       use_document_context: true
       use_source_location: true
     geocoding:
-      enabled: true
+      enabled: false
       provider: nominatim
       cache_results: true
     examples:

@@ -1,0 +1,21 @@
+# Override config to disable temporal and spatial dimensions for medical corpus
+# This config merges with the discovered schema to disable irrelevant dimensions
+#
+# Usage:
+#   extraction:
+#     dimension_config: "data/schema_discovery_mirage_textbook/final_schema"
+#     dimension_overrides: "cfg/extraction/inference/medical_corpus_overrides"
+#
+# Rationale:
+#   - Medical textbooks focus on domain-specific knowledge (diagnostic tests, procedures, etc.)
+#   - Temporal/spatial extraction adds noise and increases processing time
+#   - The discovered schema already contains 35+ medical dimensions that are relevant
+
+dimensions:
+  temporal:
+    enabled: false
+    description: "Temporal dimension disabled - not relevant for medical textbook corpus"
+
+  spatial:
+    enabled: false
+    description: "Spatial dimension disabled - not relevant for medical textbook corpus"

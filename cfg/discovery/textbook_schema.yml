@@ -1,0 +1,29 @@
+# Textbook Schema Discovery Configuration
+# Discovers medical dimensions from MIRAGE questions
+
+input:
+  questions_path: "data/evaluation/filtered_mirage_questions.jsonl"  # 1273 textbook-filtered questions
+
+discovery:
+  sample_limit: null  # Use all questions (or set to number for testing)
+  n_clusters: 10
+  enable_parallel: true
+  max_workers: 5
+  reuse_clusters: true
+
+entity_extraction:
+  batch_size: 30  # Reduced from 50 to avoid context overflow
+
+# LLM Configuration - matches parallel corpus extraction settings
+llm:
+  llm_provider: "hf"
+  model_name: "Qwen3-4B-Instruct-2507"
+  base_url: "http://localhost:8001"
+  temperature: 0.0
+  max_tokens: 16384  # Increased to handle large JSON outputs (50 questions/batch)
+  seed: null
+  top_p: 1.0
+  top_k: -1
+
+output:
+  output_dir: "data/schema_discovery_textbook_filtered"

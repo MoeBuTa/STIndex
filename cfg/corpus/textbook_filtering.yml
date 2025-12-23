@@ -1,0 +1,10 @@
+# Textbook Corpus Filtering Configuration
+# Filters MedCorp corpus to only textbook documents
+
+input:
+  medcorp_path: "data/original/medcorp/train.jsonl"
+  source_filter: "textbooks"  # Filter by metadata.source_corpus
+
+output:
+  corpus_path: "data/corpus/medcorp_textbooks.jsonl"
+  stats_output: "data/corpus/textbook_filtering_stats.json"

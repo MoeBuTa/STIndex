@@ -1,0 +1,26 @@
+llm:
+  llm_provider: hf
+  model_name: Qwen3-4B-Instruct-2507
+  base_url: http://localhost:8001
+  temperature: 0.0
+  max_tokens: 4096
+  seed: null
+  top_p: 1.0
+  top_k: -1
+deployment:
+  model: Qwen/Qwen3-4B-Instruct-2507
+  infer_backend: vllm
+  use_hf: true
+  host: 0.0.0.0
+  port: 8001
+  verbose: true
+  log_interval: 20
+  result_path: null
+  vllm:
+    tensor_parallel_size: ${NUM_GPUS:-4}
+    gpu_memory_utilization: 0.85
+    max_model_len: 16384
+    dtype: bfloat16
+    max_num_seqs: 256
+    enforce_eager: false
+    trust_remote_code: true

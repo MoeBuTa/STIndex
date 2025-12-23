@@ -1,0 +1,36 @@
+# Corpus Extraction Configuration (Textbook)
+# Extracts dimensional metadata from ALL textbook corpus documents
+
+input:
+  corpus_path: "data/original/medcorp/train_textbooks_only.jsonl"  # Use full textbook corpus!
+
+extraction:
+  dimension_config: "data/schema_discovery_textbook_filtered/extraction_schema"  # Slim schema (64 dims, 14KB)
+  dimension_overrides: "cfg/extraction/inference/medical_corpus_overrides"  # Disable temporal/spatial
+  batch_size: 100
+  sample_limit: null  # null = process all 125K textbooks
+  resume: true  # Auto-resume from previous progress if interrupted
+
+  # Dimension discovery: Propose new dimensions during extraction
+  enable_dimension_discovery: false  # Set true to enable in-line dimension discovery
+  discovery_confidence_threshold: 0.9  # Only accept proposals with confidence >= 0.9
+  schema_output_path: "data/schema_discovery_textbook_filtered/extraction_schema"  # Update schema in-place
+
+indexing:
+  corpus_name: "medcorp_textbooks"  # Corpus identifier for metadata
+
+llm:
+  llm_provider: "hf"
+  model_name: null  # Use config default
+  base_url: "http://localhost:8001"  # Use vLLM parallel deployment
+
+output:
+  output_dir: "data/extraction_results_textbook"
+  format: "jsonl"  # One document per line
+
+# Speed optimizations
+spatial:
+  enable_osm_context: false  # Disable OSM context for 10% speedup
+
+reflection:
+  enabled: false  # Disable reflection for 2× speedup per document

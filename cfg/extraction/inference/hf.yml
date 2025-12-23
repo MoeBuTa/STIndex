@@ -28,6 +28,12 @@ llm:
   top_p: 1.0  # Top-p (nucleus) sampling (1.0 = disabled)
   top_k: -1   # Top-k sampling (-1 = disabled)
 
+  # Concurrent request settings (for continuous batching optimization)
+  max_concurrent: 64         # Max simultaneous requests to server
+  request_timeout: 120       # Seconds before request timeout
+  retry_max: 3               # Max retries on transient failures
+  retry_backoff: 1.5         # Exponential backoff multiplier
+
 # ============================================================
 # Server Deployment Configuration
 # ============================================================
@@ -71,7 +77,7 @@ deployment:
     gpu_memory_utilization: 0.7  # Fraction of GPU memory to use (0.0-1.0)
 
     # Model settings
-    max_model_len: 8192  # Maximum sequence length (tokens)
+    max_model_len: 16384  # Maximum sequence length (tokens) - matches corpus extraction config
     dtype: auto          # Data type: auto, float16, bfloat16, float32
 
     # Security

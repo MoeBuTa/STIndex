@@ -1,0 +1,36 @@
+# QA Evaluation Configuration
+# Evaluates question answering using RRF-4 retrieval
+
+# Input paths
+questions_file: "data/evaluation/filtered_mirage_questions.jsonl"  # Questions file
+corpus_path: "data/original/medcorp/train.jsonl"  # MedCorp corpus
+indices_dir: "data/indices/medcorp"  # FAISS indices directory
+
+# Output paths
+output_dir: "data/output/evaluations/qa"
+
+# Question type
+question_type: "multiple_choice"  # Options: multiple_choice, open_ended, boolean
+
+# Retrieval settings
+retrieval_k: 5  # Number of documents to retrieve per question
+use_bm25: true  # Include BM25 in RRF-4
+use_contriever: true  # Include Contriever
+use_specter: true  # Include SPECTER
+use_medcpt: true  # Include MedCPT
+
+# LLM settings for answer generation
+llm:
+  model: "Qwen3-4B-Instruct-2507"  # LLM model name (configurable)
+  base_url: "http://localhost:8001/v1"  # MS-SWIFT server endpoint
+  temperature: 0.1  # Sampling temperature (lower = more deterministic)
+  max_tokens: 256  # Maximum tokens for LLM response
+
+# Evaluation settings
+sample_limit: null  # Limit questions for testing (null = all questions)
+
+# Target thresholds (for multiple_choice)
+targets:
+  exact_match: 0.40  # Minimum exact match score
+  token_f1: 0.55  # Minimum token F1 score
+  answer_coverage: 0.80  # Minimum answer coverage in context
