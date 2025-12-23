@@ -49,19 +49,19 @@ class RAGRetrieverConfig:
 @dataclass
 class RetrievedChunk:
     """A single retrieved chunk."""
-    chunk_id: str
+    doc_id: str
     text: str
     score: float
-    doc_id: Optional[str] = None
+    document_id: Optional[str] = None
     doc_title: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "chunk_id": self.chunk_id,
+            "doc_id": self.doc_id,
             "text": self.text,
             "score": self.score,
-            "doc_id": self.doc_id,
+            "document_id": self.document_id,
             "doc_title": self.doc_title,
             **self.metadata,
         }
@@ -128,13 +128,13 @@ class RetrievalContext:
 
         return "\n\n".join(formatted_chunks)
 
-    def get_chunk_ids(self) -> List[str]:
-        """Get list of chunk IDs."""
-        return [c.chunk_id for c in self.chunks]
-
     def get_doc_ids(self) -> List[str]:
-        """Get unique document IDs."""
-        return list(set(c.doc_id for c in self.chunks if c.doc_id))
+        """Get list of doc IDs from chunks."""
+        return [c.doc_id for c in self.chunks]
+
+    def get_unique_document_ids(self) -> List[str]:
+        """Get unique parent document IDs."""
+        return list(set(c.document_id for c in self.chunks if c.document_id))
 
 
 class RAGRetriever:
@@ -202,13 +202,34 @@ class RAGRetriever:
             import jsonlines
             with jsonlines.open(metadata_path, "r") as reader:
                 for chunk in reader:
-                    chunk_id = chunk.get("chunk_id", "")
-                    self._chunk_metadata[chunk_id] = {
+                    doc_id = chunk.get("doc_id", "")
+
+                    # Get dimensions (new unified format)
+                    dimensions = chunk.get("dimensions", {})
+
+                    # Build metadata dict
+                    meta = {
                         "doc_id": chunk.get("doc_id"),
                         "doc_title": chunk.get("doc_title"),
                         "temporal_normalized": chunk.get("temporal_normalized"),
                         "spatial_text": chunk.get("spatial_text"),
+                        "dimensions": dimensions,
                     }
+
+                    # Extract flat labels for backward compatibility
+                    # NEW format: dimensions["temporal"] = [["2022", "Q1", "2022-03"]]
+                    # OLD format: temporal_labels = ["2022", "Q1", "2022-03"]
+                    if dimensions.get("temporal"):
+                        meta["temporal_labels"] = dimensions["temporal"][0] if dimensions["temporal"] else []
+                    else:
+                        meta["temporal_labels"] = chunk.get("temporal_labels", [])
+
+                    if dimensions.get("spatial"):
+                        meta["spatial_labels"] = dimensions["spatial"][0] if dimensions["spatial"] else []
+                    else:
+                        meta["spatial_labels"] = chunk.get("spatial_labels", [])
+
+                    self._chunk_metadata[doc_id] = meta
 
         return self._chunk_metadata
 
@@ -248,16 +269,19 @@ class RAGRetriever:
         # Convert to RetrievedChunk objects
         chunks = []
         for result in response.results:
-            chunk_meta = metadata.get(result.chunk_id, {})
+            chunk_meta = metadata.get(result.doc_id, {})
             chunks.append(RetrievedChunk(
-                chunk_id=result.chunk_id,
+                doc_id=result.doc_id,
                 text=result.text,
                 score=result.score,
-                doc_id=chunk_meta.get("doc_id"),
+                document_id=chunk_meta.get("doc_id"),
                 doc_title=chunk_meta.get("doc_title"),
                 metadata={
                     "temporal_normalized": chunk_meta.get("temporal_normalized"),
                     "spatial_text": chunk_meta.get("spatial_text"),
+                    "temporal_labels": chunk_meta.get("temporal_labels", []),
+                    "spatial_labels": chunk_meta.get("spatial_labels", []),
+                    "dimensions": chunk_meta.get("dimensions", {}),
                 },
             ))
 
@@ -300,7 +324,7 @@ class RAGRetriever:
         documents_per_hop = documents_per_hop or self.config.documents_per_hop
 
         all_chunks = []
-        all_chunk_ids = set()
+        all_doc_ids = set()
         queries = [question]
 
         for hop in range(max_hops):
@@ -317,8 +341,8 @@ class RAGRetriever:
 
                 # Add new chunks (deduplication)
                 for chunk in context.chunks:
-                    if chunk.chunk_id not in all_chunk_ids:
-                        all_chunk_ids.add(chunk.chunk_id)
+                    if chunk.doc_id not in all_doc_ids:
+                        all_doc_ids.add(chunk.doc_id)
                         all_chunks.append(chunk)
                         hop_chunks.append(chunk)
 
@@ -450,7 +474,8 @@ class SimpleRetriever:
             import jsonlines
             with jsonlines.open(metadata_path, "r") as reader:
                 for chunk in reader:
-                    self.texts[chunk["chunk_id"]] = chunk.get("text", "")
+                    doc_id = chunk.get("doc_id", chunk.get("chunk_id", ""))
+                    self.texts[doc_id] = chunk.get("text", "")
 
     def _init_encoder(self, model_name: str) -> None:
         """Initialize encoder."""
@@ -475,10 +500,10 @@ class SimpleRetriever:
         for score, idx in zip(scores[0], indices[0]):
             if idx < 0:
                 continue
-            chunk_id = self.id_mapping[idx]
+            doc_id = self.id_mapping[idx]
             results.append({
-                "chunk_id": chunk_id,
-                "text": self.texts.get(chunk_id, ""),
+                "doc_id": doc_id,
+                "text": self.texts.get(doc_id, ""),
                 "score": float(score),
             })
 

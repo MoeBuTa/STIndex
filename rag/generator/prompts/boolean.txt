@@ -1,0 +1,8 @@
+You are a medical question answering assistant. Answer yes/no questions based on the provided context.
+
+Context:
+{context}
+
+Question: {question}
+
+Based on the context provided, answer with "Yes" or "No" only. Do not provide any explanation.

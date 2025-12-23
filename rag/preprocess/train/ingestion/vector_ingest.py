@@ -331,7 +331,7 @@ class VectorIngester:
         faiss.write_index(index, str(index_path))
         logger.info(f"Saved FAISS index to {index_path}")
 
-        # Save ID mapping (int index -> chunk_id)
+        # Save ID mapping (int index -> doc_id)
         id_mapping_path = self.output_dir / "id_mapping.json"
         with open(id_mapping_path, "w") as f:
             json.dump(ids, f)
@@ -342,7 +342,7 @@ class VectorIngester:
         with jsonlines.open(metadata_path, "w") as writer:
             for i, meta in enumerate(metadata):
                 meta["faiss_idx"] = i
-                meta["chunk_id"] = ids[i]
+                meta["doc_id"] = ids[i]
                 writer.write(meta)
         logger.info(f"Saved metadata to {metadata_path}")
 
@@ -443,21 +443,21 @@ class VectorIndexLoader:
             k: Number of results to return
 
         Returns:
-            List of results with chunk_id and score
+            List of results with doc_id and score
         """
         query_embedding = self.encode_query(query)
 
         # Search FAISS
         scores, indices = self.index.search(query_embedding, k)
 
-        # Map indices to chunk IDs
+        # Map indices to doc IDs
         results = []
         for score, idx in zip(scores[0], indices[0]):
             if idx < 0:  # FAISS returns -1 for not found
                 continue
 
             results.append({
-                "chunk_id": self.id_mapping[idx],
+                "doc_id": self.id_mapping[idx],
                 "score": float(score),
                 "faiss_idx": int(idx),
             })
@@ -498,7 +498,7 @@ class VectorIndexLoader:
                 if idx < 0:
                     continue
                 results.append({
-                    "chunk_id": self.id_mapping[idx],
+                    "doc_id": self.id_mapping[idx],
                     "score": float(score),
                     "faiss_idx": int(idx),
                 })

@@ -28,10 +28,16 @@ Usage:
 
 from .retriever import RAGRetriever, RAGRetrieverConfig, RetrievalContext
 from .query_processor import QueryProcessor
+from .rrf_retriever import RRFRetriever, RetrievalResult as RRFRetrievalResult
+from .three_stage_retriever import ThreeStageRetriever, RetrievalResult
 
 __all__ = [
     "RAGRetriever",
     "RAGRetrieverConfig",
     "RetrievalContext",
     "QueryProcessor",
+    "RRFRetriever",
+    "RRFRetrievalResult",
+    "ThreeStageRetriever",
+    "RetrievalResult",
 ]

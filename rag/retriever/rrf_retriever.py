@@ -7,6 +7,8 @@ Implements RRF-4: Combines 4 retrievers using Reciprocal Rank Fusion
 - SPECTER (scientific-domain semantic)
 - MedCPT (biomedical-domain semantic)
 
+Supports hierarchical dimensional filtering for dimension-aware retrieval.
+
 Based on MedRAG: https://github.com/Teddy-XiongGZ/MedRAG
 
 Usage:
@@ -19,7 +21,15 @@ Usage:
         rrf_k=60
     )
 
+    # Basic retrieval
     results = retriever.retrieve("What causes fever?", k=10)
+
+    # Retrieval with dimensional filtering
+    results = retriever.retrieve(
+        "What causes fever?",
+        k=10,
+        dimension_filters=[{"dimension": "symptom", "values": ["fever"]}]
+    )
 """
 
 import json
@@ -27,7 +37,7 @@ import numpy as np
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set, Any
 
 import faiss
 from loguru import logger
@@ -52,6 +62,8 @@ class RRFRetriever:
     RRF-4 Retriever combining 4 retrievers with Reciprocal Rank Fusion.
 
     Fusion formula: score = sum(1 / (rrf_k + rank_i + 1))
+
+    Supports hierarchical dimensional filtering for dimension-aware retrieval.
     """
 
     def __init__(
@@ -63,7 +75,8 @@ class RRFRetriever:
         use_specter: bool = True,
         use_medcpt: bool = True,
         rrf_k: int = 60,
-        device: str = "cpu"
+        device: str = "cpu",
+        use_dimensions: bool = False
     ):
         """
         Initialize RRF retriever.
@@ -77,6 +90,7 @@ class RRFRetriever:
             use_medcpt: Whether to include MedCPT
             rrf_k: RRF smoothing parameter (default 60)
             device: Device for neural models
+            use_dimensions: Whether to load dimensional indexes for filtering
         """
         self.corpus_path = Path(corpus_path)
         self.indices_dir = Path(indices_dir)
@@ -87,6 +101,12 @@ class RRFRetriever:
         logger.info(f"Loading corpus from {self.corpus_path}")
         self.documents = self._load_corpus()
         logger.info(f"Loaded {len(self.documents)} documents")
+
+        # Build doc_id -> index mapping for filtering
+        self.doc_id_to_idx = {
+            doc.get("doc_id", ""): idx
+            for idx, doc in enumerate(self.documents)
+        }
 
         # Initialize retrievers
         self.retrievers = {}
@@ -107,8 +127,39 @@ class RRFRetriever:
             logger.info("Initializing MedCPT...")
             self._init_dense_retriever("medcpt", "ncbi/MedCPT-Query-Encoder")
 
+        # Load dimensional indexes if requested
+        self.dimension_index = None
+        self.chunks_metadata = None
+        if use_dimensions:
+            self._load_dimension_indexes()
+
         logger.info(f"✓ RRF-{len(self.retrievers)} retriever ready")
         logger.info(f"  Active retrievers: {', '.join(self.retrievers.keys())}")
+        if self.dimension_index:
+            logger.info(f"  Dimensional filtering: enabled ({len(self.dimension_index)} dimensions)")
+
+    def _load_dimension_indexes(self):
+        """Load dimensional indexes for filtering."""
+        dimension_index_path = self.indices_dir / "indexes" / "dimension_index.json"
+        chunks_metadata_path = self.indices_dir / "chunks_metadata.jsonl"
+
+        if dimension_index_path.exists():
+            logger.info(f"Loading dimension index from {dimension_index_path}")
+            with open(dimension_index_path) as f:
+                self.dimension_index = json.load(f)
+            logger.info(f"  Loaded {len(self.dimension_index)} dimensions")
+        else:
+            logger.warning(f"Dimension index not found: {dimension_index_path}")
+
+        if chunks_metadata_path.exists():
+            logger.info(f"Loading chunks metadata from {chunks_metadata_path}")
+            self.chunks_metadata = {}
+            with open(chunks_metadata_path) as f:
+                for line in f:
+                    doc = json.loads(line)
+                    doc_id = doc.get("doc_id", doc.get("chunk_id", ""))
+                    self.chunks_metadata[doc_id] = doc
+            logger.info(f"  Loaded {len(self.chunks_metadata)} chunks")
 
     def _load_corpus(self) -> List[Dict]:
         """Load corpus from JSONL file."""
@@ -177,19 +228,47 @@ class RRFRetriever:
         self,
         query: str,
         k: int = 32,
-        retrieval_k: int = 100
+        retrieval_k: int = 100,
+        dimension_filters: Optional[List[Dict[str, Any]]] = None,
+        filter_mode: str = "post",
+        hierarchical: bool = True
     ) -> List[RetrievalResult]:
         """
-        Retrieve documents using RRF fusion.
+        Retrieve documents using RRF fusion with optional dimensional filtering.
 
         Args:
             query: Query string
             k: Number of final results to return
             retrieval_k: Number of results to retrieve from each retriever before fusion
+            dimension_filters: List of dimension filter dicts, e.g.:
+                [{"dimension": "symptom", "values": ["fever", "cough"]},
+                 {"dimension": "drug", "values": ["aspirin"]}]
+                Multiple values in same dimension are OR'd, multiple dimensions are AND'd
+            filter_mode: "post" (filter after RRF) or "pre" (filter before retrieval)
+            hierarchical: If True, query at any level matches all hierarchy levels
 
         Returns:
             List of RetrievalResult objects sorted by RRF score
         """
+        # Get allowed doc_ids if filtering
+        allowed_doc_ids = None
+        if dimension_filters and self.dimension_index:
+            allowed_doc_ids = self._apply_dimension_filters(
+                dimension_filters, hierarchical
+            )
+            logger.debug(f"Dimension filter matched {len(allowed_doc_ids)} documents")
+
+            if not allowed_doc_ids:
+                logger.warning("Dimension filter matched 0 documents, returning empty results")
+                return []
+
+            # For pre-filter mode, we need to expand retrieval_k to ensure enough candidates
+            if filter_mode == "pre" and allowed_doc_ids:
+                # Estimate expansion factor based on filter selectivity
+                selectivity = len(allowed_doc_ids) / len(self.documents)
+                if selectivity > 0:
+                    retrieval_k = min(int(retrieval_k / selectivity), len(self.documents))
+
         # Retrieve from each retriever
         all_rankings = {}
 
@@ -202,9 +281,115 @@ class RRFRetriever:
             all_rankings[retriever_name] = rankings
 
         # Fuse rankings with RRF
-        fused_results = self._fuse_rrf(all_rankings, k)
+        fused_results = self._fuse_rrf(all_rankings, k * 10 if allowed_doc_ids else k)
 
-        return fused_results
+        # Apply post-filtering if needed
+        if allowed_doc_ids and filter_mode == "post":
+            fused_results = [
+                r for r in fused_results
+                if r.doc_id in allowed_doc_ids
+            ]
+            # Re-rank after filtering
+            for i, result in enumerate(fused_results):
+                result.rank = i + 1
+
+        return fused_results[:k]
+
+    def _apply_dimension_filters(
+        self,
+        dimension_filters: List[Dict[str, Any]],
+        hierarchical: bool = True
+    ) -> Set[str]:
+        """
+        Apply dimension filters and return matching doc_ids.
+
+        Args:
+            dimension_filters: List of filter dicts with 'dimension' and 'values' keys
+            hierarchical: If True, match at any hierarchy level
+
+        Returns:
+            Set of matching doc_ids (intersection of all dimension filters)
+        """
+        if not dimension_filters or not self.dimension_index:
+            return set()
+
+        # Start with all documents
+        result_sets = []
+
+        for filter_spec in dimension_filters:
+            dim_name = filter_spec.get("dimension", "")
+            values = filter_spec.get("values", [])
+
+            if not dim_name or not values:
+                continue
+
+            # Normalize dimension name
+            dim_name_normalized = dim_name.strip().lower().replace(" ", "_")
+
+            if dim_name_normalized not in self.dimension_index:
+                logger.warning(f"Dimension '{dim_name}' not found in index")
+                continue
+
+            dim_data = self.dimension_index[dim_name_normalized]
+            labels_index = dim_data.get("labels", {})
+            paths_index = dim_data.get("paths", {})
+
+            # Collect matching doc_ids for this dimension (OR across values)
+            dim_matches = set()
+            for value in values:
+                value_normalized = value.strip().lower()
+
+                # Match in labels index
+                if value_normalized in labels_index:
+                    dim_matches.update(labels_index[value_normalized])
+
+                # If hierarchical, also match in paths
+                if hierarchical:
+                    for path, doc_ids in paths_index.items():
+                        if value_normalized in path:
+                            dim_matches.update(doc_ids)
+
+            if dim_matches:
+                result_sets.append(dim_matches)
+
+        # AND across dimensions (intersection)
+        if not result_sets:
+            return set()
+
+        result = result_sets[0]
+        for s in result_sets[1:]:
+            result = result.intersection(s)
+
+        return result
+
+    def get_dimension_stats(self, dimension: str) -> Dict[str, int]:
+        """
+        Get statistics for a specific dimension.
+
+        Args:
+            dimension: Dimension name (e.g., "symptom", "drug")
+
+        Returns:
+            Dict with top labels and their document counts
+        """
+        if not self.dimension_index:
+            return {}
+
+        dim_name_normalized = dimension.strip().lower().replace(" ", "_")
+        if dim_name_normalized not in self.dimension_index:
+            return {}
+
+        dim_data = self.dimension_index[dim_name_normalized]
+        labels_index = dim_data.get("labels", {})
+
+        # Sort by count
+        sorted_labels = sorted(
+            [(label, len(doc_ids)) for label, doc_ids in labels_index.items()],
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        return {label: count for label, count in sorted_labels[:50]}
 
     def _retrieve_bm25(
         self,
