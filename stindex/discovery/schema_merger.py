@@ -42,7 +42,7 @@ class SchemaMerger:
         semantic_threshold: float = 0.65,
         use_semantic: bool = True,
         use_llm_alignment: bool = True,
-        llm_manager=None
+        llm_manager=None  # accepts an LLMClient instance; named llm_manager for backward compat
     ):
         """
         Initialize schema merger.
@@ -56,14 +56,14 @@ class SchemaMerger:
                 Set to False to use only fuzzy matching (faster, but misses semantic duplicates)
             use_llm_alignment: Enable LLM-based dimension alignment (default: True)
                 Final pass to merge semantically related dimensions that fuzzy/semantic miss
-            llm_manager: LLMManager instance for LLM-based alignment (optional)
+            llm_manager: LLMClient instance for LLM-based alignment (optional)
                 If None and use_llm_alignment=True, will be created on demand
         """
         self.fuzzy_threshold = fuzzy_threshold
         self.semantic_threshold = semantic_threshold
         self.use_semantic = use_semantic
         self.use_llm_alignment = use_llm_alignment
-        self._llm_manager = llm_manager
+        self._llm_client = llm_manager  # accept LLMClient instance
 
         # Lazy-load sentence-transformers model
         self._embedding_model = None
@@ -224,10 +224,10 @@ class SchemaMerger:
         dimension_names = list(dimension_groups.keys())
         logger.info(f"  Running LLM alignment on {len(dimension_names)} dimensions...")
 
-        # Get or create LLM manager
-        llm_manager = self._get_llm_manager()
-        if llm_manager is None:
-            logger.warning("  LLM manager not available, skipping LLM alignment")
+        # Get or create LLM client
+        llm_client = self._get_llm_client()
+        if llm_client is None:
+            logger.warning("  LLM client not available, skipping LLM alignment")
             return dimension_groups
 
         # Build domain-agnostic prompt
@@ -235,8 +235,7 @@ class SchemaMerger:
 
         try:
             # Call LLM
-            response = llm_manager.generate([{"role": "user", "content": prompt}])
-            llm_output = response.content
+            llm_output = llm_client.generate("", prompt)
 
             # Parse LLM response to get merge groups
             merge_groups = self._parse_llm_alignment_response(llm_output, dimension_names)
@@ -259,21 +258,20 @@ class SchemaMerger:
             logger.warning(f"  LLM alignment failed: {e}, continuing without LLM merges")
             return dimension_groups
 
-    def _get_llm_manager(self):
-        """Get or create LLM manager for alignment."""
-        if self._llm_manager is not None:
-            return self._llm_manager
+    def _get_llm_client(self):
+        """Get or create LLM client for alignment."""
+        if self._llm_client is not None:
+            return self._llm_client
 
         try:
-            from stindex.llm.manager import LLMManager
+            from stindex.llm.base import create_client
             from stindex.utils.config import load_config_from_file
 
-            # Load default extraction config (just the filename, not full path)
             config = load_config_from_file("extract")
-            self._llm_manager = LLMManager(config)
-            return self._llm_manager
+            self._llm_client = create_client(config.get("llm", {}))
+            return self._llm_client
         except Exception as e:
-            logger.warning(f"Failed to create LLM manager: {e}")
+            logger.warning(f"Failed to create LLM client: {e}")
             return None
 
     def _build_llm_alignment_prompt(self, dimension_names: List[str]) -> str:

@@ -11,9 +11,9 @@ from loguru import logger
 
 from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.utils import extract_json_from_text
-from stindex.llm.manager import LLMManager
+from stindex.llm.base import create_client
 from stindex.llm.prompts.dimensional_extraction import DimensionalExtractionPrompt
-from stindex.llm.response.dimension_models import (
+from stindex.extraction.dimension_models import (
     DimensionType,
     MultiDimensionalResult,
     NormalizedDimensionEntity,
@@ -91,7 +91,7 @@ class DimensionalExtractor:
         if "auto_start" not in llm_config:
             llm_config["auto_start"] = auto_start
 
-        self.llm_manager = LLMManager(llm_config)
+        self.llm_client = create_client(llm_config)
 
         # Initialize spatial post-processors (loads from cfg/extraction/postprocess/spatial.yml)
         self.geocoder = GeocoderService()
@@ -220,12 +220,9 @@ class DimensionalExtractor:
 
             # Step 2: Generate with LLM
             logger.info(f"Extracting {len(self.dimensions)} dimensions with LLM...")
-            llm_response = self.llm_manager.generate(messages)
-
-            if not llm_response.success:
-                raise ValueError(f"LLM generation failed: {llm_response.error_msg}")
-
-            raw_output = llm_response.content
+            _sys = next((m["content"] for m in messages if m["role"] == "system"), "")
+            _usr = next((m["content"] for m in messages if m["role"] == "user"), "")
+            raw_output = self.llm_client.generate(_sys, _usr)
             logger.debug(f"Raw LLM output: {raw_output}...")
 
             # Step 3: Extract and validate JSON
@@ -311,42 +308,42 @@ class DimensionalExtractor:
                 )
 
                 # Retry LLM call
-                retry_response = self.llm_manager.generate(messages_with_retry)
-                if retry_response.success:
-                    raw_output = retry_response.content
+                try:
+                    _sys = next((m["content"] for m in messages_with_retry if m["role"] == "system"), "")
+                    _usr = next((m["content"] for m in messages_with_retry if m["role"] == "user"), "")
+                    raw_output = self.llm_client.generate(_sys, _usr)
                     logger.debug(f"Retry {retry_count} raw output: {raw_output[:200]}...")
 
-                    try:
-                        extraction_dict = extract_json_from_text(raw_output, None, return_dict=True)
-                        logger.info(f"Retry {retry_count} extracted: {list(extraction_dict.keys())}")
+                    extraction_dict = extract_json_from_text(raw_output, None, return_dict=True)
+                    logger.info(f"Retry {retry_count} extracted: {list(extraction_dict.keys())}")
 
-                        # Re-process entities
-                        for dim_name, dim_config in self.dimensions.items():
-                            mentions = extraction_dict.get(dim_name, [])
-                            if not mentions:
-                                continue
+                    # Re-process entities
+                    for dim_name, dim_config in self.dimensions.items():
+                        mentions = extraction_dict.get(dim_name, [])
+                        if not mentions:
+                            continue
 
-                            extraction_type = DimensionType(dim_config.extraction_type)
+                        extraction_type = DimensionType(dim_config.extraction_type)
 
-                            if extraction_type == DimensionType.NORMALIZED:
-                                entities = self._process_normalized(mentions, dim_name, dim_config, document_metadata)
-                            elif extraction_type == DimensionType.GEOCODED:
-                                entities = self._process_geocoded(mentions, dim_name, text, document_metadata)
-                            elif extraction_type == DimensionType.CATEGORICAL:
-                                entities = self._process_categorical(mentions, dim_name, dim_config)
-                            elif extraction_type == DimensionType.STRUCTURED:
-                                entities = self._process_structured(mentions, dim_name)
+                        if extraction_type == DimensionType.NORMALIZED:
+                            entities = self._process_normalized(mentions, dim_name, dim_config, document_metadata)
+                        elif extraction_type == DimensionType.GEOCODED:
+                            entities = self._process_geocoded(mentions, dim_name, text, document_metadata)
+                        elif extraction_type == DimensionType.CATEGORICAL:
+                            entities = self._process_categorical(mentions, dim_name, dim_config)
+                        elif extraction_type == DimensionType.STRUCTURED:
+                            entities = self._process_structured(mentions, dim_name)
+                        else:
+                            entities = self._process_free_text(mentions, dim_name)
+
+                        if entities:
+                            if hasattr(entities[0], 'model_dump'):
+                                processed_entities[dim_name] = [e.model_dump() for e in entities]
                             else:
-                                entities = self._process_free_text(mentions, dim_name)
-
-                            if entities:
-                                if hasattr(entities[0], 'model_dump'):
-                                    processed_entities[dim_name] = [e.model_dump() for e in entities]
-                                else:
-                                    processed_entities[dim_name] = entities
-                    except Exception as e:
-                        logger.warning(f"Retry {retry_count} failed to parse JSON: {e}")
-                        continue
+                                processed_entities[dim_name] = entities
+                except Exception as e:
+                    logger.warning(f"Retry {retry_count} failed: {e}")
+                    continue
 
             if not processed_entities:
                 logger.warning(f"No entities extracted after {MAX_RETRIES} retries")

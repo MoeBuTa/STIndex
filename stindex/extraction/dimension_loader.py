@@ -15,7 +15,7 @@ import yaml
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from stindex.llm.response.dimension_models import DimensionMetadata, DimensionType
+from stindex.extraction.dimension_models import DimensionMetadata, DimensionType
 
 
 # Predefined mandatory dimensions with hierarchies

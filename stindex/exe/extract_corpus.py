@@ -32,7 +32,7 @@ sys.path.insert(0, str(project_root))
 from stindex.extraction.dimensional_extraction import DimensionalExtractor
 from stindex.extraction.dimension_loader import DimensionConfigLoader
 from stindex.warehouse.chunk_labeler import DimensionalChunkLabeler
-from stindex.llm.manager import LLMManager
+from stindex.llm.base import create_client
 from stindex.utils.config import load_config_from_file
 from stindex.utils.timing import TimingStats
 
@@ -381,7 +381,7 @@ Config file format:
         qprint(f"   Dimension discovery: DISABLED")
 
     # Build extraction config path from llm_config
-    # DimensionalExtractor will create LLMManager internally
+    # DimensionalExtractor will create LLMClient internally
     extractor = DimensionalExtractor(
         config_path="extract",  # Use main extraction config
         dimension_config_path=dimension_config_path,
@@ -394,7 +394,7 @@ Config file format:
 
     # Override LLM config if specified in corpus extraction config
     if llm_config:
-        extractor.llm_manager = LLMManager(llm_config)
+        extractor.llm_client = create_client(llm_config)
 
     # Initialize labeler with dimension config
     qprint(f"⚙️  Initializing dimensional labeler...")

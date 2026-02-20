@@ -9,7 +9,7 @@ from typing import Dict, List, Set
 import json
 from loguru import logger
 
-from stindex.llm.manager import LLMManager
+from stindex.llm.base import LLMClient, create_client
 from stindex.llm.prompts.entity_extraction_with_discovery import ClusterEntityPrompt
 from stindex.discovery.cot_logger import CoTLogger
 from stindex.discovery.models import DiscoveredDimensionSchema, HierarchicalEntity
@@ -25,7 +25,7 @@ class ClusterEntityExtractor:
     def __init__(
         self,
         global_dimensions: Dict[str, DiscoveredDimensionSchema],
-        llm_manager: LLMManager = None,
+        llm_client: LLMClient = None,
         llm_config: Dict = None,
         batch_size: int = 50,
         first_batch_size: int = None,
@@ -41,8 +41,8 @@ class ClusterEntityExtractor:
         Args:
             global_dimensions: Dimensional schemas (either discovered globally or per-cluster)
                 Example: {'symptom': DiscoveredDimensionSchema(...), ...}
-            llm_manager: Shared LLM manager instance (preferred, for engine reuse)
-            llm_config: LLM configuration dict (fallback, creates new manager)
+            llm_client: Shared LLM client instance (preferred, for engine reuse)
+            llm_config: LLM configuration dict (fallback, creates new client)
             batch_size: Number of questions to process per LLM call (default: 50)
             first_batch_size: Size of first batch (adaptive, default: same as batch_size)
             output_dir: Output directory for CoT logging (optional, deprecated if cot_logger provided)
@@ -53,13 +53,13 @@ class ClusterEntityExtractor:
         """
         self.global_dimensions = global_dimensions
 
-        # Use provided llm_manager or create new one from config
-        if llm_manager is not None:
-            self.llm_manager = llm_manager
+        # Use provided llm_client or create new one from config
+        if llm_client is not None:
+            self.llm_client = llm_client
         elif llm_config is not None:
-            self.llm_manager = LLMManager(llm_config)
+            self.llm_client = create_client(llm_config)
         else:
-            raise ValueError("Must provide either llm_manager or llm_config")
+            raise ValueError("Must provide either llm_client or llm_config")
 
         self.batch_size = batch_size
         self.first_batch_size = first_batch_size if first_batch_size is not None else batch_size
@@ -186,8 +186,10 @@ class ClusterEntityExtractor:
 
             for attempt in range(self.max_retries):
                 try:
-                    response = self.llm_manager.generate(messages)
-                    result = prompt.parse_response_with_discovery(response.content)
+                    _sys = next((m["content"] for m in messages if m["role"] == "system"), "")
+                    _usr = next((m["content"] for m in messages if m["role"] == "user"), "")
+                    content = self.llm_client.generate(_sys, _usr)
+                    result = prompt.parse_response_with_discovery(content)
                     # Success - break out of retry loop
                     break
                 except (ValueError, json.JSONDecodeError) as e:

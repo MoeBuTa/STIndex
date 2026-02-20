@@ -343,7 +343,7 @@ class STIndexPipeline:
                 reflector = None
                 if self.enable_reflection:
                     reflector = ExtractionReflector(
-                        llm_manager=extractor.llm_manager,
+                        llm_client=extractor.llm_client,
                         relevance_threshold=self.relevance_threshold,
                         accuracy_threshold=self.accuracy_threshold,
                         consistency_threshold=self.consistency_threshold,
@@ -461,7 +461,7 @@ class STIndexPipeline:
             reflector = None
             if self.enable_reflection:
                 reflector = ExtractionReflector(
-                    llm_manager=self.extractor.llm_manager,
+                    llm_client=self.extractor.llm_client,
                     relevance_threshold=self.relevance_threshold,
                     accuracy_threshold=self.accuracy_threshold,
                     consistency_threshold=self.consistency_threshold,

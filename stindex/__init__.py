@@ -21,7 +21,7 @@ from stindex.preprocess import DocumentChunk, InputDocument, Preprocessor
 from stindex.pipeline import STIndexPipeline
 
 # Dimensional models
-from stindex.llm.response.dimension_models import (
+from stindex.extraction.dimension_models import (
     CategoricalDimensionEntity,
     CategoricalDimensionMention,
     DimensionType,

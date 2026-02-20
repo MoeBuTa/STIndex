@@ -35,6 +35,11 @@ PROVIDER_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "temperature": 0.0,
         "max_tokens": 2048,
     },
+    "gemini": {
+        "model_name": "gemini-2.0-flash",
+        "temperature": 0.0,
+        "max_tokens": 2048,
+    },
     "hf": {
         "model_name": "Qwen3-4B-Instruct-2507",
         "temperature": 0.0,

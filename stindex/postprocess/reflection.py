@@ -11,7 +11,7 @@ from loguru import logger
 
 from stindex.extraction.context_manager import ExtractionContext
 from stindex.extraction.utils import extract_json_from_text
-from stindex.llm.manager import LLMManager
+from stindex.llm.base import LLMClient
 from stindex.llm.prompts.reflection import ReflectionPrompt
 
 
@@ -37,7 +37,7 @@ class ExtractionReflector:
 
     def __init__(
         self,
-        llm_manager: LLMManager,
+        llm_client: LLMClient,
         relevance_threshold: float = 0.7,
         accuracy_threshold: float = 0.7,
         consistency_threshold: float = 0.6,
@@ -47,13 +47,13 @@ class ExtractionReflector:
         Initialize extraction reflector.
 
         Args:
-            llm_manager: LLM manager for reflection
+            llm_client: LLM client for reflection
             relevance_threshold: Minimum relevance score (0-1)
             accuracy_threshold: Minimum accuracy score (0-1)
             consistency_threshold: Minimum consistency score (0-1)
             extraction_context: Optional ExtractionContext for context-aware reflection
         """
-        self.llm_manager = llm_manager
+        self.llm_client = llm_client
         self.relevance_threshold = relevance_threshold
         self.accuracy_threshold = accuracy_threshold
         self.consistency_threshold = consistency_threshold
@@ -154,15 +154,12 @@ class ExtractionReflector:
         try:
             # Generate reflection scores
             messages = prompt_builder.build_messages()
-
-            response = self.llm_manager.generate(messages)
-
-            if not response.success:
-                logger.warning(f"Reflection LLM call failed: {response.error_msg}")
-                return self._default_scores(len(entities))
+            _sys = next((m["content"] for m in messages if m["role"] == "system"), "")
+            _usr = next((m["content"] for m in messages if m["role"] == "user"), "")
+            content = self.llm_client.generate(_sys, _usr)
 
             # Parse scores from response
-            scores = extract_json_from_text(response.content, None, return_dict=True)
+            scores = extract_json_from_text(content, None, return_dict=True)
 
             # Debug: Log what we got
             logger.debug(f"Reflection response type: {type(scores)}")
@@ -192,14 +189,14 @@ class ExtractionReflector:
                 logger.warning(
                     f"Reflection returned {type(scores).__name__} instead of list. Using default scores."
                 )
-                logger.debug(f"Raw response (first 500 chars): {response.content[:500]}")
+                logger.debug(f"Raw response (first 500 chars): {content[:500]}")
                 return self._default_scores(len(entities))
 
             if len(scores) != len(entities):
                 logger.warning(
                     f"Reflection returned {len(scores)} scores for {len(entities)} entities. Using default scores."
                 )
-                logger.debug(f"Raw response (first 500 chars): {response.content[:500]}")
+                logger.debug(f"Raw response (first 500 chars): {content[:500]}")
                 return self._default_scores(len(entities))
 
             # Log reflection reasoning for first few entities

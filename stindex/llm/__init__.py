@@ -1,14 +1,16 @@
 """LLM providers for STIndex."""
 
-from stindex.llm.anthropic import AnthropicLLM
-from stindex.llm.manager import LLMManager
-from stindex.llm.openai import OpenAILLM
-
-# MSSwiftLLM is lazy-loaded by LLMManager to avoid import errors
-# when MS-SWIFT dependencies are not installed
+from stindex.llm.base import LLMClient, create_client
+from stindex.llm.openai import OpenAIClient
+from stindex.llm.anthropic import AnthropicClient
+from stindex.llm.gemini import GeminiClient
+from stindex.llm.ms_swift import MSSwiftClient
 
 __all__ = [
-    "LLMManager",
-    "OpenAILLM",
-    "AnthropicLLM",
+    "LLMClient",
+    "create_client",
+    "OpenAIClient",
+    "AnthropicClient",
+    "GeminiClient",
+    "MSSwiftClient",
 ]
