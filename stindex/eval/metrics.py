@@ -283,7 +283,13 @@ def calculate_temporal_match(
         gt_norm = ground_truth.get("normalized", "")
         if not pred_norm or not gt_norm:
             return False
-        return pred_norm == gt_norm
+        # Normalize: strip T00:00:00 suffix so "2022-03-15T00:00:00" == "2022-03-15"
+        def _strip_midnight(v: str) -> str:
+            for suffix in ("T00:00:00", "T00:00"):
+                if v.endswith(suffix):
+                    return v[: -len(suffix)]
+            return v
+        return _strip_midnight(pred_norm) == _strip_midnight(gt_norm)
 
     return False
 
