@@ -269,6 +269,14 @@ data/output/evaluations/
     └── eval_{timestamp}_{config}.summary.json # Aggregate metrics
 ```
 
+### Slurm
+
+```
+salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:1
+salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:2
+salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:4
+```
+
 ### TODOs
 
  - Backend server implementation

@@ -1,14 +1,4 @@
-# Anthropic Claude API Configuration
-
+# Anthropic provider selector — use with: stindex extract --config anthropic
+# Model/temperature/max_tokens come from PROVIDER_DEFAULTS in stindex/utils/config.py.
 llm:
-  # Provider type
   llm_provider: anthropic
-
-  # Model name/identifier
-  # Latest: claude-sonnet-4-5-20250929 (specific version) or claude-sonnet-4-5 (rolling)
-  model_name: claude-sonnet-4-5-20250929
-  # Generation parameters
-  temperature: 0.0
-  max_tokens: 2048
-
-# API Key: Set via environment variable ANTHROPIC_API_KEY

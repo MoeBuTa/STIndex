@@ -1,7 +1,11 @@
 #!/bin/bash
+# Parallel corpus extraction across all available GPUs with auto-resume.
+# Requires one vLLM server per GPU: bash scripts/server/deploy_vllm_multi_server.sh
+# Edit CORPUS_PATH and CONFIG below before running.
+# Usage: bash scripts/extraction/extract_corpus_parallel.sh
 set -e
 
-echo "Starting parallel corpus extraction..."
+echo "Starting parallel corpus extraction with auto-resume..."
 
 # Detect number of GPUs using nvidia-smi
 NUM_GPUS=$(nvidia-smi -L | wc -l)
@@ -49,17 +53,23 @@ for WORKER_ID in $(seq 1 $NUM_GPUS); do
     echo "  Offset: $OFFSET"
     echo "  Limit: $LIMIT"
     echo "  Server: $BASE_URL"
+    echo "  Resume: Enabled (auto-resume from previous work)"
 
     # Start worker in background
     nohup bash -c "
+        # Activate conda environment
+        source ~/.bashrc
+        conda activate replay
+
         echo 'Worker $WORKER_ID: Starting extraction'
         echo '  Offset: $OFFSET'
         echo '  Limit: $LIMIT'
         echo '  Server: $BASE_URL'
+        echo '  Resume: Enabled'
         echo 'Started: \$(date)'
 
         python -m stindex.exe.extract_corpus \
-            --config cfg/extraction/corpus_extraction_parallel.yml \
+            --config cfg/extraction/inference/extract.yml \
             --worker-id $WORKER_ID \
             --offset $OFFSET \
             --limit $LIMIT \
@@ -78,11 +88,17 @@ done
 
 echo "✓ All $NUM_GPUS workers started in background"
 echo ""
+echo "🔄 Auto-resume enabled:"
+echo "  - Workers will automatically resume from previous progress"
+echo "  - Existing output files will be appended to"
+echo "  - No manual merge needed"
+echo ""
 echo "Monitor progress:"
 echo "  tail -f $LOGDIR/worker_*.log"
 echo ""
 echo "Check progress:"
 echo "  for w in \$(seq 1 $NUM_GPUS); do"
-echo "    count=\$(wc -l data/extraction_results_worker_\$w/corpus_extraction_*.jsonl 2>/dev/null | awk '{print \$1}')"
+echo "    count=\$(wc -l data/extraction_results_parallel/corpus_extraction_worker\${w}_*.jsonl 2>/dev/null | tail -1 | awk '{print \$1}')"
 echo "    echo \"Worker \$w: \$count docs\""
 echo "  done"
+echo ""

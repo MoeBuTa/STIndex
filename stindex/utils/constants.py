@@ -20,9 +20,7 @@ OUTPUT_DIR = str(OUTPUT_DIR)
 
 CFG_DIR = PROJECT_DIR / "cfg"
 CFG_EXTRACTION_INFERENCE_DIR = CFG_DIR / "extraction" / "inference"
-CFG_EXTRACTION_TRAINING_DIR = CFG_DIR / "extraction" / "training"
 CFG_EXTRACTION_POSTPROCESS_DIR = CFG_DIR / "extraction" / "postprocess"
-CFG_EXTRACTION_EVALUATION_DIR = CFG_DIR / "extraction" / "evaluation"
 CFG_PREPROCESS_DIR = CFG_DIR / "preprocess"
 
 # Cache directories

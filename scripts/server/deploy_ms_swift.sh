@@ -11,7 +11,7 @@ export VLLM_USE_TRITON_FLASH_ATTN="0"
 # Configuration
 CONFIG_FILE="cfg/extraction/inference/hf.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Change to project root
 cd "$PROJECT_ROOT"

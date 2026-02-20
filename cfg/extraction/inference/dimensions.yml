@@ -39,16 +39,12 @@ dimensions:
   spatial:
     enabled: true
     description: Extract spatial/location mentions with parent regions for disambiguation
-    extraction_type: structured
+    extraction_type: geocoded
     schema_type: SpatialEntity
     disambiguation:
       use_parent_region: true
       use_document_context: true
       use_source_location: true
-    geocoding:
-      enabled: false
-      provider: nominatim
-      cache_results: true
     examples:
     - input: a cyclone hit Broome, Western Australia
       output:

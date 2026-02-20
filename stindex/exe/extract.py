@@ -19,13 +19,23 @@ def execute_extract(
     text: str,
     config: str = "extract",
     model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    base_url: Optional[str] = None,
     auto_start: bool = True,
     output: Optional[Path] = None,
 ):
     """Execute extraction from text string."""
     try:
-        # Create extractor with config file
-        extractor = DimensionalExtractor(config_path=config, model_name=model, auto_start=auto_start)
+        # Create extractor with config file and optional overrides
+        extractor = DimensionalExtractor(
+            config_path=config,
+            model_name=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            base_url=base_url,
+            auto_start=auto_start,
+        )
 
         # Extract
         with console.status("[bold green]Extracting spatiotemporal indices..."):
@@ -40,7 +50,6 @@ def execute_extract(
 
         # Auto-save based on config (unless custom output path is specified)
         if not output:
-            # Check if auto_save is enabled in config
             auto_save = extractor.config.get("extraction", {}).get("auto_save", True)
             if auto_save:
                 output_dir = get_output_dir()

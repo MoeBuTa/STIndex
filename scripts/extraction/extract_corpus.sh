@@ -1,11 +1,11 @@
 #!/bin/bash
-# Entry point for corpus extraction + metadata construction
-# Config: cfg/extraction/corpus_extraction_textbook.yml
+# Entry point for corpus extraction.
+# Edit CONFIG below to point to your extraction config (LLM provider + corpus settings).
 # Usage: bash scripts/extraction/extract_corpus.sh
 
 set -e
 
-CONFIG="cfg/extraction/corpus_extraction_textbook.yml"
+CONFIG="cfg/extraction/inference/extract.yml"
 
 # Setup logging
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
@@ -25,11 +25,12 @@ nohup bash -c "
     echo '========================================'
     echo 'Corpus Extraction + Metadata'
     echo '========================================'
-    echo 'Config: $CONFIG'
+    echo 'Config:  $CONFIG'
     echo 'Started: \$(date)'
     echo ''
 
-    python -m stindex.exe.extract_corpus --config '$CONFIG'
+    python -m stindex.exe.extract_corpus \
+        --config '$CONFIG'
 
     echo ''
     echo '✓ Corpus extraction complete!'

@@ -28,9 +28,6 @@ from stindex.eval.retrieval_metrics import RetrievalMetrics, compute_retrieval_m
 # QA metrics
 from stindex.eval.qa_metrics import QAMetrics, compute_qa_metrics
 
-# Unified evaluation
-from stindex.eval.unified_evaluation_pipeline import UnifiedEvaluator
-
 __all__ = [
     # Extraction metrics
     "TemporalMetrics",
@@ -47,6 +44,4 @@ __all__ = [
     # QA
     "QAMetrics",
     "compute_qa_metrics",
-    # Unified
-    "UnifiedEvaluator",
 ]

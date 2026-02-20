@@ -1,9 +1,11 @@
 # STIndex Extraction Configuration
-# Main configuration file that switches between different LLM providers
+# Feature toggles for extraction pipeline. LLM model/temperature/max_tokens
+# come from PROVIDER_DEFAULTS in stindex/utils/config.py and can be overridden
+# via CLI flags (--model, --temperature, --max-tokens, --base-url).
 
 # LLM Configuration
 llm:
-  # LLM Provider Selection
+  # LLM Provider Selection — model settings come from PROVIDER_DEFAULTS
   # Options: hf, openai, anthropic
   llm_provider: openai
 

@@ -20,20 +20,7 @@ from stindex.preprocess import DocumentChunk, InputDocument, Preprocessor
 # Pipeline API
 from stindex.pipeline import STIndexPipeline
 
-
-# Response models (legacy)
-from stindex.llm.response.models import (
-    ExtractionResult,
-    LocationType,
-    SpatialEntity,
-    SpatialMention,
-    SpatioTemporalResult,
-    TemporalEntity,
-    TemporalMention,
-    TemporalType,
-)
-
-# New dimensional models
+# Dimensional models
 from stindex.llm.response.dimension_models import (
     CategoricalDimensionEntity,
     CategoricalDimensionMention,
@@ -45,29 +32,16 @@ from stindex.llm.response.dimension_models import (
     NormalizedDimensionMention,
 )
 
-# Retrieval API
-from stindex.retrieval.hybrid_retriever import HybridRetriever, RetrievalResult, RetrievalResponse
-from stindex.retrieval.dimensional_filter import DimensionalFilter, TemporalFilter, SpatialFilter
-
 __all__ = [
     # Main API
-    "DimensionalExtractor",  # Multi-dimensional extractor
+    "DimensionalExtractor",
     # Preprocessing API
-    "Preprocessor",  # Generic preprocessing orchestrator
-    "InputDocument",  # Input document model
-    "DocumentChunk",  # Document chunk model
+    "Preprocessor",
+    "InputDocument",
+    "DocumentChunk",
     # Pipeline API
-    "STIndexPipeline",  # End-to-end pipeline orchestrator
-    # Legacy Models
-    "ExtractionResult",
-    "SpatioTemporalResult",
-    "TemporalEntity",
-    "SpatialEntity",
-    "TemporalMention",
-    "SpatialMention",
-    "TemporalType",
-    "LocationType",
-    # New Dimensional Models
+    "STIndexPipeline",
+    # Dimensional Models
     "MultiDimensionalResult",
     "DimensionType",
     "NormalizedDimensionMention",
@@ -76,13 +50,6 @@ __all__ = [
     "GeocodedDimensionEntity",
     "CategoricalDimensionMention",
     "CategoricalDimensionEntity",
-    # Retrieval API
-    "HybridRetriever",
-    "RetrievalResult",
-    "RetrievalResponse",
-    "DimensionalFilter",
-    "TemporalFilter",
-    "SpatialFilter",
 ]
 
 

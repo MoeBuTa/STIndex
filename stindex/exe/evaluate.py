@@ -372,7 +372,8 @@ def evaluate_baseline_chunks_parallel(
 def evaluate_single_document_context_aware(
     config: str,
     doc_id: str,
-    chunks: List[Dict[str, Any]]
+    chunks: List[Dict[str, Any]],
+    llm_overrides: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Evaluate a single document with context-aware extraction (thread-safe).
@@ -380,6 +381,8 @@ def evaluate_single_document_context_aware(
     Each document gets its own extractor with its own ExtractionContext.
     Returns list of evaluation results for all chunks in this document.
     """
+    llm_overrides = llm_overrides or {}
+
     # Load config to get context_aware settings
     from stindex.utils.config import load_config_from_file
     eval_config = load_config_from_file(config)
@@ -395,7 +398,11 @@ def evaluate_single_document_context_aware(
     # Create context-aware extractor for this document
     extractor = DimensionalExtractor(
         config_path=config,
-        extraction_context=context
+        extraction_context=context,
+        model_name=llm_overrides.get("model_name"),
+        temperature=llm_overrides.get("temperature"),
+        max_tokens=llm_overrides.get("max_tokens"),
+        base_url=llm_overrides.get("base_url"),
     )
 
     # Extract all chunks with shared context
@@ -451,19 +458,21 @@ def evaluate_context_aware_documents_parallel(
     config: str,
     documents: Dict[str, List[Dict[str, Any]]],
     progress,
-    task
+    task,
+    llm_overrides: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Evaluate documents in parallel, each with its own context.
 
     Returns list of evaluation results for all chunks.
     """
+    llm_overrides = llm_overrides or {}
     all_results = []
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         # Submit all documents
         future_to_doc = {
-            executor.submit(evaluate_single_document_context_aware, config, doc_id, chunks): (doc_id, len(chunks))
+            executor.submit(evaluate_single_document_context_aware, config, doc_id, chunks, llm_overrides): (doc_id, len(chunks))
             for doc_id, chunks in documents.items()
         }
 
@@ -487,6 +496,10 @@ def execute_context_aware_evaluation(
     dataset: Optional[Path] = None,
     output_dir: Optional[Path] = None,
     sample_limit: Optional[int] = None,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    base_url: Optional[str] = None,
 ):
     """
     Execute context-aware evaluation comparing baseline vs context-aware extraction.
@@ -496,7 +509,21 @@ def execute_context_aware_evaluation(
         dataset: Path to context-aware evaluation dataset
         output_dir: Output directory for results
         sample_limit: Limit number of chunks to process (for testing)
+        model: Model name override
+        temperature: Sampling temperature override
+        max_tokens: Max tokens override
+        base_url: LLM server base URL override (for hf provider)
     """
+    # Store LLM overrides for use by extractors created in this evaluation run
+    _llm_overrides = {
+        k: v for k, v in {
+            "model_name": model,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "base_url": base_url,
+        }.items() if v is not None
+    }
+
     try:
         # Load configuration
         eval_config = load_config_from_file(config)
@@ -546,7 +573,13 @@ def execute_context_aware_evaluation(
         console.print(f"\n[bold cyan]Initializing extractors...[/bold cyan]")
 
         # Baseline extractor (no context)
-        baseline_extractor = DimensionalExtractor(config_path=config)
+        baseline_extractor = DimensionalExtractor(
+            config_path=config,
+            model_name=_llm_overrides.get("model_name"),
+            temperature=_llm_overrides.get("temperature"),
+            max_tokens=_llm_overrides.get("max_tokens"),
+            base_url=_llm_overrides.get("base_url"),
+        )
         console.print("[green]✓ Baseline extractor ready (no context)[/green]")
 
         # Metrics storage
@@ -646,7 +679,8 @@ def execute_context_aware_evaluation(
                 config,
                 documents,
                 progress,
-                task
+                task,
+                llm_overrides=_llm_overrides,
             )
 
             # Aggregate context-aware metrics

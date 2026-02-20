@@ -44,6 +44,9 @@ class DimensionalExtractor:
         dimension_config_path: Optional[str] = None,
         dimension_overrides: Optional[str] = None,
         model_name: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        base_url: Optional[str] = None,
         auto_start: bool = True,
         extraction_context: Optional[ExtractionContext] = None,
         prompt_mode: str = "default",  # "default" or "corpus"
@@ -57,9 +60,11 @@ class DimensionalExtractor:
         Args:
             config_path: Path to main config file (llm provider, geocoding, etc.)
             dimension_config_path: Path to dimension config file (default: cfg/dimensions.yml)
-                                  Can be domain-specific: "case_studies/public_health/extraction/config/health_dimensions"
             dimension_overrides: Optional path to override config (e.g., to disable dimensions)
             model_name: Override model name from config
+            temperature: Override sampling temperature from config
+            max_tokens: Override max tokens from config
+            base_url: Override LLM server base URL from config (for hf provider)
             auto_start: Auto-start servers if not running (vLLM only)
             extraction_context: Optional ExtractionContext for context-aware extraction
             prompt_mode: Prompt template mode - "default" for general text, "corpus" for corpus/textbook documents
@@ -72,11 +77,17 @@ class DimensionalExtractor:
         self.config = config
         self.prompt_mode = prompt_mode
 
-        # Create LLM manager
+        # Create LLM manager — apply any runtime overrides
         llm_config = config.get("llm", {})
-        if model_name:
+        if model_name is not None:
             llm_config["model_name"] = model_name
             logger.info(f"Using runtime model override: {model_name}")
+        if temperature is not None:
+            llm_config["temperature"] = temperature
+        if max_tokens is not None:
+            llm_config["max_tokens"] = max_tokens
+        if base_url is not None:
+            llm_config["base_url"] = base_url
         if "auto_start" not in llm_config:
             llm_config["auto_start"] = auto_start
 
@@ -430,14 +441,25 @@ class DimensionalExtractor:
 
             text = mention.get("text", "")
             normalized = mention.get("normalized", "")
-            # Get normalization type - try 'type' first, then third key if available
-            normalization_type = mention.get("type", "")
-            if not normalization_type and len(mention) > 2:
-                keys = list(mention.keys())
-                for key in keys:
-                    if key not in ("text", "normalized", "confidence"):
-                        normalization_type = mention.get(key, "")
-                        break
+            # For temporal hierarchy format, fall back to timestamp → date if normalized is empty
+            if not normalized and dim_name == "temporal":
+                normalized = (
+                    mention.get("timestamp") or
+                    mention.get("datetime") or
+                    mention.get("date") or
+                    ""
+                )
+            # Get normalization type from explicit key or infer from hierarchy fields present
+            normalization_type = mention.get("type") or mention.get("normalization_type") or ""
+            if not normalization_type and dim_name == "temporal":
+                if mention.get("timestamp") or mention.get("datetime"):
+                    normalization_type = "datetime"
+                elif mention.get("date"):
+                    normalization_type = "date"
+                elif mention.get("month"):
+                    normalization_type = "month"
+                elif mention.get("year"):
+                    normalization_type = "year"
 
             # Apply relative temporal resolution if available and dimension is temporal
             if self.temporal_resolver and dim_name == "temporal" and normalized:
