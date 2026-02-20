@@ -6,7 +6,7 @@
 [![Home Homepage](https://img.shields.io/badge/Home-Homepage-green.svg)](https://stindex.ai4wa.com/)
 [![Demo Dashboard](https://img.shields.io/badge/Demo-Dashboard-green.svg)](https://stindex.ai4wa.com/dashboard)
 
-STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features end-to-end pipeline with preprocessing, extraction, and visualization.
+STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features an end-to-end pipeline with preprocessing, extraction, and evaluation.
 
 **🌐 [Try the Demo Dashboard](https://stindex.ai4wa.com/)**
 
@@ -24,11 +24,30 @@ python -m spacy download en_core_web_sm
 ### Basic Extraction
 
 ```bash
-# Extract spatiotemporal entities
+# Extract spatiotemporal entities (uses default config + PROVIDER_DEFAULTS)
 stindex extract "On March 15, 2022, a cyclone hit Broome, Western Australia."
 
-# Use specific LLM provider
-stindex extract "Text here..." --config openai  # or anthropic, hf
+# Use a specific provider
+stindex extract "Text here..." --config openai   # or anthropic, hf
+
+# Override model and parameters at runtime
+stindex extract "Text here..." --config hf --model Qwen/Qwen3-8B \
+    --base-url http://localhost:8001 --temperature 0.0 --max-tokens 4096
+```
+
+### Python API
+
+```python
+from stindex import DimensionalExtractor
+
+extractor = DimensionalExtractor(config_path="openai")
+result = extractor.extract("March 15, 2022 in Broome, Western Australia")
+
+for e in result.temporal_entities:
+    print(e["text"], "→", e["normalized"])   # "March 15, 2022" → "2022-03-15"
+
+for e in result.spatial_entities:
+    print(e["text"], e["latitude"], e["longitude"])  # "Broome" -17.96 122.22
 ```
 
 ### End-to-End Pipeline
@@ -36,29 +55,23 @@ stindex extract "Text here..." --config openai  # or anthropic, hf
 ```python
 from stindex import InputDocument, STIndexPipeline
 
-# Create input documents (URL, file, or text)
 docs = [
     InputDocument.from_url("https://example.com/article"),
     InputDocument.from_file("/path/to/document.pdf"),
     InputDocument.from_text("Your text here")
 ]
 
-# Run full pipeline: preprocessing → extraction → warehouse → visualization
-pipeline = STIndexPipeline(
-    dimension_config="dimensions",
-    output_dir="data/output",
-)
+pipeline = STIndexPipeline(dimension_config="dimensions", output_dir="data/output")
 results = pipeline.run_pipeline(docs)
 ```
 
-### Schema Discovery (NEW in v0.6.0)
+### Schema Discovery
 
 Automatically discover dimensional schemas from Q&A datasets:
 
 ```python
 from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
 
-# Discover schema from medical Q&A dataset
 discovery = SchemaDiscoveryPipeline(
     questions_path="data/original/mirage/train.jsonl",
     corpus_path="data/original/medcorp/train.jsonl",
@@ -68,225 +81,204 @@ discovery = SchemaDiscoveryPipeline(
 schema = discovery.run()
 
 # Use discovered schema for extraction
-pipeline = STIndexPipeline(
-    dimension_config="cfg/discovered_medical_schema.yml"
-)
+pipeline = STIndexPipeline(dimension_config="cfg/discovered_medical_schema.yml")
 results = pipeline.run_pipeline(docs)
 ```
 
-**Features:**
-- Domain-agnostic schema discovery from question-answer datasets
-- Two-phase approach: cluster-based initial discovery + refinement
-- Outputs hierarchy-based dimension configs compatible with extraction pipeline
-- Automatic mandatory dimension inclusion (temporal, spatial)
-
 **Supported datasets:** MIRAGE, MedCorp, HotpotQA, 2WikiMQA, MuSiQue
 
-### Python API (Direct Extraction)
+---
 
-```python
-from stindex import DimensionalExtractor
+## LLM Providers
 
-# Initialize with default config (cfg/extract.yml)
-extractor = DimensionalExtractor()
+Provider defaults are defined in `stindex/utils/config.py` and can be overridden at runtime via CLI flags or Python API. No separate YAML files needed — just select a provider.
 
-# Or specify a config
-extractor = DimensionalExtractor(config_path="openai")
+| Provider | Default Model | Config File |
+|----------|--------------|-------------|
+| `openai` | `gpt-4o-mini` | `cfg/extraction/inference/openai.yml` |
+| `anthropic` | `claude-sonnet-4-5-20250929` | `cfg/extraction/inference/anthropic.yml` |
+| `hf` | `Qwen3-4B-Instruct-2507` | `cfg/extraction/inference/hf.yml` |
 
-# Extract entities
-result = extractor.extract("March 15, 2022 in Broome, Australia")
-
-# Access results
-print(f"Temporal: {len(result.temporal_entities)} entities")
-print(f"Spatial: {len(result.spatial_entities)} entities")
-
-# Raw LLM output available for debugging
-if result.extraction_config:
-    raw_output = result.extraction_config.get("raw_llm_output") if isinstance(result.extraction_config, dict) else result.extraction_config.raw_llm_output
-    print(f"Raw output: {raw_output}")
+Select provider in `cfg/extraction/inference/extract.yml`:
+```yaml
+llm:
+  llm_provider: hf   # or openai, anthropic
 ```
 
-## Server Deployment
+Or override everything at runtime:
+```bash
+stindex extract "Text..." --config openai --model gpt-4o --temperature 0.0
 
-### MS-SWIFT Server (Model Sharding with Tensor Parallelism)
+stindex extract "Text..." --config hf \
+    --model Qwen3-4B-Instruct-2507 --base-url http://localhost:8001
+```
 
-Deploy a single MS-SWIFT server that uses all available GPUs via tensor parallelism:
+---
+
+## HuggingFace Server (MS-SWIFT + vLLM)
+
+Deploy a model using MS-SWIFT with vLLM backend. Configure in `cfg/extraction/inference/hf.yml`:
+
+```yaml
+deployment:
+  model: Qwen/Qwen3-4B-Instruct-2507   # HuggingFace model ID or local path
+  port: 8001
+  vllm:
+    tensor_parallel_size: 1            # Number of GPUs (or "auto")
+    gpu_memory_utilization: 0.7
+    max_model_len: 16384
+```
 
 ```bash
-# Deploy server (auto-detects GPUs by default)
-./scripts/deploy_ms_swift.sh
+# Start server (reads cfg/extraction/inference/hf.yml)
+./scripts/server/deploy_ms_swift.sh
 
 # Stop server
-./scripts/stop_ms_swift.sh
+./scripts/server/stop_ms_swift.sh
 
-# Check logs
+# Monitor
 tail -f logs/hf_server.log
 ```
 
-**Configuration** (`cfg/hf.yml`):
-- `deployment.port`: Server port (default: 8001)
-- `deployment.model`: HuggingFace model ID or local path
-- `deployment.result_path`: Directory for inference logs (default: `data/output/result`)
-- `deployment.vllm.tensor_parallel_size`:
-  - `auto` (default): Auto-detect all available GPUs
-  - Or set manually: `1`, `2`, `4`, etc.
-- `deployment.vllm.gpu_memory_utilization`: GPU memory fraction (default: 0.7)
-
-
+---
 
 ## Configuration
 
-STIndex uses a hierarchical configuration structure organized by module:
+```
+cfg/
+├── extraction/
+│   ├── inference/
+│   │   ├── extract.yml        # Main config: llm_provider, feature toggles
+│   │   ├── dimensions.yml     # Dimension schema definitions
+│   │   ├── reflection.yml     # Two-pass reflection thresholds
+│   │   ├── hf.yml             # HF server deployment config
+│   │   ├── openai.yml         # Provider selector (llm_provider: openai)
+│   │   └── anthropic.yml      # Provider selector (llm_provider: anthropic)
+│   └── postprocess/
+│       ├── spatial.yml        # Geocoding settings (Nominatim, Google Maps)
+│       └── temporal.yml       # Temporal normalization (ISO 8601)
+├── preprocess/
+│   ├── chunking.yml           # Chunking strategy and parameters
+│   ├── parsing.yml            # Document parsing (PDF, HTML, DOCX)
+│   └── scraping.yml           # Web scraping (rate limits, caching)
+└── discovery/
+    └── textbook_schema.yml    # Example discovered schema
+```
 
-### Preprocessing Configs (`cfg/preprocess/`)
+### Key Config: `extract.yml`
 
-- **`chunking.yml`**: Document chunking strategies
-  - `strategy`: "sliding_window", "paragraph", "element_based", "semantic"
-  - `max_chunk_size`: Maximum tokens per chunk (default: 1500)
-  - `overlap`: Token overlap between chunks (default: 150)
-
-- **`parsing.yml`**: Document parsing settings
-  - `parsing_method`: "unstructured" (recommended) or "simple"
-  - Format-specific settings for PDF, HTML, DOCX
-  - `max_file_size_mb`: Maximum file size (default: 50MB)
-
-- **`scraping.yml`**: Web scraping configuration
-  - `rate_limit`: Seconds between requests (default: 2.0)
-  - `timeout`: Request timeout (default: 30s)
-  - `cache.enabled`: Enable response caching
-  - `robots.respect_robots_txt`: Respect robots.txt rules
-
-### Extraction Configs (`cfg/extraction/`)
-
-#### Inference Configs (`cfg/extraction/inference/`)
-
-- **`extract.yml`**: Main extraction configuration
-  - `llm.llm_provider`: "hf", "openai", or "anthropic"
-  - `extraction.enable_cache`: Cache extraction results
-  - `extraction.auto_save`: Auto-save to `data/output/yyyy-mm-dd/hh-mm-ss.json`
-  - `extraction.min_confidence`: Minimum confidence threshold (0.0-1.0)
-  - Context-aware extraction settings
-  - Post-processing toggles (reflection, OSM context, relative temporal resolution)
-
-- **`dimensions.yml`**: Multi-dimensional extraction definitions (hierarchy-based format v0.6.0+)
-  - **temporal**: ISO 8601 normalized dates with 4-level hierarchy (timestamp → date → month → year)
-  - **spatial**: Geocoded locations with 4-level hierarchy (location → city → state → country)
-  - **event**: Optional categorical dimension for event types (disabled by default)
-  - **entity**: Optional categorical dimension for named entities (disabled by default)
-  - Each dimension defines: `enabled`, `extraction_type`, `schema_type`, `hierarchy`, `examples`
-  - Custom dimensions: Add hierarchical dimensions for domain-specific extraction
-  - Migration: Use `scripts/migrate_dimension_configs.py` to convert old field-based configs
-
-- **`reflection.yml`**: Two-pass reflection settings
-  - `enabled`: Enable LLM-based quality filtering (default: false)
-  - `thresholds`: Relevance, accuracy, completeness, consistency scores
-  - Context-aware reasoning for temporal/spatial consistency checks
-  - Quality scoring with configurable weights
-
-- **`openai.yml`**: OpenAI API settings
-  - `model_name`: "gpt-4o-mini", "gpt-4o", "gpt-4.1", etc.
-  - `temperature`: Generation temperature (default: 0.0)
-  - `max_tokens`: Maximum output tokens (default: 2048)
-  - Requires: `OPENAI_API_KEY` environment variable
-
-- **`anthropic.yml`**: Anthropic Claude API settings
-  - `model_name`: "claude-sonnet-4-5-20250929" (latest)
-  - `temperature`: Generation temperature (default: 0.0)
-  - `max_tokens`: Maximum output tokens (default: 2048)
-  - Requires: `ANTHROPIC_API_KEY` environment variable
-
-- **`hf.yml`**: HuggingFace/MS-SWIFT server settings
-  - **Client config** (`llm`): API endpoint and generation parameters
-    - `model_name`: Model name as reported by server (e.g., "Qwen3-8B")
-    - `base_url`: Server endpoint (e.g., "http://localhost:8001")
-    - `max_tokens`: Maximum tokens per request (default: 32768)
-  - **Server config** (`deployment`): Model deployment settings
-    - `model`: HuggingFace model ID (e.g., "Qwen/Qwen3-8B")
-    - `port`: Server port (default: 8001)
-    - `result_path`: Inference log directory (null to disable)
-    - `vllm.tensor_parallel_size`: GPU configuration (`auto` or number)
-    - `vllm.gpu_memory_utilization`: GPU memory fraction (default: 0.7)
-    - `vllm.max_model_len`: Maximum sequence length (default: 32768)
-
-#### Post-Processing Configs (`cfg/extraction/postprocess/`)
-
-- **`spatial.yml`**: Geocoding and spatial validation
-  - `geocoder`: "nominatim" (free, OSM) or "google" (requires API key)
-  - `nominatim.rate_limit`: Rate limiting (minimum 1.0 seconds for OSM)
-  - `cache.enabled`: Cache geocoding results
-  - `disambiguation`: Context-aware disambiguation settings
-  - `validation`: Geocoding validation (min_confidence, max_distance_km)
-
-- **`temporal.yml`**: Temporal normalization
-  - `format`: "iso8601" (default)
-  - `timezone.default`: Default timezone (default: "UTC")
-  - `relative.handle_relative`: Resolve relative dates (e.g., "Monday" → absolute date)
-  - `ranges.expand_intervals`: Expand date ranges to start/end
-  - `validation`: Year range validation (min_year: 1900, max_year: 2100)
-
-#### Evaluation Config (`cfg/extraction/evaluation/`)
-
-- **`evaluate.yml`**: Evaluation settings
-  - `dataset.path`: Path to evaluation dataset
-  - `dataset.sample_limit`: Limit number of chunks (null = all)
-  - `llm.llm_provider`: LLM provider for evaluation
-  - `context_aware.enabled`: Enable context-aware extraction
-  - Post-processing settings for evaluation
-
-### Switching LLM Providers
-
-Edit `cfg/extraction/inference/extract.yml`:
 ```yaml
 llm:
-  llm_provider: hf  # or openai, anthropic
+  llm_provider: openai     # Selects provider; model/temp/tokens use PROVIDER_DEFAULTS
+
+spatial:
+  enable_osm_context: false  # Fetch nearby POIs for disambiguation (slow)
+
+temporal:
+  enable_relative_resolution: true  # Resolve "yesterday" → absolute date
+
+reflection:
+  enabled: false             # Two-pass LLM quality filtering (adds latency)
+
+categorical:
+  enable_validation: true    # Validate categories against allowed values
 ```
 
-Or specify at runtime:
-```python
-extractor = DimensionalExtractor(config_path="openai")
+### Key Config: `dimensions.yml`
+
+Defines extraction schemas. Temporal and spatial are always enabled. Additional dimensions (e.g., `event`, `entity`) can be toggled:
+
+```yaml
+dimensions:
+  temporal:
+    enabled: true
+    extraction_type: normalized
+    # hierarchy: timestamp → date → month → year
+  spatial:
+    enabled: true
+    extraction_type: geocoded
+    # hierarchy: location → city → state → country
+  event:
+    enabled: false   # Set to true to extract event categories
+    extraction_type: categorical
 ```
 
-### Quick Evaluation
+---
+
+## Evaluation
+
+Compare baseline vs. context-aware extraction on annotated datasets:
 
 ```bash
-# Sequential mode (default)
-stindex evaluate
+# Run on built-in evaluation set
+stindex evaluate \
+    --dataset data/evaluation/context_aware_eval.json \
+    --config hf --model Qwen3-4B-Instruct-2507 --base-url http://localhost:8001
 
-# With specific config
-stindex evaluate --llm-config openai
+# Limit to 20 samples for quick testing
+stindex evaluate --dataset data/evaluation/context_aware_eval.json \
+    --config openai --sample-limit 20
 
-# Limit samples
-stindex evaluate --sample-limit 10
+# Resume from checkpoint
+stindex evaluate --dataset data/evaluation/context_aware_eval_extended.json \
+    --config hf --output-dir data/output/evaluations/my_run
 ```
 
-### Output Structure
-
-Results are organized by dataset and model:
+Results saved to `--output-dir` (default: `data/output/evaluations/`):
 ```
 data/output/evaluations/
-└── {dataset_name}-{model_name}/
-    ├── eval_{timestamp}_{config}.csv         # Detailed results
-    └── eval_{timestamp}_{config}.summary.json # Aggregate metrics
+└── {run_dir}/
+    ├── baseline_{timestamp}.csv          # Per-chunk baseline results
+    ├── context_aware_{timestamp}.csv     # Per-chunk context-aware results
+    └── comparison_summary_{timestamp}.json
 ```
 
-### Slurm
+Metrics reported (following CoNLL-2003 and TempEval-3 standards):
+- **Temporal**: Precision, Recall, F1, Normalization Accuracy
+- **Spatial**: Precision, Recall, F1, Geocoding Success Rate, Mean Distance Error, Accuracy@25km
+
+---
+
+## Scripts
 
 ```
+scripts/
+├── server/
+│   ├── deploy_ms_swift.sh         # Start HF model server
+│   └── stop_ms_swift.sh           # Stop HF model server
+├── extract/
+│   ├── extract_openai.sh          # Single-text extraction via OpenAI
+│   ├── extract_anthropic.sh       # Single-text extraction via Anthropic
+│   └── extract_hf.sh              # Single-text extraction via HF server
+├── evaluate/
+│   ├── evaluate_openai.sh         # Evaluation via OpenAI
+│   └── evaluate_hf.sh             # Evaluation via HF server
+├── extraction/
+│   ├── extract_corpus.sh          # Corpus extraction (background)
+│   ├── extract_corpus_parallel.sh # Parallel corpus extraction (multi-GPU)
+│   ├── monitor_progress.sh        # Monitor parallel extraction progress
+│   └── stop_extraction_parallel.sh
+├── discovery/
+│   └── discover_schema.sh         # Run schema discovery pipeline
+└── rag/
+    ├── filter_questions.sh        # Filter evaluation questions
+    └── preprocess_corpus.sh       # Preprocess corpus for RAG
+```
+
+---
+
+## Slurm (HPC)
+
+```bash
+# Single GPU
 salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:1
-salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:2
-salloc -p data-inst -n 24 --mem=128G --gres=gpu:h100:4
+
+# Multi-GPU (for tensor parallelism)
+salloc -p data-inst -n 48 --mem=256G --gres=gpu:h100:2
 ```
 
-### TODOs
-
- - Backend server implementation
- - Data warehouse integration
-
+---
 
 ## License
 
 MIT License
-
-
-
-
