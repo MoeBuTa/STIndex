@@ -37,7 +37,7 @@ deployment:
   # vLLM backend settings
   vllm:
     tensor_parallel_size: 1       # 4B model fits on 1 GPU
-    gpu_memory_utilization: 0.7   # Fraction of GPU memory to use (0.0-1.0)
-    max_model_len: 16384          # Maximum sequence length (tokens)
+    gpu_memory_utilization: 0.85  # Fraction of GPU memory to use (0.0-1.0)
+    max_model_len: 8192           # Maximum sequence length (tokens)
     dtype: auto                   # Data type: auto, float16, bfloat16, float32
     trust_remote_code: true       # Allow custom model code execution

@@ -8,6 +8,14 @@ set -e
 export VLLM_ATTENTION_BACKEND="FLASH_ATTN"
 export VLLM_USE_TRITON_FLASH_ATTN="0"
 
+# Ensure C compiler is available for Triton kernel compilation
+if ! command -v gcc &> /dev/null; then
+    if command -v x86_64-conda-linux-gnu-gcc &> /dev/null; then
+        export CC=$(which x86_64-conda-linux-gnu-gcc)
+        echo "Using conda C compiler: $CC"
+    fi
+fi
+
 # Configuration
 CONFIG_FILE="cfg/extraction/inference/hf.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -86,7 +94,7 @@ fi
 
 # Add optional parameters
 if [ -n "$MAX_LEN" ]; then
-    CMD="$CMD --max_model_len $MAX_LEN"
+    CMD="$CMD --vllm_max_model_len $MAX_LEN"
 fi
 
 # Note: dtype and trust_remote_code are handled automatically by vLLM/MS-SWIFT

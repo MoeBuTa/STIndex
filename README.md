@@ -6,18 +6,29 @@
 [![Home Homepage](https://img.shields.io/badge/Home-Homepage-green.svg)](https://stindex.ai4wa.com/)
 [![Demo Dashboard](https://img.shields.io/badge/Demo-Dashboard-green.svg)](https://stindex.ai4wa.com/dashboard)
 
-STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features an end-to-end pipeline with preprocessing, extraction, and evaluation.
+STIndex is a multi-dimensional information extraction system that uses LLMs to extract temporal, spatial, and custom dimensional data from unstructured text. Features an end-to-end pipeline with preprocessing, extraction, auto schema discovery, and evaluation.
 
-**🌐 [Try the Demo Dashboard](https://stindex.ai4wa.com/)**
+**[Try the Demo Dashboard](https://stindex.ai4wa.com/)**
 
 ## Quick Start
 
 ### Installation
 
+**Option 1: Conda (recommended for GPU setups)**
+
+```bash
+conda env create -f environment.yml
+conda activate stindex
+pip install -e .
+python -m spacy download en_core_web_sm
+```
+
+The conda environment includes PyTorch 2.6.0 with CUDA 12.4, vLLM, and all dependencies.
+
+**Option 2: pip only**
+
 ```bash
 pip install stindex
-
-# Install spaCy language model (required for NER)
 python -m spacy download en_core_web_sm
 ```
 
@@ -28,7 +39,7 @@ python -m spacy download en_core_web_sm
 stindex extract "On March 15, 2022, a cyclone hit Broome, Western Australia."
 
 # Use a specific provider
-stindex extract "Text here..." --config openai   # or anthropic, hf
+stindex extract "Text here..." --config openai   # or anthropic, hf, gemini
 
 # Override model and parameters at runtime
 stindex extract "Text here..." --config hf --model Qwen/Qwen3-8B \
@@ -65,44 +76,122 @@ pipeline = STIndexPipeline(dimension_config="dimensions", output_dir="data/outpu
 results = pipeline.run_pipeline(docs)
 ```
 
-### Schema Discovery
+---
 
-Automatically discover dimensional schemas from Q&A datasets:
+## Multi-Dimensional Extraction
+
+STIndex supports extracting any combination of dimensions beyond temporal and spatial. Define custom schemas in YAML:
+
+```python
+from stindex import DimensionalExtractor
+
+# Use a custom dimension schema (health surveillance example)
+extractor = DimensionalExtractor(
+    config_path="hf",
+    dimension_config_path="case_studies/public_health/config/health_dimensions",
+)
+result = extractor.extract(
+    "WA Health confirmed a measles outbreak at Port Hedland Hospital on Feb 12, 2024."
+)
+
+# Access all extracted dimensions
+for dim_name, entities in result.entities.items():
+    print(f"{dim_name}: {len(entities)} entities")
+    for e in entities:
+        print(f"  - {e.get('text')}: {e.get('category', e.get('normalized', ''))}")
+```
+
+**Included schemas:**
+- `case_studies/public_health/config/health_dimensions.yml` — temporal, spatial, event_type, venue_type, disease
+- `case_studies/wa_news/config/wa_dimensions.yml` — temporal, spatial, person, organization, event_type
+
+### Custom Dimension Schema
+
+```yaml
+dimensions:
+  temporal:
+    enabled: true
+  spatial:
+    enabled: true
+  disease:
+    enabled: true
+    description: Disease or health condition mentioned
+    extraction_type: categorical
+    hierarchy:
+      - level: category
+        values: [measles, influenza, covid19, pertussis, other]
+      - level: disease_code
+        description: ICD-10 code if applicable
+```
+
+---
+
+## Auto Schema Discovery
+
+Automatically discover dimensional schemas from Q&A datasets using LLM-powered clustering and extraction:
 
 ```python
 from stindex.pipeline.discovery_pipeline import SchemaDiscoveryPipeline
 
-discovery = SchemaDiscoveryPipeline(
-    questions_path="data/original/mirage/train.jsonl",
-    corpus_path="data/original/medcorp/train.jsonl",
-    output_path="cfg/discovered_medical_schema.yml",
-    n_clusters=10
-)
-schema = discovery.run()
+llm_config = {
+    "llm_provider": "hf",
+    "model_name": "Qwen3-4B-Instruct-2507",
+    "temperature": 0.0,
+    "max_tokens": 4096,
+    "base_url": "http://localhost:8001",
+}
 
-# Use discovered schema for extraction
-pipeline = STIndexPipeline(dimension_config="cfg/discovered_medical_schema.yml")
-results = pipeline.run_pipeline(docs)
+pipeline = SchemaDiscoveryPipeline(
+    llm_config=llm_config,
+    n_clusters=10,
+    batch_size=30,
+)
+
+schema = pipeline.discover_schema(
+    questions_file="data/questions.jsonl",
+    output_dir="data/schema_discovery_output",
+)
 ```
 
-**Supported datasets:** MIRAGE, MedCorp, HotpotQA, 2WikiMQA, MuSiQue
+**CLI:**
+```bash
+python -m stindex.pipeline.discovery_pipeline \
+    --questions data/questions.jsonl \
+    --output-dir data/schema_discovery \
+    --n-clusters 10 --llm-provider hf --batch-size 30
+```
+
+**Output:**
+```
+data/schema_discovery/
+├── cluster_assignments.csv          # Question → cluster mapping
+├── cluster_samples.json             # Sample questions per cluster
+├── cluster_*_result.json            # Per-cluster results
+├── final_schema.json                # Full discovered schema
+├── final_schema.yml                 # YAML version
+├── extraction_schema.yml            # Slim schema for extraction
+└── cot/                             # Chain-of-thought reasoning logs
+```
+
+**Supported datasets:** MIRAGE, MedCorp, HotpotQA, 2WikiMQA, MuSiQue, or any JSONL with `{"question": "..."}` format.
 
 ---
 
 ## LLM Providers
 
-Provider defaults are defined in `stindex/utils/config.py` and can be overridden at runtime via CLI flags or Python API. No separate YAML files needed — just select a provider.
+Provider defaults are defined in `stindex/utils/config.py` and can be overridden at runtime via CLI flags or Python API.
 
 | Provider | Default Model | Config File |
 |----------|--------------|-------------|
 | `openai` | `gpt-4o-mini` | `cfg/extraction/inference/openai.yml` |
 | `anthropic` | `claude-sonnet-4-5-20250929` | `cfg/extraction/inference/anthropic.yml` |
+| `gemini` | `gemini-2.0-flash` | `cfg/extraction/inference/gemini.yml` |
 | `hf` | `Qwen3-4B-Instruct-2507` | `cfg/extraction/inference/hf.yml` |
 
 Select provider in `cfg/extraction/inference/extract.yml`:
 ```yaml
 llm:
-  llm_provider: hf   # or openai, anthropic
+  llm_provider: hf   # or openai, anthropic, gemini
 ```
 
 Or override everything at runtime:
@@ -125,8 +214,8 @@ deployment:
   port: 8001
   vllm:
     tensor_parallel_size: 1            # Number of GPUs (or "auto")
-    gpu_memory_utilization: 0.7
-    max_model_len: 16384
+    gpu_memory_utilization: 0.85       # Adjust for your GPU VRAM
+    max_model_len: 8192                # Max sequence length
 ```
 
 ```bash
@@ -139,6 +228,10 @@ deployment:
 # Monitor
 tail -f logs/hf_server.log
 ```
+
+**Tested configurations:**
+- RTX 5080 (16GB): `gpu_memory_utilization: 0.85`, `max_model_len: 8192`
+- H100 (80GB): `gpu_memory_utilization: 0.9`, `max_model_len: 16384`
 
 ---
 
@@ -153,7 +246,8 @@ cfg/
 │   │   ├── reflection.yml     # Two-pass reflection thresholds
 │   │   ├── hf.yml             # HF server deployment config
 │   │   ├── openai.yml         # Provider selector (llm_provider: openai)
-│   │   └── anthropic.yml      # Provider selector (llm_provider: anthropic)
+│   │   ├── anthropic.yml      # Provider selector (llm_provider: anthropic)
+│   │   └── gemini.yml         # Provider selector (llm_provider: gemini)
 │   └── postprocess/
 │       ├── spatial.yml        # Geocoding settings (Nominatim, Google Maps)
 │       └── temporal.yml       # Temporal normalization (ISO 8601)
@@ -212,16 +306,12 @@ Compare baseline vs. context-aware extraction on annotated datasets:
 ```bash
 # Run on built-in evaluation set
 stindex evaluate \
-    --dataset data/evaluation/context_aware_eval.json \
+    --dataset eval_data/doc_500.json \
     --config hf --model Qwen3-4B-Instruct-2507 --base-url http://localhost:8001
 
 # Limit to 20 samples for quick testing
-stindex evaluate --dataset data/evaluation/context_aware_eval.json \
+stindex evaluate --dataset eval_data/doc_500.json \
     --config openai --sample-limit 20
-
-# Resume from checkpoint
-stindex evaluate --dataset data/evaluation/context_aware_eval_extended.json \
-    --config hf --output-dir data/output/evaluations/my_run
 ```
 
 Results saved to `--output-dir` (default: `data/output/evaluations/`):

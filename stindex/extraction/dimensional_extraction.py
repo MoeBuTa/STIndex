@@ -317,6 +317,9 @@ class DimensionalExtractor:
                     extraction_dict = extract_json_from_text(raw_output, None, return_dict=True)
                     logger.info(f"Retry {retry_count} extracted: {list(extraction_dict.keys())}")
 
+                    # Validate and normalize keys
+                    extraction_dict = self._validate_and_filter_extraction(extraction_dict)
+
                     # Re-process entities
                     for dim_name, dim_config in self.dimensions.items():
                         mentions = extraction_dict.get(dim_name, [])
@@ -672,6 +675,8 @@ class DimensionalExtractor:
             Filtered extraction dict with only valid dimensions and fields
         """
         valid_dim_names = set(self.dimensions.keys())
+        # Build case-insensitive lookup: lowercase → original key
+        dim_name_lookup = {k.lower(): k for k in valid_dim_names}
         validated = {}
 
         for dim_name, entities in extraction_dict.items():
@@ -680,10 +685,16 @@ class DimensionalExtractor:
                 validated[dim_name] = entities
                 continue
 
-            # Check if dimension exists in schema
-            if dim_name not in valid_dim_names:
+            # Case-insensitive dimension name matching
+            canonical_name = dim_name_lookup.get(dim_name.lower())
+            if canonical_name is None:
                 logger.warning(f"⚠ Invalid dimension '{dim_name}' not in schema - skipping")
                 continue
+            dim_name = canonical_name
+
+            # Normalize single dict to list of dicts
+            if isinstance(entities, dict):
+                entities = [entities]
 
             if not entities or not isinstance(entities, list):
                 validated[dim_name] = entities
