@@ -1,0 +1,4 @@
+# DeepSeek provider selector — use with: stindex extract --config deepseek
+# Model/temperature/max_tokens come from PROVIDER_DEFAULTS in stindex/utils/config.py.
+llm:
+  llm_provider: deepseek

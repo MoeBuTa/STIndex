@@ -40,6 +40,11 @@ PROVIDER_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "temperature": 0.0,
         "max_tokens": 2048,
     },
+    "deepseek": {
+        "model_name": "deepseek-chat",
+        "temperature": 0.0,
+        "max_tokens": 2048,
+    },
     "hf": {
         "model_name": "Qwen3-4B-Instruct-2507",
         "temperature": 0.0,

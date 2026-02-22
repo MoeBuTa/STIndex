@@ -39,6 +39,9 @@ def create_client(config: Dict) -> LLMClient:
     elif provider == "gemini":
         from stindex.llm.gemini import GeminiClient
         return GeminiClient(model=model, temperature=temp, max_tokens=tokens)
+    elif provider == "deepseek":
+        from stindex.llm.deepseek import DeepSeekClient
+        return DeepSeekClient(model=model, temperature=temp, max_tokens=tokens)
     elif provider == "hf":
         from stindex.llm.ms_swift import MSSwiftClient
         return MSSwiftClient(
