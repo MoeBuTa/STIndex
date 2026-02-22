@@ -14,7 +14,18 @@ STIndex is a multi-dimensional information extraction system that uses LLMs to e
 
 ### Installation
 
-**Option 1: Conda (recommended for GPU setups)**
+**Option 1: macOS / Apple Silicon (CPU-only)**
+
+```bash
+conda env create -f environment-mac.yml
+conda activate stindex
+pip install -e . --no-deps
+python -m spacy download en_core_web_sm
+```
+
+This installs all API-based providers (OpenAI, Anthropic, Gemini, DeepSeek) without GPU dependencies. The `--no-deps` flag skips pulling GPU-only packages (vLLM, flashinfer, deepspeed) that are absent from `environment-mac.yml`.
+
+**Option 2: Linux / GPU (CUDA 12.4)**
 
 ```bash
 conda env create -f environment.yml
@@ -25,11 +36,28 @@ python -m spacy download en_core_web_sm
 
 The conda environment includes PyTorch 2.6.0 with CUDA 12.4, vLLM, and all dependencies.
 
-**Option 2: pip only**
+**Option 3: pip only**
 
 ```bash
 pip install stindex
 python -m spacy download en_core_web_sm
+```
+
+### API Keys
+
+Copy the environment template and add your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```bash
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+DEEPSEEK_API_KEY=sk-...        # DeepSeek — https://platform.deepseek.com
+# No key needed for HuggingFace (local server)
 ```
 
 ### Basic Extraction
@@ -39,7 +67,8 @@ python -m spacy download en_core_web_sm
 stindex extract "On March 15, 2022, a cyclone hit Broome, Western Australia."
 
 # Use a specific provider
-stindex extract "Text here..." --config openai   # or anthropic, hf, gemini
+stindex extract "Text here..." --config openai      # or anthropic, gemini, deepseek
+stindex extract "Text here..." --config deepseek    # DeepSeek (great for macOS)
 
 # Override model and parameters at runtime
 stindex extract "Text here..." --config hf --model Qwen/Qwen3-8B \
@@ -186,17 +215,20 @@ Provider defaults are defined in `stindex/utils/config.py` and can be overridden
 | `openai` | `gpt-4o-mini` | `cfg/extraction/inference/openai.yml` |
 | `anthropic` | `claude-sonnet-4-5-20250929` | `cfg/extraction/inference/anthropic.yml` |
 | `gemini` | `gemini-2.0-flash` | `cfg/extraction/inference/gemini.yml` |
+| `deepseek` | `deepseek-chat` | `cfg/extraction/inference/deepseek.yml` |
 | `hf` | `Qwen3-4B-Instruct-2507` | `cfg/extraction/inference/hf.yml` |
 
 Select provider in `cfg/extraction/inference/extract.yml`:
 ```yaml
 llm:
-  llm_provider: hf   # or openai, anthropic, gemini
+  llm_provider: deepseek   # or openai, anthropic, gemini, hf
 ```
 
 Or override everything at runtime:
 ```bash
 stindex extract "Text..." --config openai --model gpt-4o --temperature 0.0
+
+stindex extract "Text..." --config deepseek   # uses deepseek-chat by default
 
 stindex extract "Text..." --config hf \
     --model Qwen3-4B-Instruct-2507 --base-url http://localhost:8001
@@ -235,6 +267,186 @@ tail -f logs/hf_server.log
 
 ---
 
+## MCP Server
+
+STIndex exposes its extraction pipeline as a **Model Context Protocol (MCP)** server over SSE/HTTP,
+so that Claude Desktop, Cursor, docs2synth, and any other MCP-compatible client can send documents
+and receive structured JSON back.
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `extract_text` | Extract entities from a plain-text or HTML string |
+| `extract_file` | Extract from a local file path (PDF, DOCX, TXT, HTML) |
+| `extract_url` | Scrape a web URL and extract entities |
+| `extract_content` | Extract from base64-encoded file bytes (for remote clients) |
+| `analyze` | Cluster and analyse a prior extraction result |
+
+### Quick Start (local)
+
+```bash
+pip install -e .
+stindex-mcp --port 8008          # SSE transport, all interfaces
+# or
+python -m stindex.mcp_server --port 8008 --transport sse
+```
+
+Test with MCP Inspector:
+```bash
+npx @modelcontextprotocol/inspector http://localhost:8008/sse
+```
+
+### Mac Mini / Server Deployment
+
+The recommended setup runs `stindex-mcp` as a persistent **launchd** service behind an **Nginx**
+reverse proxy so clients can reach it at a clean HTTPS URL like
+`https://mcp.yourdomain.com/sse`.
+
+#### 1 — Create a launchd service
+
+Create `/Library/LaunchDaemons/com.stindex.mcp.plist` (runs as root, survives reboots):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.stindex.mcp</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <!-- adjust to your venv / conda env path -->
+    <string>/opt/miniconda3/envs/stindex/bin/stindex-mcp</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8008</string>
+    <string>--transport</string>
+    <string>sse</string>
+  </array>
+
+  <!-- working directory must contain cfg/ -->
+  <key>WorkingDirectory</key>
+  <string>/path/to/STIndex</string>
+
+  <!-- API keys -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OPENAI_API_KEY</key>
+    <string>sk-...</string>
+    <key>ANTHROPIC_API_KEY</key>
+    <string>sk-ant-...</string>
+    <key>DEEPSEEK_API_KEY</key>
+    <string>sk-...</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/var/log/stindex-mcp.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/stindex-mcp.err</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>
+```
+
+Load and start:
+```bash
+sudo launchctl load /Library/LaunchDaemons/com.stindex.mcp.plist
+sudo launchctl start com.stindex.mcp
+
+# Check status
+sudo launchctl list | grep stindex
+tail -f /var/log/stindex-mcp.log
+```
+
+#### 2 — Nginx reverse proxy with HTTPS
+
+Install Nginx and [Certbot](https://certbot.eff.org/) (e.g. via Homebrew):
+
+```bash
+brew install nginx certbot
+```
+
+Create `/opt/homebrew/etc/nginx/servers/stindex-mcp.conf`:
+
+```nginx
+server {
+    listen 80;
+    server_name mcp.yourdomain.com;
+
+    # Redirect HTTP → HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name mcp.yourdomain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/mcp.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mcp.yourdomain.com/privkey.pem;
+
+    # SSE requires long-lived connections — disable buffering
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    keepalive_timeout  3600s;
+
+    location / {
+        proxy_pass         http://127.0.0.1:8008;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        # Required for SSE
+        proxy_set_header   Connection        '';
+        chunked_transfer_encoding on;
+    }
+}
+```
+
+Issue a certificate and reload:
+```bash
+sudo certbot certonly --standalone -d mcp.yourdomain.com
+sudo nginx -t && sudo nginx -s reload
+```
+
+The MCP server is now reachable at `https://mcp.yourdomain.com/sse`.
+
+#### 3 — Connect clients
+
+**Claude Desktop** (`~/.config/claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "stindex": {
+      "url": "https://mcp.yourdomain.com/sse"
+    }
+  }
+}
+```
+
+**Cursor** — add to MCP settings:
+```
+https://mcp.yourdomain.com/sse
+```
+
+**docs2synth / any HTTP MCP client** — point it at:
+```
+https://mcp.yourdomain.com/sse
+```
+
+---
+
 ## Configuration
 
 ```
@@ -247,7 +459,8 @@ cfg/
 │   │   ├── hf.yml             # HF server deployment config
 │   │   ├── openai.yml         # Provider selector (llm_provider: openai)
 │   │   ├── anthropic.yml      # Provider selector (llm_provider: anthropic)
-│   │   └── gemini.yml         # Provider selector (llm_provider: gemini)
+│   │   ├── gemini.yml         # Provider selector (llm_provider: gemini)
+│   │   └── deepseek.yml       # Provider selector (llm_provider: deepseek)
 │   └── postprocess/
 │       ├── spatial.yml        # Geocoding settings (Nominatim, Google Maps)
 │       └── temporal.yml       # Temporal normalization (ISO 8601)

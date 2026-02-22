@@ -38,6 +38,7 @@ Repository = "https://github.com/MoeBuTa/STIndex/"
 
 [project.scripts]
 stindex = "stindex.cli:main"
+stindex-mcp = "stindex.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
