@@ -305,59 +305,28 @@ reverse proxy so clients can reach it at a clean HTTPS URL like
 
 #### 1 — Create a launchd service
 
-Create `/Library/LaunchDaemons/com.stindex.mcp.plist` (runs as root, survives reboots):
+A template plist is included in the repo. Copy it, fill in your paths and API keys, then install:
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.stindex.mcp</string>
-
-  <key>ProgramArguments</key>
-  <array>
-    <!-- adjust to your venv / conda env path -->
-    <string>/opt/miniconda3/envs/stindex/bin/stindex-mcp</string>
-    <string>--host</string>
-    <string>127.0.0.1</string>
-    <string>--port</string>
-    <string>8008</string>
-    <string>--transport</string>
-    <string>sse</string>
-  </array>
-
-  <!-- working directory must contain cfg/ -->
-  <key>WorkingDirectory</key>
-  <string>/path/to/STIndex</string>
-
-  <!-- API keys -->
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>OPENAI_API_KEY</key>
-    <string>sk-...</string>
-    <key>ANTHROPIC_API_KEY</key>
-    <string>sk-ant-...</string>
-    <key>DEEPSEEK_API_KEY</key>
-    <string>sk-...</string>
-  </dict>
-
-  <key>StandardOutPath</key>
-  <string>/var/log/stindex-mcp.log</string>
-  <key>StandardErrorPath</key>
-  <string>/var/log/stindex-mcp.err</string>
-
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-</dict>
-</plist>
+```bash
+cp com.stindex.mcp.plist.example com.stindex.mcp.plist
 ```
 
-Load and start:
+Edit `com.stindex.mcp.plist` — replace every `YOUR_USERNAME`, `/path/to/STIndex`, and `YOUR_*_API_KEY` placeholder with real values:
+
+| Placeholder | Example value |
+|---|---|
+| `YOUR_USERNAME` | `wenxiao` |
+| `/path/to/STIndex` | `/Users/wenxiao/Projects/STIndex` |
+| `YOUR_DEEPSEEK_API_KEY` | `sk-...` |
+| `YOUR_OPENAI_API_KEY` | `sk-...` (optional) |
+| `YOUR_ANTHROPIC_API_KEY` | `sk-ant-...` (optional) |
+
+> **Note:** `com.stindex.mcp.plist` is git-ignored because it contains secrets. Only `com.stindex.mcp.plist.example` is tracked.
+
+Install and start the service (runs as root, survives reboots):
+
 ```bash
+sudo cp com.stindex.mcp.plist /Library/LaunchDaemons/
 sudo launchctl load /Library/LaunchDaemons/com.stindex.mcp.plist
 sudo launchctl start com.stindex.mcp
 

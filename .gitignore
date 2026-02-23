@@ -80,3 +80,6 @@ CLAUDE.md
 # MS-SWIFT Result folder
 result/
 result/*
+
+# launchd plist (contains API keys — use com.stindex.mcp.plist.example as template)
+com.stindex.mcp.plist

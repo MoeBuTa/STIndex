@@ -296,7 +296,11 @@ class DocumentParser:
     ) -> ParsedDocument:
         """Parse file using unstructured library."""
         # Use unstructured's auto-partition
-        elements = partition(str(path))
+        try:
+            elements = partition(str(path))
+        except Exception as e:
+            logger.warning(f"unstructured partition failed for {path.name}: {e}. Falling back to simple parsing.")
+            return self._parse_file_simple(path, document_id, title, metadata)
 
         # Process elements similar to HTML parsing
         extracted_title = ""
@@ -350,7 +354,24 @@ class DocumentParser:
         metadata: Dict[str, Any]
     ) -> ParsedDocument:
         """Parse file using simple text extraction."""
-        # For simple parsing, just read as text
+        # Use pypdf for PDF files
+        if path.suffix.lower() == ".pdf":
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(str(path))
+                pages = [page.extract_text() or "" for page in reader.pages]
+                text = "\n\n".join(p for p in pages if p.strip())
+                return ParsedDocument(
+                    document_id=document_id,
+                    title=title,
+                    content=text,
+                    metadata=metadata,
+                    parsing_method="pypdf"
+                )
+            except Exception as e:
+                logger.warning(f"pypdf failed for {path.name}: {e}")
+
+        # For all other files, read as text
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 text = f.read()

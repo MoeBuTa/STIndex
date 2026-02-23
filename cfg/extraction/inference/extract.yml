@@ -6,8 +6,8 @@
 # LLM Configuration
 llm:
   # LLM Provider Selection — model settings come from PROVIDER_DEFAULTS
-  # Options: hf, openai, anthropic
-  llm_provider: openai
+  # Options: hf, openai, anthropic, gemini, deepseek
+  llm_provider: deepseek
 
 # Extraction Configuration
 extraction:

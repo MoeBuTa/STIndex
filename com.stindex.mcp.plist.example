@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.stindex.mcp</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <!-- adjust to your venv / conda env path -->
+    <string>/Users/YOUR_USERNAME/miniconda3/envs/stindex/bin/stindex-mcp</string>
+    <string>--host</string>
+    <string>0.0.0.0</string>
+    <string>--port</string>
+    <string>9090</string>
+    <string>--transport</string>
+    <string>sse</string>
+  </array>
+
+  <!-- working directory must contain cfg/ -->
+  <key>WorkingDirectory</key>
+  <string>/path/to/STIndex</string>
+
+  <!-- Load API keys from environment -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DEEPSEEK_API_KEY</key>
+    <string>YOUR_DEEPSEEK_API_KEY</string>
+    <key>OPENAI_API_KEY</key>
+    <string>YOUR_OPENAI_API_KEY</string>
+    <key>ANTHROPIC_API_KEY</key>
+    <string>YOUR_ANTHROPIC_API_KEY</string>
+    <key>HOME</key>
+    <string>/Users/YOUR_USERNAME</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/var/log/stindex-mcp.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/stindex-mcp.err</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>
