@@ -4,19 +4,78 @@ STIndex MCP server — exposes the STIndex extraction pipeline over SSE/HTTP.
 Transport: SSE (default, suitable for web-hosted MCP clients)
            stdio / streamable-http also supported via --transport flag.
 
+Authentication:
+    HTTP transports (SSE, streamable-http) require a Bearer token matching
+    MCP_API_KEY from the environment.  Set it in .env or as an env var.
+    stdio transport needs no authentication (local process boundary is sufficient).
+
 Usage:
-    stindex-mcp --port 8008           # SSE on 0.0.0.0:8008
+    stindex-mcp --port 9090           # SSE on 0.0.0.0:9090 (auth enforced if MCP_API_KEY set)
     python -m stindex.mcp_server --transport stdio
 """
 
 import argparse
 import base64
 import json
+import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import uvicorn
 from mcp.server.fastmcp import FastMCP
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Auth middleware  (mirrors Docs2Synth's JWTAuthMiddleware pattern)
+# ---------------------------------------------------------------------------
+
+class APIKeyMiddleware(BaseHTTPMiddleware):
+    """Validate Bearer API-key tokens for protected MCP endpoints.
+
+    Unprotected paths (e.g. health checks) pass through without a token.
+    All other paths require:  Authorization: Bearer <MCP_API_KEY>
+    """
+
+    def __init__(self, app: Any, api_key: str, protected_paths: List[str]) -> None:
+        super().__init__(app)
+        self.api_key = api_key
+        self.protected_paths = protected_paths
+
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
+        if not any(request.url.path.startswith(p) for p in self.protected_paths):
+            return await call_next(request)
+
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return JSONResponse(
+                {
+                    "error": "unauthorized",
+                    "error_description": "Missing or invalid Authorization header",
+                },
+                status_code=401,
+                headers={"WWW-Authenticate": 'Bearer realm="STIndex MCP"'},
+            )
+
+        token = auth_header[7:]  # strip "Bearer "
+        if token != self.api_key:
+            return JSONResponse(
+                {
+                    "error": "unauthorized",
+                    "error_description": "Invalid API key",
+                },
+                status_code=401,
+                headers={"WWW-Authenticate": 'Bearer realm="STIndex MCP"'},
+            )
+
+        logger.debug("Authenticated MCP request from %s", request.client)
+        return await call_next(request)
 
 
 # ---------------------------------------------------------------------------
@@ -415,7 +474,32 @@ def main() -> None:
     args = p.parse_args()
 
     mcp = _build_mcp(host=args.host, port=args.port)
-    mcp.run(transport=args.transport)
+
+    # stdio — no auth needed (local process boundary is the security boundary)
+    if args.transport == "stdio":
+        mcp.run(transport="stdio")
+        return
+
+    # HTTP transports — wrap the ASGI app with APIKeyMiddleware if MCP_API_KEY is set
+    api_key = os.environ.get("MCP_API_KEY", "").strip()
+
+    if args.transport == "sse":
+        app = mcp.sse_app()
+        protected_paths = ["/sse", "/messages"]
+    else:  # streamable-http
+        app = mcp.streamable_http_app()
+        protected_paths = ["/mcp"]
+
+    if api_key:
+        logger.info("MCP_API_KEY set — Bearer token authentication enabled")
+        app = APIKeyMiddleware(app, api_key=api_key, protected_paths=protected_paths)
+    else:
+        logger.warning(
+            "MCP_API_KEY is not set — server is unauthenticated. "
+            "Set MCP_API_KEY in .env or the environment to require a Bearer token."
+        )
+
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

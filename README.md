@@ -292,9 +292,46 @@ stindex-mcp --port 8008          # SSE transport, all interfaces
 python -m stindex.mcp_server --port 8008 --transport sse
 ```
 
+> **Without `MCP_API_KEY` set the server starts unauthenticated** and logs a warning.
+> See [Authentication](#authentication) below to secure it.
+
 Test with MCP Inspector:
 ```bash
 npx @modelcontextprotocol/inspector http://localhost:8008/sse
+```
+
+### Authentication
+
+The MCP server uses **Bearer token authentication** for SSE and streamable-http transports
+(the same pattern used by Docs2Synth). stdio transport needs no auth.
+
+**1 — Generate a key**
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+**2 — Set it in `.env`**
+
+```bash
+MCP_API_KEY=<your-generated-key>
+```
+
+**3 — Pass it from clients**
+
+```bash
+# curl
+curl -H "Authorization: Bearer <your-key>" http://localhost:8008/sse
+
+# MCP Inspector
+npx @modelcontextprotocol/inspector \
+  --header "Authorization: Bearer <your-key>" \
+  http://localhost:8008/sse
+```
+
+If `MCP_API_KEY` is not set the server still starts but logs:
+```
+WARNING  MCP_API_KEY is not set — server is unauthenticated.
 ```
 
 ### Mac Mini / Server Deployment
@@ -317,6 +354,7 @@ Edit `com.stindex.mcp.plist` — replace every `YOUR_USERNAME`, `/path/to/STInde
 |---|---|
 | `YOUR_USERNAME` | `wenxiao` |
 | `/path/to/STIndex` | `/Users/wenxiao/Projects/STIndex` |
+| `YOUR_MCP_API_KEY` | output of `python -c "import secrets; print(secrets.token_hex(32))"` |
 | `YOUR_DEEPSEEK_API_KEY` | `sk-...` |
 | `YOUR_OPENAI_API_KEY` | `sk-...` (optional) |
 | `YOUR_ANTHROPIC_API_KEY` | `sk-ant-...` (optional) |
@@ -398,21 +436,26 @@ The MCP server is now reachable at `https://mcp.yourdomain.com/sse`.
 {
   "mcpServers": {
     "stindex": {
-      "url": "https://mcp.yourdomain.com/sse"
+      "url": "https://mcp.yourdomain.com/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_API_KEY"
+      }
     }
   }
 }
 ```
 
-**Cursor** — add to MCP settings:
+**Cursor** — add to MCP settings with the header:
 ```
 https://mcp.yourdomain.com/sse
+Authorization: Bearer YOUR_MCP_API_KEY
 ```
 
 **docs2synth / any HTTP MCP client** — point it at:
 ```
 https://mcp.yourdomain.com/sse
 ```
+and pass `Authorization: Bearer YOUR_MCP_API_KEY` in the request headers.
 
 ---
 

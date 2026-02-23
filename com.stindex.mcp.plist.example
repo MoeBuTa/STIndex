@@ -25,6 +25,8 @@
   <!-- Load API keys from environment -->
   <key>EnvironmentVariables</key>
   <dict>
+    <key>MCP_API_KEY</key>
+    <string>YOUR_MCP_API_KEY</string>
     <key>DEEPSEEK_API_KEY</key>
     <string>YOUR_DEEPSEEK_API_KEY</string>
     <key>OPENAI_API_KEY</key>
