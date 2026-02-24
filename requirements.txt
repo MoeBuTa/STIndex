@@ -87,6 +87,8 @@ uvicorn>=0.23.0  # ASGI server
 
 # MCP (Model Context Protocol)
 mcp>=1.2.0
+PyJWT[crypto]>=2.8.0   # JWT validation against KAIA JWKS (OIDC resource server)
+httpx>=0.27.0           # Async HTTP for OIDC discovery / token introspection
 
 # Visualization
 matplotlib>=3.7.0

@@ -35,6 +35,7 @@ import uvicorn
 from mcp.server.fastmcp import FastMCP
 
 from stindex.mcp_oauth import APIKeyMiddleware, OAuthASGIRouter, OAuthServer
+from stindex.mcp_oidc_proxy import OIDCAuthMiddleware, OIDCProxyServer, OIDCResourceServer
 
 logger = logging.getLogger(__name__)
 
@@ -444,36 +445,65 @@ def main() -> None:
         mcp.run(transport="stdio")
         return
 
-    # Resolve public base URL (needed for OAuth metadata endpoints)
+    # Resolve public base URL
     base_url = (
         args.base_url
         or os.environ.get("MCP_BASE_URL", "").strip()
         or f"http://{args.host}:{args.port}"
     ).rstrip("/")
 
-    api_key = os.environ.get("MCP_API_KEY", "").strip()
-    if not api_key:
-        logger.warning(
-            "MCP_API_KEY is not set — server is unauthenticated. "
-            "Set MCP_API_KEY in .env to enable OAuth Bearer token auth."
+    # -----------------------------------------------------------------------
+    # Choose auth mode:
+    #   OIDC proxy mode  — OIDC_DISCOVERY_URL is set → use KAIAPlatform OAuth
+    #   Self-contained   — fallback → self-issued JWT with MCP_API_KEY
+    # -----------------------------------------------------------------------
+    oidc_discovery_url = os.environ.get("OIDC_DISCOVERY_URL", "").strip()
+
+    if oidc_discovery_url:
+        logger.info("OIDC proxy mode — auth delegated to KAIAPlatform (%s)", oidc_discovery_url)
+        oidc = OIDCResourceServer(
+            discovery_url    = oidc_discovery_url,
+            client_id        = os.environ.get("OIDC_CLIENT_ID", ""),
+            client_secret    = os.environ.get("OIDC_CLIENT_SECRET", ""),
+            use_introspection= os.environ.get("OIDC_USE_INTROSPECTION", "true").lower()
+                               in ("true", "1", "yes"),
+            verify_ssl       = os.environ.get("OIDC_VERIFY_SSL", "true").lower()
+                               in ("true", "1", "yes"),
+            timeout          = float(os.environ.get("OIDC_TIMEOUT", "30")),
         )
+        proxy    = OIDCProxyServer(base_url=base_url, oidc=oidc)
+        oauth_app = proxy.build_app()
 
-    # Build the OAuth server (handles discovery + auth flow)
-    oauth_server = OAuthServer(base_url=base_url, api_key=api_key)
-    oauth_app    = oauth_server.build_app()
+        if args.transport == "sse":
+            mcp_app         = mcp.sse_app()
+            protected_paths = ["/sse", "/messages"]
+        else:
+            mcp_app         = mcp.streamable_http_app()
+            protected_paths = ["/mcp"]
 
-    # Get the underlying MCP ASGI app and protect it
-    if args.transport == "sse":
-        mcp_app         = mcp.sse_app()
-        protected_paths = ["/sse", "/messages"]
-    else:   # streamable-http
-        mcp_app         = mcp.streamable_http_app()
-        protected_paths = ["/mcp"]
+        mcp_app = OIDCAuthMiddleware(mcp_app, proxy=proxy, protected_paths=protected_paths)
 
-    if api_key:
-        logger.info("OAuth Bearer token authentication enabled (base_url=%s)", base_url)
-        mcp_app = APIKeyMiddleware(mcp_app, oauth_server=oauth_server,
-                                   protected_paths=protected_paths)
+    else:
+        api_key = os.environ.get("MCP_API_KEY", "").strip()
+        if not api_key:
+            logger.warning(
+                "Neither OIDC_DISCOVERY_URL nor MCP_API_KEY is set — "
+                "server is unauthenticated."
+            )
+        logger.info("Self-contained OAuth mode (MCP_API_KEY)")
+        oauth_server = OAuthServer(base_url=base_url, api_key=api_key)
+        oauth_app    = oauth_server.build_app()
+
+        if args.transport == "sse":
+            mcp_app         = mcp.sse_app()
+            protected_paths = ["/sse", "/messages"]
+        else:
+            mcp_app         = mcp.streamable_http_app()
+            protected_paths = ["/mcp"]
+
+        if api_key:
+            mcp_app = APIKeyMiddleware(mcp_app, oauth_server=oauth_server,
+                                       protected_paths=protected_paths)
 
     # Route: OAuth/discovery paths → oauth_app, MCP traffic → mcp_app
     app = OAuthASGIRouter(mcp_app=mcp_app, oauth_app=oauth_app)
