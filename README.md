@@ -302,36 +302,26 @@ npx @modelcontextprotocol/inspector http://localhost:8008/sse
 
 ### Authentication
 
-The MCP server uses **Bearer token authentication** for SSE and streamable-http transports
-(the same pattern used by Docs2Synth). stdio transport needs no auth.
+STIndex MCP uses a **self-contained OAuth 2.0 authorization server** embedded in the server process — the same pattern as Talk2Metadata and Docs2Synth. `mcp-remote` discovers the OAuth endpoints automatically and handles the entire auth flow:
 
-**1 — Generate a key**
+1. `mcp-remote` connects → gets a `401` with a `resource_metadata` header
+2. Fetches `/.well-known/oauth-protected-resource` → finds the authorization server
+3. Fetches `/.well-known/oauth-authorization-server` → gets token/auth endpoints
+4. Registers itself via `/oauth/register` (RFC 7591 dynamic client registration)
+5. Opens a browser tab to `/oauth/authorize` — you enter your `MCP_API_KEY`
+6. Server issues a 30-day JWT; `mcp-remote` stores it and sends it as `Bearer` on every request
+
+**No token needs to be hardcoded in the client config.**
+
+**Setup:**
 
 ```bash
+# Generate a key
 python -c "import secrets; print(secrets.token_hex(32))"
-```
 
-**2 — Set it in `.env`**
-
-```bash
-MCP_API_KEY=<your-generated-key>
-```
-
-**3 — Pass it from clients**
-
-```bash
-# curl
-curl -H "Authorization: Bearer <your-key>" http://localhost:8008/sse
-
-# MCP Inspector
-npx @modelcontextprotocol/inspector \
-  --header "Authorization: Bearer <your-key>" \
-  http://localhost:8008/sse
-```
-
-If `MCP_API_KEY` is not set the server still starts but logs:
-```
-WARNING  MCP_API_KEY is not set — server is unauthenticated.
+# Add to .env
+MCP_API_KEY=<generated-key>
+MCP_BASE_URL=https://stindex.wenxiao.link   # must match what clients connect to
 ```
 
 ### Mac Mini / Server Deployment
@@ -355,6 +345,7 @@ Edit `com.stindex.mcp.plist` — replace every `YOUR_USERNAME`, `/path/to/STInde
 | `YOUR_USERNAME` | `wenxiao` |
 | `/path/to/STIndex` | `/Users/wenxiao/Projects/STIndex` |
 | `YOUR_MCP_API_KEY` | output of `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `YOUR_MCP_BASE_URL` | `https://stindex.wenxiao.link` |
 | `YOUR_DEEPSEEK_API_KEY` | `sk-...` |
 | `YOUR_OPENAI_API_KEY` | `sk-...` (optional) |
 | `YOUR_ANTHROPIC_API_KEY` | `sk-ant-...` (optional) |
@@ -431,31 +422,29 @@ The MCP server is now reachable at `https://mcp.yourdomain.com/sse`.
 
 #### 3 — Connect clients
 
-**Claude Desktop** (`~/.config/claude/claude_desktop_config.json`):
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
     "stindex": {
-      "url": "https://mcp.yourdomain.com/sse",
-      "headers": {
-        "Authorization": "Bearer YOUR_MCP_API_KEY"
-      }
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.yourdomain.com/sse"]
     }
   }
 }
 ```
 
-**Cursor** — add to MCP settings with the header:
+On first launch Claude Desktop will open a browser tab for you to enter your `MCP_API_KEY`. The resulting JWT is stored automatically — no token in the config file.
+
+**Cursor** — add to MCP settings:
 ```
 https://mcp.yourdomain.com/sse
-Authorization: Bearer YOUR_MCP_API_KEY
 ```
 
-**docs2synth / any HTTP MCP client** — point it at:
+**Any mcp-remote client:**
+```bash
+npx mcp-remote https://mcp.yourdomain.com/sse
 ```
-https://mcp.yourdomain.com/sse
-```
-and pass `Authorization: Bearer YOUR_MCP_API_KEY` in the request headers.
 
 ---
 

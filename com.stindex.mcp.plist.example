@@ -27,6 +27,9 @@
   <dict>
     <key>MCP_API_KEY</key>
     <string>YOUR_MCP_API_KEY</string>
+    <!-- Public URL used in OAuth metadata — must match what clients connect to -->
+    <key>MCP_BASE_URL</key>
+    <string>https://stindex.wenxiao.link</string>
     <key>DEEPSEEK_API_KEY</key>
     <string>YOUR_DEEPSEEK_API_KEY</string>
     <key>OPENAI_API_KEY</key>

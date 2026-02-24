@@ -4,13 +4,21 @@ STIndex MCP server — exposes the STIndex extraction pipeline over SSE/HTTP.
 Transport: SSE (default, suitable for web-hosted MCP clients)
            stdio / streamable-http also supported via --transport flag.
 
-Authentication:
-    HTTP transports (SSE, streamable-http) require a Bearer token matching
-    MCP_API_KEY from the environment.  Set it in .env or as an env var.
-    stdio transport needs no authentication (local process boundary is sufficient).
+Authentication (HTTP transports):
+    The server embeds a self-contained OAuth 2.0 authorization server so
+    mcp-remote can discover and complete the auth flow automatically —
+    no Bearer token needs to be hardcoded in the client config.
+
+    On first connection mcp-remote opens a browser to /oauth/authorize;
+    the user enters MCP_API_KEY, and the resulting JWT is stored by mcp-remote
+    for all subsequent requests.
+
+    Set MCP_BASE_URL to the public URL of the server (e.g. https://stindex.wenxiao.link).
+    stdio transport needs no authentication.
 
 Usage:
-    stindex-mcp --port 9090           # SSE on 0.0.0.0:9090 (auth enforced if MCP_API_KEY set)
+    stindex-mcp --port 9090                   # SSE with OAuth on 0.0.0.0:9090
+    MCP_BASE_URL=https://stindex.wenxiao.link stindex-mcp --port 9090
     python -m stindex.mcp_server --transport stdio
 """
 
@@ -25,57 +33,10 @@ from typing import Any, Dict, List, Optional
 
 import uvicorn
 from mcp.server.fastmcp import FastMCP
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
+
+from stindex.mcp_oauth import APIKeyMiddleware, OAuthASGIRouter, OAuthServer
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Auth middleware  (mirrors Docs2Synth's JWTAuthMiddleware pattern)
-# ---------------------------------------------------------------------------
-
-class APIKeyMiddleware(BaseHTTPMiddleware):
-    """Validate Bearer API-key tokens for protected MCP endpoints.
-
-    Unprotected paths (e.g. health checks) pass through without a token.
-    All other paths require:  Authorization: Bearer <MCP_API_KEY>
-    """
-
-    def __init__(self, app: Any, api_key: str, protected_paths: List[str]) -> None:
-        super().__init__(app)
-        self.api_key = api_key
-        self.protected_paths = protected_paths
-
-    async def dispatch(self, request: Request, call_next: Any) -> Any:
-        if not any(request.url.path.startswith(p) for p in self.protected_paths):
-            return await call_next(request)
-
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return JSONResponse(
-                {
-                    "error": "unauthorized",
-                    "error_description": "Missing or invalid Authorization header",
-                },
-                status_code=401,
-                headers={"WWW-Authenticate": 'Bearer realm="STIndex MCP"'},
-            )
-
-        token = auth_header[7:]  # strip "Bearer "
-        if token != self.api_key:
-            return JSONResponse(
-                {
-                    "error": "unauthorized",
-                    "error_description": "Invalid API key",
-                },
-                status_code=401,
-                headers={"WWW-Authenticate": 'Bearer realm="STIndex MCP"'},
-            )
-
-        logger.debug("Authenticated MCP request from %s", request.client)
-        return await call_next(request)
 
 
 # ---------------------------------------------------------------------------
@@ -463,8 +424,11 @@ def _build_mcp(host: str = "0.0.0.0", port: int = 8008) -> FastMCP:
 def main() -> None:
     """Start the STIndex MCP server."""
     p = argparse.ArgumentParser(description="STIndex MCP Server")
-    p.add_argument("--host", default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
-    p.add_argument("--port", type=int, default=8008, help="Port to listen on (default: 8008)")
+    p.add_argument("--host",      default="0.0.0.0",  help="Host to bind (default: 0.0.0.0)")
+    p.add_argument("--port",      type=int, default=8008, help="Port to listen on (default: 8008)")
+    p.add_argument("--base-url",  default=None,
+                   help="Public base URL (e.g. https://stindex.wenxiao.link). "
+                        "Falls back to MCP_BASE_URL env var, then http://HOST:PORT.")
     p.add_argument(
         "--transport",
         default="sse",
@@ -480,25 +444,39 @@ def main() -> None:
         mcp.run(transport="stdio")
         return
 
-    # HTTP transports — wrap the ASGI app with APIKeyMiddleware if MCP_API_KEY is set
-    api_key = os.environ.get("MCP_API_KEY", "").strip()
+    # Resolve public base URL (needed for OAuth metadata endpoints)
+    base_url = (
+        args.base_url
+        or os.environ.get("MCP_BASE_URL", "").strip()
+        or f"http://{args.host}:{args.port}"
+    ).rstrip("/")
 
+    api_key = os.environ.get("MCP_API_KEY", "").strip()
+    if not api_key:
+        logger.warning(
+            "MCP_API_KEY is not set — server is unauthenticated. "
+            "Set MCP_API_KEY in .env to enable OAuth Bearer token auth."
+        )
+
+    # Build the OAuth server (handles discovery + auth flow)
+    oauth_server = OAuthServer(base_url=base_url, api_key=api_key)
+    oauth_app    = oauth_server.build_app()
+
+    # Get the underlying MCP ASGI app and protect it
     if args.transport == "sse":
-        app = mcp.sse_app()
+        mcp_app         = mcp.sse_app()
         protected_paths = ["/sse", "/messages"]
-    else:  # streamable-http
-        app = mcp.streamable_http_app()
+    else:   # streamable-http
+        mcp_app         = mcp.streamable_http_app()
         protected_paths = ["/mcp"]
 
     if api_key:
-        logger.info("MCP_API_KEY set — Bearer token authentication enabled")
-        app = APIKeyMiddleware(app, api_key=api_key, protected_paths=protected_paths)
-    else:
-        logger.warning(
-            "MCP_API_KEY is not set — server is unauthenticated. "
-            "Set MCP_API_KEY in .env or the environment to require a Bearer token."
-        )
+        logger.info("OAuth Bearer token authentication enabled (base_url=%s)", base_url)
+        mcp_app = APIKeyMiddleware(mcp_app, oauth_server=oauth_server,
+                                   protected_paths=protected_paths)
 
+    # Route: OAuth/discovery paths → oauth_app, MCP traffic → mcp_app
+    app = OAuthASGIRouter(mcp_app=mcp_app, oauth_app=oauth_app)
     uvicorn.run(app, host=args.host, port=args.port)
 
 
